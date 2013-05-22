@@ -1,3 +1,5 @@
-These python files are a collection of modules written for Willie, an IRC bot written in python.
+##Willie modules for the FineLine bot
 
-Currently written for willie 3.2.0.
+These python files are a collection of modules written for FineLine, an implementation of the [Willie](http://willie.dftba.net/) IRC bot.
+
+Currently written for Willie 3.2.0.
