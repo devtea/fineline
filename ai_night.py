@@ -14,15 +14,16 @@ def night(Willie, trigger):
     punctuation = random.choice((".","","!"))
 
     #Replies cause the bot to reply to the triggered message
-    Willie.reply(message + punctuation)
+    #if statment to filter negetive statements
+    if ('not' and 'no') not in trigger.bytes:
+        Willie.reply(message + punctuation)
 
 prefix = r"($nickname:?,?\s+)?"
 meat = r"((good)?\s?'?(night|bye))|(later)"
 all = r"all|every\s?(body|one|pony|pone|poni)|mlpds"
 to_fineline = prefix + meat
-to_all = r".*" + meat + r"\s+" + all
-universal = r".*time (for me)?\s?(to|for)\s?(go to)\s?" + \
-        r"(bed|sleep)"
+to_all = r".*\s" + meat + r"\s+" + all
+universal = r".*?(time (for me)?\s?(to|for)\s?(go to)?\s?(bed|sleep))"
 
 night.rule = r"(" + to_fineline + r")|" + \
         r"(" + to_all + r")|" + \
