@@ -11,7 +11,6 @@ random.seed()
 
 def hi(Willie, trigger):
     """Replies to greetings, usually."""
-
     if random.uniform(0,100)>3:
         message = random.choice(("Hi","Hello","Yo","Hey","Ahoy"))
         wait = random.uniform(0,5)
@@ -20,8 +19,16 @@ def hi(Willie, trigger):
         time.sleep(wait)
         Willie.say(trigger.nick + ": " + message + punctuation)
 
-hi_terms = "(hi|hey|hello|ahoy|yo|sup)"
-hi.rule = r'$nickname\:?,?\s+' + hi_terms + r'|' + hi_terms + r',?\s+$nickname'
+
+prefix = r"($nickname\:?,?\s+)"
+meat = r"(hello|hi|ahoy|sup|hey|yo)"
+all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|$nickname)"
+to_fineline = prefix + meat
+to_all =  meat + r"\s+" + all
+
+hi.rule = r"(" + to_fineline + r")|" + \
+        r"(" + to_all + r")"
+
 hi.priority = 'medium'
 hi.thread = False
 hi.rate = 300

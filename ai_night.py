@@ -18,7 +18,7 @@ def night(Willie, trigger):
     if ('not' and 'no') not in trigger.bytes:
         Willie.reply(message + punctuation)
 
-prefix = r"($nickname:?,?\s+)?"
+prefix = r"($nickname:?,?\s+)"
 meat = r"((good)?\s?'?(night|bye))|(later)"
 all = r"all|every\s?(body|one|pony|pone|poni)|mlpds"
 to_fineline = prefix + meat
