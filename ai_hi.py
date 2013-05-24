@@ -13,16 +13,17 @@ def hi(Willie, trigger):
     """Replies to greetings, usually."""
     if random.uniform(0,100)>3:
         message = random.choice(("Hi","Hello","Yo","Hey","Ahoy"))
-        wait = random.uniform(0,5)
         punctuation = random.choice((".","","!"))
 
-        time.sleep(wait)
-        Willie.say(trigger.nick + ": " + message + punctuation)
-
+        time.sleep(random.uniform(0,3))
+        if random.uniform(0,1) > 0.5:
+            Willie.reply(message + punctuation)
+        else:
+            Willie.say(message + " " + trigger.nick + punctuation)
 
 prefix = r"($nickname\:?,?\s+)"
-meat = r"(hello|hi|ahoy|sup|hey|yo)"
-all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|$nickname)"
+meat = r"(hello|hi|ahoy|sup|hey|yo|afternoon|morning)"
+all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|folks|guys|$nickname)"
 to_fineline = prefix + meat
 to_all =  meat + r"\s+" + all
 
