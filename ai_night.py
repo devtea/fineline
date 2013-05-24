@@ -5,7 +5,9 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-import random
+import random, time
+
+random.seed()
 
 def night(Willie, trigger):
     """Responds to people saying good night"""
@@ -16,11 +18,15 @@ def night(Willie, trigger):
     #Replies cause the bot to reply to the triggered message
     #if statment to filter negetive statements
     if ('not' and 'no') not in trigger.bytes:
-        Willie.reply(message + punctuation)
+        time.sleep(random.uniform(0,1))
+        if random.uniform(0,1) > 0.5:
+            Willie.reply(message + punctuation)
+        else:
+            Willie.say(message + " " + trigger.nick + punctuation)
 
 prefix = r"($nickname\:?,?\s+)"
 meat = r"((good|g)?\s?'?(night|bye)|(later))"
-all = r"(all|folks|(every\s?(body|one|pony|pone|poni))|mlpds|guys|$nickname)"
+all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|folks|guys|$nickname)"
 to_fineline = prefix + meat
 to_all = r".*?" + meat + r",?\s+" + all
 universal = r".*?((time (for me)?\s?(to|for)\s?(go to)?\s?(bed|sleep))|" + \
