@@ -20,10 +20,11 @@ def night(Willie, trigger):
 
 prefix = r"($nickname\:?,?\s+)"
 meat = r"((good|g)?\s?'?(night|bye)|(later))"
-all = r"(all|folks|(every\s?(body|one|pony|pone|poni))|mlpds|$nickname)"
+all = r"(all|folks|(every\s?(body|one|pony|pone|poni))|mlpds|guys|$nickname)"
 to_fineline = prefix + meat
 to_all = r".*?" + meat + r",?\s+" + all
-universal = r".*?(time (for me)?\s?(to|for)\s?(go to)?\s?(bed|sleep))"
+universal = r".*?((time (for me)?\s?(to|for)\s?(go to)?\s?(bed|sleep))|" + \
+        "(I'?m going to (go to)?\s?(bed|sleep|crash|(pass out))))"
 
 night.rule = r"(" + to_fineline + r")|" + \
         r"(" + to_all + r")|" + \
