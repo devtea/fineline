@@ -22,7 +22,7 @@ prefix = r"($nickname\:?,?\s+)"
 meat = r"((good|g)?\s?'?(night|bye)|(later))"
 all = r"(all|folks|(every\s?(body|one|pony|pone|poni))|mlpds|$nickname)"
 to_fineline = prefix + meat
-to_all = r".*?" + meat + r"\s+" + all
+to_all = r".*?" + meat + r",?\s+" + all
 universal = r".*?(time (for me)?\s?(to|for)\s?(go to)?\s?(bed|sleep))"
 
 night.rule = r"(" + to_fineline + r")|" + \
