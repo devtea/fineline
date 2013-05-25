@@ -1,5 +1,5 @@
 """
-prompt.py - A simple Willie module prompt
+prompt.py - A Willie module that generates simple drawing ideas
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -8,37 +8,20 @@ http://bitbucket.org/tdreyer/fineline
 import random, bisect
 
 
-    #index_no = weighted_choice(ponies)
-def weighted_choice(weighted):
-    sum = 0
-    sum_steps = []
-
-    for item in weighted:
-        sum = sum + int(item[1])
-        sum_steps.append(sum)
-
-    return bisect.bisect_right( sum_steps, random.uniform(0,sum))
-
-
-def prompt(Willie, trigger):
-    """Gives a short drawing prompt using ponies from the show."""
-    #think about hitting the DB once during a setup function
-
-    Willie.debug("prompt.py", "==============", "verbose")
-    Willie.debug("prompt.py", "Module started", "verbose")
-
-    Willie.reply("Okay, your random prompt is as follows:")
+def setup(Willie):
+    #Load from database when module is first loaded to reduce load over
+    #each call
 
     #Debugging messages showing the size of the tables
-    Willie.debug("prompt.py", "Ponies: " + str(Willie.db.prompt_ponies.size()),
-            "verbose")
-    Willie.debug("prompt.py", "Nouns: " + str(Willie.db.prompt_nouns.size()),
-            "verbose")
-    Willie.debug("prompt.py", "Verbs: " + str(Willie.db.prompt_verbs.size()),
-            "verbose")
+    #Willie.debug("prompt.py", "Ponies: " + str(Willie.db.prompt_ponies.size()),
+    #        "verbose")
+    #Willie.debug("prompt.py", "Nouns: " + str(Willie.db.prompt_nouns.size()),
+    #        "verbose")
+    #Willie.debug("prompt.py", "Verbs: " + str(Willie.db.prompt_verbs.size()),
+    #        "verbose")
 
-
-    #Load list of ponies
+    #Load list of names
+    global ponies
     ponies = []
     for row in Willie.db.prompt_ponies.keys():
         """Willie.debug("prompt.py", Willie.db.prompt_ponies.get(row[0],
@@ -48,6 +31,7 @@ def prompt(Willie, trigger):
             " weighted ponies.", "verbose")
 
     #Load list of nouns
+    global nouns
     nouns = []
     for row in Willie.db.prompt_nouns.keys():
         """Willie.debug("prompt.py", Willie.db.prompt_ponies.get(row[0],
@@ -57,6 +41,7 @@ def prompt(Willie, trigger):
             " nouns.", "verbose")
 
     #Load list of verbs
+    global verbs
     verbs = []
     for row in Willie.db.prompt_verbs.keys():
         """Willie.debug("prompt.py", Willie.db.prompt_ponies.get(row[0],
@@ -65,17 +50,36 @@ def prompt(Willie, trigger):
     Willie.debug("prompt.py", "Loaded " + str(len(verbs)) +
             " verbs.", "verbose")
 
+
+
+def weighted_choice(weighted):
+    """Returns a random index from a list of tuples that contain
+    (something, weight) where weight is the weighted probablity that
+    that item should be chosen. Higher weights are chosen more often"""
+
+    sum = 0
+    sum_steps = []
+    for item in weighted:
+        sum = sum + int(item[1])
+        sum_steps.append(sum)
+    return bisect.bisect_right( sum_steps, random.uniform(0,sum))
+
+
+
+def prompt(Willie, trigger):
+    """Gives a short drawing prompt using ponies from the show."""
+
+    Willie.debug("prompt.py", "==============", "verbose")
+    Willie.debug("prompt.py", "Module started", "verbose")
+
     #Make our random selections for our prompt construction
-    #Willie.debug("prompt.py", random.choice(verbs), "verbose")
     index_no = weighted_choice(ponies)
-    pony = ponies[index_no][0]
-    verb = random.choice(verbs).strip()
-    noun = random.choice(nouns).strip()
+    sentence = ["Your random prompt is: ",
+            ponies[index_no][0],
+            random.choice(verbs).strip(),
+            random.choice(nouns).strip() + "."]
 
-    Willie.reply(pony + " " + verb + " " + noun + ".")
-
-
-### COMMAND
+    Willie.reply(" ".join(sentence))
 #Match a command sequence eg !cmd
 prompt.commands = ['prompt']
 
@@ -86,7 +90,7 @@ prompt.priority = 'medium'
 #prompt.thread = False
 
 #Limit in seconds of users ability to trigger module
-prompt.rate = 30
+prompt.rate = 15
 
 #Example used in help query to bot for commands
 prompt.example = ".prompt"
