@@ -8,13 +8,21 @@ http://bitbucket.org/tdreyer/fineline
 
 def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
-    Willie.action('hugs %s back' % trigger.nick)
 
+    Willie.action('hugs %s back' % trigger.nick)
+# Rules allow regex matches to PRIVMSG
 hugback.rule = r'\001ACTION hugs $nickname'
+
+# Priorities of 'high', 'medium', and 'low' work
 hugback.priority = 'medium'
-hugback.thread = False
+
+# Willie is multithreaded by default.
+#hugback.thread = False
+
+# Limit in seconds of users ability to trigger module
 hugback.rate = 30
-#hugback.example = "Why don't you hug me and find out?!"
+
+
 
 if __name__ == "__main__":
     print __doc__.strip()

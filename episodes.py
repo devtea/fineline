@@ -7,6 +7,8 @@ http://bitbucket.org/tdreyer/fineline
 """
 import random, re
 
+random.seed()
+
 def setup(Willie):
     #load data from database
     global episodes
@@ -21,6 +23,7 @@ def setup(Willie):
 
 def say_ep(Willie, trigger, episode):
     """Accepts a list optionally containing an int of the index of the ep"""
+
     if len(episode) == 0:
         Willie.debug("episodes.py:episode", "Episode not found",
                 "verbose")
@@ -56,9 +59,16 @@ def reload_eps(Willie, trigger):
     else:
         Willie.debug("episodes.py", trigger.nick +
                 " just tried to reload episodes...", "always")
+# Match a command sequence eg !cmd
 reload_eps.commands = ['reload_eps']
+
+# Priorities of 'high', 'medium', and 'low' work
 reload_eps.priority = 'medium'
+
+# Willie is multithreaded by default.
 #prompt.thread = False
+
+# Example used in help query to bot for commands
 reload_eps.example = ".reload_eps"
 
 
@@ -74,10 +84,19 @@ def add_ep(Willie, trigger):
     else:
         Willie.debug("episodes.py", trigger.nick +
                 " just tried to add an episode...", "always")
+# Match a command sequence eg !cmd
 add_ep.commands = ['add_ep']
+
+# Priorities of 'high', 'medium', and 'low' work
 add_ep.priority = 'medium'
+
+# Willie is multithreaded by default.
 #prompt.thread = False
-add_ep.rate = 15
+
+# Limit in seconds of users ability to trigger module
+#add_ep.rate = 15
+
+# Example used in help query to bot for commands
 add_ep.example = ".add_ep"
 
 
@@ -115,22 +134,41 @@ def episode(Willie, trigger):
     else:
         Willie.debug("episodes.py:episode", "Not enough args", "verbose")
         randep(Willie, trigger)
+# Match a command sequence eg !cmd
 episode.commands = ['episode', 'ep']
+
+# Priorities of 'high', 'medium', and 'low' work
 episode.priority = 'medium'
+
+# Willie is multithreaded by default.
 #prompt.thread = False
-episode.rate = 15
+
+# Limit in seconds of users ability to trigger module
+episode.rate = 35
+
+# Example used in help query to bot for commands
 episode.example = ".episode S02E11"
 
 
 
 def randep(Willie, trigger):
     """Returns a random episode."""
+
     Willie.debug("episodes.py:randep", "Triggered", "verbose")
     say_ep(Willie, trigger, [random.randint(0,len(episodes)-1)] )
+# Match a command sequence eg !cmd
 randep.commands = ['randep', 'rep', 'randomepisode']
+
+# Priorities of 'high', 'medium', and 'low' work
 randep.priority = 'medium'
+
+# Willie is multithreaded by default.
 #prompt.thread = False
-randep.rate = 15
+
+# Limit in seconds of users ability to trigger module
+randep.rate = 35
+
+# Example used in help query to bot for commands
 randep.example = ".randep"
 
 

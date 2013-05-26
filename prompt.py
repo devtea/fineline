@@ -7,18 +7,11 @@ http://bitbucket.org/tdreyer/fineline
 """
 import random, bisect
 
+random.seed()
 
 def setup(Willie):
     #Load from database when module is first loaded to reduce load over
     #each call
-
-    #Debugging messages showing the size of the tables
-    #Willie.debug("prompt.py", "Ponies: " + str(Willie.db.prompt_ponies.size()),
-    #        "verbose")
-    #Willie.debug("prompt.py", "Nouns: " + str(Willie.db.prompt_nouns.size()),
-    #        "verbose")
-    #Willie.debug("prompt.py", "Verbs: " + str(Willie.db.prompt_verbs.size()),
-    #        "verbose")
 
     #Load list of names
     global ponies
@@ -90,10 +83,9 @@ prompt.priority = 'medium'
 #prompt.thread = False
 
 #Limit in seconds of users ability to trigger module
-prompt.rate = 15
+prompt.rate = 35
 
-#Example used in help query to bot for commands
-prompt.example = ".prompt"
+
 
 if __name__ == "__main__":
     print __doc__.strip()
