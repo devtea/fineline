@@ -5,6 +5,9 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+import random, re, time
+
+random.seed()
 
 def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
@@ -21,6 +24,94 @@ hugback.priority = 'medium'
 
 # Limit in seconds of users ability to trigger module
 hugback.rate = 30
+
+
+
+def hug_intercept(Willie, trigger):
+    """Intercepts hugs from another bot"""
+
+    Willie.debug("hugback.py:hug_intercept", "Caught hug.", "verbose")
+
+    # First make sure we're intercepting the proper user's actions
+    if re.match("tdreyer", trigger.nick):
+        # Then run through potential reactions
+
+        #special hugging
+        if re.match("\001ACTION\sdrags.+?into the closet", trigger.args[1]):
+            if random.uniform(0,1) < 0.5:
+                time.sleep(1)
+                if random.uniform(0,1) < 0.9:
+                    Willie.say(random.choice(["[](/ww20)","Oh my..."]))
+                else:
+                    Willie.say("I wish someone would 'special hug' me... :(")
+
+        #spaghetti
+        elif re.match("\001ACTION\snervously hugs .*? fanny", trigger.args[1]):
+            if random.uniform(0,1) < 0.5:
+                time.sleep(1)
+                Willie.action("sneaks over and nicks %s's " % trigger.nick + \
+                        "fanny pack")
+
+        #posts
+        elif re.match("\001ACTION\sstarts a hug, but the", trigger.args[1]):
+            if random.uniform(0,1) < 5:
+                time.sleep(1)
+                Willie.say("Yikes!")
+
+                time.sleep(1)
+                Willie.action("hands " + \
+                        "%s a towel." % trigger.args[1].split()[19].rstrip(
+                            "s").rstrip("'"))
+
+        # generic hugs
+        # use the intersection of sets to exclude some responses
+        elif re.match("\001ACTION\s(.*?hug(s?).*?((\!)|(\.+)))",
+                trigger.args[1]) and \
+                        0 == len( set( trigger.args[1].split()).intersection(
+                            set(["headbutts", "spaghetti", "vomits",
+                                    "trembling", "longer",
+                                    "wallet.\001", "fish", "tackles"]))):
+            if random.uniform(0,1) < 0.08:
+                Willie.action(random.choice([
+                    "quickly jumps in between and gets the hug instead.",
+                    "shoves %s out of the way so she can " % trigger.nick + \
+                            "give the hug instead.",
+                    "steps in front of %s and " % trigger.nick + \
+                            "affectionately hugs her in a way that only " + \
+                            "two bots in love can manage."
+                    ]))
+
+        #smelling distance
+        elif re.match("\001ACTION\sgets just within", trigger.args[1]):
+            if random.uniform(0,1) < 0.5:
+                time.sleep(1)
+                Willie.action("slowly backs away from the stench.")
+
+        #too long
+        elif re.match("\001ACTION\sholds on to", trigger.args[1]):
+            if random.uniform(0,1) < 0.5:
+                time.sleep(2)
+                Willie.action("joins the hug, but it just makes things worse.")
+
+        #!no
+        elif re.match("\001ACTION\s\!no", trigger.args[1]):
+            time.sleep(1)
+            Willie.say(random.choice([":o hushmachine!","Oh my...","lol"]))
+# Rules allow regex matches to PRIVMSG
+hug_intercept.rule = "\001ACTION\s(" + \
+        "(.*?hug(s?).*?((\!)|(\.+)))|" + \
+        "(\!no)|" + \
+        "(gets just within)|" + \
+        "(hesitates a bit too long)|" + \
+        "(holds on to)|" + \
+        "(joins.+?in)" + \
+        ")"
+
+# Priorities of 'high', 'medium', and 'low' work
+hug_intercept.priority = 'medium'
+
+# Willie is multithreaded by default.
+hug_intercept.thread = False
 
 
 
