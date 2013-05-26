@@ -33,11 +33,16 @@ def hug_intercept(Willie, trigger):
     Willie.debug("hugback.py:hug_intercept", "Caught hug.", "verbose")
 
     # First make sure we're intercepting the proper user's actions
-    if re.match("tdreyer", trigger.nick):
+    if re.match("hushmachine", trigger.nick):
         # Then run through potential reactions
 
+        #Hugs directed at the bot
+        if re.match("\001ACTION\s.+?%s.+?" % Willie.nick, trigger.args[1]):
+            time.sleep(1)
+            Willie.say(random.choice([":D","Aww, thanks!"]))
+
         #special hugging
-        if re.match("\001ACTION\sdrags.+?into the closet", trigger.args[1]):
+        elif re.match("\001ACTION\sdrags.+?into the closet", trigger.args[1]):
             if random.uniform(0,1) < 0.5:
                 time.sleep(1)
                 if random.uniform(0,1) < 0.9:
