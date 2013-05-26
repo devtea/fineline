@@ -1,5 +1,5 @@
 """
-hugback.py - A simple Willie Module for replying to 'hug' actions
+hugs.py - A simple Willie Module for interacting with 'hug' actions
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
