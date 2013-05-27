@@ -15,8 +15,8 @@ def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
     Willie.action('hugs %s back' % trigger.nick)
 # Rules allow regex matches to PRIVMSG
-hugback.rule = r'\001ACTION .*?($nickname)?\s?((a.*? hug)|(hugs))' + \
-        '\s?($nickname)?'
+hugback.rule = r'((($nickname)\s?((a.*? hug)|(hugs)))|' + \
+        '(((a.*? hug)|(hugs))\s?($nickname)))'
 # Priorities of 'high', 'medium', and 'low' work
 hugback.priority = 'medium'
 # Willie is multithreaded by default.
@@ -28,7 +28,7 @@ def hug_intercept(Willie, trigger):
     """Intercepts hugs from another bot"""
     Willie.debug("hugback.py:hug_intercept", "Caught hug.", "verbose")
     # First make sure we're intercepting the proper user's actions
-    if re.match("hushmachine", trigger.nick):
+    if re.match("tdreyer", trigger.nick):
         #Hugs directed at the bot
         if re.match("\001ACTION\s.+?%s.+?" % Willie.nick, trigger.args[1]):
             time.sleep(1)
