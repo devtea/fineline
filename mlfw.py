@@ -7,7 +7,6 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 import willie.web as web
-import re
 import json
 
 def mlfw_search(Willie, terms):
@@ -18,8 +17,8 @@ def mlfw_search(Willie, terms):
     try:
         json_results = json.loads(result)
     except ValueError:
-        Willie.debug("mlfw.py:mlfw_search", "Bad json returned", "verbose")
-        Willie.debug("mlfw.py:mlfw_search", result, "verbose")
+        Willie.debug("mlfw.py:mlfw_search", "Bad json returned", "warning")
+        Willie.debug("mlfw.py:mlfw_search", result, "warning")
     Willie.debug(
             "mlfw.py:mlfw_search",
             json.dumps(json_results, sort_keys=False, indent=2),
@@ -38,13 +37,13 @@ def mlfw(Willie, trigger):
     Willie.debug("mlfw.py:mlfw",trigger.args, "verbose")
     __, __, list = trigger.args[1].partition(' ')
     if not list:
-        Willie.reply("usage: !mlfw tag one, tag two, tag three")
+        Willie.reply("try something like " + mlfw.example)
     else:
         # Test for csv or space separated values
         if ',' in trigger.args[1]:
-            Willie.debug("choose.py list", list, "verbose")
+            Willie.debug("mlfw.py:mlfw", list, "verbose")
             args = list.split(',')
-            Willie.debug("choose.py args", args, "verbose")
+            Willie.debug("mlfw.py:mlfw", args, "verbose")
         else:
             args = list.split()
         # Strip the strings
@@ -53,7 +52,6 @@ def mlfw(Willie, trigger):
         Willie.debug("mlfw.py:mlfw", args, "verbose")
         tags = '&tags__all=' + ','.join(args)
         Willie.debug("mlfw.py:mlfw", tags, "verbose")
-        #mlfw_result = mlfw_search(Willie, '&tags__all=fluttershy')
         mlfw_result = mlfw_search(Willie, tags)
         if mlfw_result:
             Willie.debug("mlfw.py:mlfw", mlfw_result, "verbose")
