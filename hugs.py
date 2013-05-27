@@ -15,7 +15,8 @@ def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
     Willie.action('hugs %s back' % trigger.nick)
 # Rules allow regex matches to PRIVMSG
-hugback.rule = r'\001ACTION hugs $nickname'
+hugback.rule = r'\001ACTION .*?($nickname)?\s?((a.*? hug)|(hugs))' + \
+        '\s?($nickname)?'
 # Priorities of 'high', 'medium', and 'low' work
 hugback.priority = 'medium'
 # Willie is multithreaded by default.
