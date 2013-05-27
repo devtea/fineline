@@ -28,7 +28,7 @@ def hug_intercept(Willie, trigger):
     """Intercepts hugs from another bot"""
     Willie.debug("hugback.py:hug_intercept", "Caught hug.", "verbose")
     # First make sure we're intercepting the proper user's actions
-    if re.match("tdreyer", trigger.nick):
+    if re.match("hushmachine", trigger.nick):
         #Hugs directed at the bot
         if re.match("\001ACTION\s.+?%s.+?" % Willie.nick, trigger.args[1]):
             time.sleep(1)
