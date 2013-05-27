@@ -1,0 +1,71 @@
+"""
+mlfw.py - A simple Willie module to parse tags and return results from the
+mlfw site
+Copyright 2013, Tim Dreyer
+Licensed under the Eiffel Forum License 2.
+
+http://bitbucket.org/tdreyer/fineline
+"""
+import willie.web as web
+import re
+import json
+
+def mlfw_search(Willie, terms):
+    base_url = 'http://mylittlefacewhen.com/api/v3/face/'
+    query_strings = '?order_by=hotness&removed=false&limit=1' + terms
+    Willie.debug("mlfw.py:mlfw_search", query_strings, "verbose")
+    result = web.get(base_url + query_strings, 10)
+    try:
+        json_results = json.loads(result)
+    except ValueError:
+        Willie.debug("mlfw.py:mlfw_search", "Bad json returned", "verbose")
+        Willie.debug("mlfw.py:mlfw_search", result, "verbose")
+    Willie.debug(
+            "mlfw.py:mlfw_search",
+            json.dumps(json_results, sort_keys=False, indent=2),
+            "verbose"
+            )
+    try:
+        return json_results['objects'][0]['image']
+    except IndexError:
+        return none
+    except TypeError:
+        return False
+
+def mlfw(Willie, trigger):
+    """Searches mlfw and returns the top result with all tags specified."""
+    Willie.debug("mlfw.py:mlfw", "Triggered ==============", "verbose")
+    Willie.debug("mlfw.py:mlfw",trigger.args, "verbose")
+    __, __, list = trigger.args[1].partition(' ')
+    # Test for csv or space separated values
+    if ',' in trigger.args[1]:
+        Willie.debug("choose.py list", list, "verbose")
+        args = list.split(',')
+        Willie.debug("choose.py args", args, "verbose")
+    else:
+        args = list.split()
+    # Strip the strings
+    for i, str in enumerate(args):
+        args[i] = str.strip()
+    Willie.debug("mlfw.py:mlfw", args, "verbose")
+    tags = '&tags__all=' + ','.join(args)
+    Willie.debug("mlfw.py:mlfw", tags, "verbose")
+    #mlfw_result = mlfw_search(Willie, '&tags__all=fluttershy')
+    mlfw_result = mlfw_search(Willie, tags)
+    if mlfw_result:
+        Willie.debug("mlfw.py:mlfw", mlfw_result, "verbose")
+        base_url = 'http://mylittlefacewhen.com'
+        Willie.reply(base_url + mlfw_result)
+    elif mlfw_result is False:  #looks bad, but must since might be None
+        Willie.reply("Uh oh, MLFW isn't working right. Try again later.")
+    else:
+        Willie.reply("That doesn't seem to exist.")
+mlfw.commands = ['mlfw']
+mlfw.priority = 'medium'
+mlfw.rate = 45
+mlfw.example = "!mlfw tag one, tag two, tag three"
+
+
+
+if __name__ == "__main__":
+    print __doc__.strip()
