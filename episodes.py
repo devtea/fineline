@@ -37,7 +37,7 @@ def say_ep(Willie, trigger, episode):
 def reload_eps(Willie, trigger):
     """Reloads cached episodes from the database. Admin only."""
     Willie.debug("episodes.py:reload_eps", "Triggered", "verbose")
-    if trigger.admin:
+    if trigger.owner:
         Willie.say("Reloading episodes.")
 
         #load data from database
@@ -60,7 +60,7 @@ reload_eps.example = ".reload_eps"
 def add_ep(Willie, trigger):
     """Adds an episode to the database. Admin only"""
     Willie.debug("episodes.py:add_ep", "Triggered", "verbose")
-    if trigger.admin:
+    if trigger.owner:
         Willie.debug("episodes.py", "This module is unfinished", "warning")
         Willie.reply("Hey knucklehead, you never finished this module!")
     else:
