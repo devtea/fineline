@@ -1,9 +1,9 @@
 """
 info.py - Willie Information Module
-Copyright 2008, Sean B. Palmer, inamidst.com
+Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
-http://willie.dftba.net
+http://bitbucket.org/tdreyer/fineline
 """
 
 def doc(willie, trigger):
@@ -11,7 +11,7 @@ def doc(willie, trigger):
     name = trigger.group(2)
     name = name.lower()
 
-    if willie.doc.has_key(name):
+    if willie.doc.has_key(name) and not willie.doc[name][0].startswith("ADMIN"):
         willie.reply(willie.doc[name][0])
         if willie.doc[name][1]:
             willie.say('e.g. ' + willie.doc[name][1])
@@ -19,24 +19,30 @@ doc.rule = ('$nick', '(?i)(help|doc) +([A-Za-z]+)(?:\?+)?$')
 doc.example = '$nickname: doc tell?'
 doc.priority = 'low'
 
-def help(willie, trigger):
-    """Get help for a command."""
-    if not input.group(2):
-	willie.reply('Say .help <command> (for example .help c) to get help for a command, or .commands for a list of commands.')
-    else:
-	doc(willie, trigger)
-help.commands = ['help']
-help.example = '.help c'
 
 def commands(willie, trigger):
     """Return a list of Willie's commands"""
-    names = ', '.join(sorted(willie.doc.iterkeys()))
-    willie.reply("I am sending you a private message of all my commands!")
-    willie.msg(trigger.nick, 'Commands I recognise: ' + names + '.')
-    willie.msg(trigger.nick, ("For help, do '%s: help example?' where example is the " +
+    if trigger.owner:
+        names = ', '.join(sorted(willie.doc.iterkeys()))
+    else:
+        cmds = [i for i in sorted(willie.doc.iterkeys())
+                if not willie.doc[i][0].startswith("ADMIN")
+                and i not in [
+                    'newoplist',
+                    'listops',
+                    'listvoices',
+                    'blocks',
+                    'part',
+                    'quit'
+                    ]  #bad hack for filtering admin cmds
+                ]
+        names = ', '.join(sorted(cmds))
+    willie.reply('Commands I recognise: ' + names + '.')
+    willie.reply(("For help, do '%s: help example?' where example is the " +
                     "name of the command you want help for.") % willie.nick)
 commands.commands = ['commands']
 commands.priority = 'low'
+
 
 def help(willie, trigger):
     response = (

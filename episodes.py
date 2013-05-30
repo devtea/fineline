@@ -35,7 +35,7 @@ def say_ep(Willie, trigger, episode):
         Willie.reply(" ".join(sentence))
 
 def reload_eps(Willie, trigger):
-    """Reloads cached episodes from the database. Admin only."""
+    """ADMIN: Reloads cached episodes from the database."""
     Willie.debug("episodes.py:reload_eps", "Triggered", "verbose")
     if trigger.owner:
         Willie.say("Reloading episodes.")
@@ -58,7 +58,7 @@ reload_eps.priority = 'medium'
 reload_eps.example = ".reload_eps"
 
 def add_ep(Willie, trigger):
-    """Adds an episode to the database. Admin only"""
+    """ADMIN: Adds an episode to the database. Admin only"""
     Willie.debug("episodes.py:add_ep", "Triggered", "verbose")
     if trigger.owner:
         Willie.debug("episodes.py", "This module is unfinished", "warning")

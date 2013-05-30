@@ -214,7 +214,7 @@ last_activity.rule = '.*'
 
 
 def timers_off(Willie, trigger):
-    """Disable the slow room timer"""
+    """ADMIN: Disable the slow room timer"""
     if trigger.owner:
         Willie.say(r'Switching the timer daemon off.')
         Willie.debug("timers:timer_off", "Disabling timer thread", "verbose")
@@ -225,7 +225,7 @@ timers_off.priority = 'high'
 
 
 def timers_on(Willie, trigger):
-    """Enable the slow room timer"""
+    """ADMIN: Enable the slow room timer"""
     if trigger.owner:
         Willie.say(r'Switching the timer daemon on.')
         Willie.debug("timers:timer_on", "Enabling timer thread", "verbose")
