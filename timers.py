@@ -100,14 +100,10 @@ def slow_room(Willie):
 
     """
     # Wait time in seconds before the bot will pipe up
-    #WAIT_TIME = (rand.randint(30,45) * 60)
-    # Wait time in seconds before the bot will pipe up
-    WAIT_TIME = random.randint(7,15)
+    WAIT_TIME = (random.uniform(28,47) * 60)
     Willie.debug("timers:slow_room", "beep", "verbose")
 
     def fzoo(Willie, channel):
-        assert len(channel) > 3
-        #assert channel is not private message
         Willie.msg(channel, r"!fzoo")
 
     def quote(Willie, channel):
@@ -157,11 +153,13 @@ def slow_room(Willie):
             Willie.msg(channel, "It's dead Jim.")
 
     def cute(Willie, channel):
-        da_favs = 'http://backend.deviantart.com/rss.xml?q=favby%3Atdreyer1%2F50127477&type=deviation'
+        da_favs = 'http://backend.deviantart.com/rss.xml" + \
+                "?q=favby%3Atdreyer1%2F50127477&type=deviation'
         pics = []
         intro = [
                 "It's a bit slow in here right now. How about a cute pic?",
-                "I guess my owner likes this pic, but I'm not sure. What do you all think?",
+                "I guess my owner likes this pic, but I'm not sure. " + \
+                        "What do you all think?",
                 "Y'all are boring. Have a pony.",
                 random.choice(["Pone!", "Pony!", "Poni!"]),
                 "I think pony should pony pony pony.",
@@ -176,7 +174,8 @@ def slow_room(Willie):
             time.sleep(random.uniform(1,3))
             Willie.msg(channel, random.choice(pics))
         else:
-            Willie.msg(channel, "[](/derpyshock) Oh no, I was going to post from DA, but something went wrong!")
+            Willie.msg(channel, "[](/derpyshock) Oh no, I was going to " + \
+                    "post from DA, but something went wrong!")
 
     Willie.memory["timer_lock"].acquire()
     try:
@@ -203,7 +202,8 @@ def slow_room(Willie):
 
 def last_activity(Willie, trigger):
     """Keeps track of the last activity for a room"""
-    if re.match(r'^#', trigger.sender):
+    if trigger.sender.startswith("#") and \
+            trigger.sender != "#fineline_testing":
         Willie.debug("timers:last_activity", trigger.sender, "verbose")
         Willie.memory["timer_lock"].acquire()
         try:
