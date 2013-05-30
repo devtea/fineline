@@ -153,8 +153,8 @@ def slow_room(Willie):
             Willie.msg(channel, "It's dead Jim.")
 
     def cute(Willie, channel):
-        da_favs = 'http://backend.deviantart.com/rss.xml" + \
-                "?q=favby%3Atdreyer1%2F50127477&type=deviation'
+        da_favs = 'http://backend.deviantart.com/rss.xml' + \
+                '?q=favby%3Atdreyer1%2F50127477&type=deviation'
         pics = []
         intro = [
                 "It's a bit slow in here right now. How about a cute pic?",
