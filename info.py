@@ -11,7 +11,8 @@ def doc(willie, trigger):
     name = trigger.group(2)
     name = name.lower()
 
-    if willie.doc.has_key(name) and not willie.doc[name][0].startswith("ADMIN"):
+    if (willie.doc.has_key(name)
+            and not willie.doc[name][0].startswith("ADMIN")):
         willie.reply(willie.doc[name][0])
         if willie.doc[name][1]:
             willie.say('e.g. ' + willie.doc[name][1])
@@ -46,10 +47,9 @@ commands.priority = 'low'
 
 def help(willie, trigger):
     response = (
-        'Hi, I\'m a bot. Say ".commands" to me in private for a list ' +
-        'of my commands, or see http://willie.dftba.net for more ' +
-        'general details. My owner is %s.'
-    ) % willie.config.owner
+        'Hi! I\'m %s and I\'m a pony. Say ".commands" to me in private ' +
+        'for a list of the things I can do. Say hi to my master, %s!'
+    ) % (willie.nick, willie.config.owner)
     willie.reply(response)
 help.rule = ('$nick', r'(?i)help(?:[?!]+)?$')
 help.priority = 'low'
