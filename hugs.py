@@ -13,15 +13,15 @@ random.seed()
 
 def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
-    Willie.action('hugs %s back' % trigger.nick)
-# Rules allow regex matches to PRIVMSG
-hugback.rule = r'((($nickname)\s?((a.*? hug)|(hugs)))|' + \
-        '(((a.*? hug)|(hugs))\s?($nickname)))'
-# Priorities of 'high', 'medium', and 'low' work
+    Willie.action(random.choice([
+            'hugs %s back' % trigger.nick,
+            'returns the hug',
+            'grips %s tightly' % trigger.nick,
+            'holds on for too long, mumbling something about warmth.'
+            ]))
+hugback.rule = '\001ACTION [a-zA-Z0-9 ,]*?' + \
+        '((hugs? $nickname)|(gives $nickname a hug))'
 hugback.priority = 'medium'
-# Willie is multithreaded by default.
-#hugback.thread = False
-# Limit in seconds of users ability to trigger module
 hugback.rate = 30
 
 def hug_intercept(Willie, trigger):
