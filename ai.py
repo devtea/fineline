@@ -10,7 +10,7 @@ import random
 
 def derp(Willie, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
-    if random.uniform(0,1) < 1:
+    if random.uniform(0,1) < 0.1:
         time.sleep(random.uniform(1,3))
         Willie.say(random.choice([
             "[](/derpwizard)",
@@ -49,7 +49,7 @@ ty.priority = 'medium'
 
 def woo(Willie, trigger):
     '''Sometimes replies to a woo with an emote'''
-    if random.uniform(0,1) < 1:
+    if random.uniform(0,1) < 0.1:
         time.sleep(random.uniform(1,3))
         Willie.say(random.choice([
                 "[](/flutteryay",
@@ -80,7 +80,7 @@ def badbot(Willie, trigger):
                 "[](/aj05)",
                 "[](/pinkiefear)"
                 ]))
-    elif random.uniform(0,1) < 1:
+    elif random.uniform(0,1) < 0.1:
         Willie.reply(random.choice([
             "[](/derpsrs)",
             "[](/cheersrsly)",
@@ -102,7 +102,7 @@ badbot.priority = 'medium'
 
 
 def swish(Willie, trigger):
-    if random.uniform(0,1) < 1:
+    if random.uniform(0,1) < 0.1:
         time.sleep(random.uniform(1,3))
         Willie.debug("swoosh", trigger.group(0), "verbose")
         i = "i"*(len(trigger.group(0))-5)
