@@ -92,11 +92,12 @@ def badbot(Willie, trigger):
             "[](/dashiemad)",
             "[](/ppumad)"
             ]))
-basic_badbot = ("bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|don'?t|" +
+basic_badbot = ("bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|don'?t|wtf|" +
         "(fuck[s]?\s?(sake|off)?)")
-badbot.rule = ("([A-Za-z0-9,.'!\s]*?$nickname[,:\s]?\s(%s)($|[\s,.!]))|" % basic_badbot +
-        "([A-Za-z0-9,.'!\s]*?(%s)([A-Za-z0-9,.!\s]+?$nickname))|" % basic_badbot +
-        "(($nickname[A-Za-z0-9,.'!\s]+?)(%s)($|[\s,.!]))" % basic_badbot
+n_text = "[A-Za-z0-9,.'!\s]"
+badbot.rule = ("(((^|%s+?\s)$nickname[.,-:]\s(%s+?\s)?(%s)([^A-Za-z0-9]|$))|" % (n_text, n_text, basic_badbot) +
+        "((^|%s+?\s)((%s)\s)(%s*?\s)?$nickname([^A-Za-z0-9]|$))|" % (n_text, basic_badbot, n_text) +
+        "(($nickname%s+?)(%s)([^A-Za-z0-9]|$)))" % (n_text, basic_badbot)
         )
 badbot.priority = 'medium'
 
@@ -111,6 +112,7 @@ swish.rule = "^!swo[o]+sh"
 swish.priority = 'medium'
 
 def slapped(Willie, trigger):
+    time.sleep(random.uniform(1,3))
     Willie.reply("[](/pinkieslap)")
 basic_slap = "slap[p]?[s]?|hit[s]?|smack[s]?"
 slapped.rule = ("(^!?(%s))|" % basic_slap +
@@ -130,8 +132,8 @@ def smart_action(Willie, trigger):
     Willie.debug("ai:derp", "admin: " + str(trigger.admin), "verbose")
     Willie.debug("ai:derp", "owner: " + str(trigger.owner), "verbose")
     Willie.debug("ai:derp", "isop: " + str(trigger.isop), "verbose")
-
-smart_action.rule = ('blorp')
+basic_smart = "would you kindly|please|go"
+smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)(a|an|the|some)(OBJECT)?")
 smart_action.priority = 'medium'
 
 if __name__ == "__main__":
