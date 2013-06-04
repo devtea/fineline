@@ -57,8 +57,8 @@ def woo(Willie, trigger):
                 "[](/flutterwoo",
                 "[](/woonadance",
                 "[](/raritywooo",
-                "[](/ajyay,"
-                '[](/derpydance'
+                "[](/ajyay",
+                "[](/derpydance"
             ]) + ' "%s")' % trigger.group(0).strip())
 basic_woo = "(wo[o]+[t]?)|(y[a]+y)"
 woo.rule = ('^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)') % basic_woo
