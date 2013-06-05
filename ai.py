@@ -29,20 +29,21 @@ derp.priority = 'medium'
 
 def ty(Willie, trigger):
     '''Politely replies to thank you's.'''
-    time.sleep(random.uniform(1,3))
-    Willie.reply(
-            random.choice([
-                "Yep",
-                "You're welcome",
-                "Certainly",
-                "Of course",
-                "Sure thing"
-            ]) +
-            random.choice([".","!"])
-            )
+    if not set(trigger.args[1].lower().split()).intersection(set(['not','no','at'])):
+        time.sleep(random.uniform(1,3))
+        Willie.reply(
+                random.choice([
+                    "Yep",
+                    "You're welcome",
+                    "Certainly",
+                    "Of course",
+                    "Sure thing"
+                ]) +
+                random.choice([".","!"])
+                )
 basic_thanks = "ty|thanks|gracias|thank\s?you|thank\s?ya|ta"
 ty.rule = ("(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
-        "([A-Za-z0-9,.!\s]*?(%s)([A-Za-z0-9,.!\s]+?$nickname))" % basic_thanks
+        "([A-Za-z0-9,.!\s]*?(%s)[^A-Za-z0-9]([A-Za-z0-9,.!\s]*?$nickname))" % basic_thanks
         )
 ty.priority = 'medium'
 
