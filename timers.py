@@ -157,12 +157,12 @@ def slow_room(Willie):
                 '?q=favby%3Atdreyer1%2F50127477&type=deviation'
         pics = []
         intro = [
-                "It's a bit slow in here right now. How about a cute pic?",
+                "It's a bit slow in here right now. How about a pony pic?",
                 "I guess my owner likes this pic, but I'm not sure. " + \
                         "What do you all think?",
                 "Y'all are boring. Have a pony.",
                 random.choice(["Pone!", "Pony!", "Poni!"]),
-                "I think pony should pony pony pony.",
+                "Pony should pony pony pony",
                 "[](/ppwatching-r-90)",
                 "\001ACTION yawns blearily and a URL squirts out!\001"
                 ]
