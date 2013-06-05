@@ -17,7 +17,7 @@ def night(Willie, trigger):
     # Test statment to filter negetive statements
     Willie.debug("ai_night.py:night", trigger.bytes, "verbose")
     # Use a set intersection to filter triggering lines by keyword
-    if not set(trigger.args[1].split()).intersection(set(['not','no','at'])):
+    if not set(trigger.args[1].lower().split()).intersection(set(['not','no','at'])):
         time.sleep(1)
         if random.uniform(0,1) > 0.5:
             Willie.reply(message + punctuation)
