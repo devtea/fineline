@@ -81,9 +81,11 @@ def reddit_post(Willie, trigger):
                 )
         try:
             redditor = rc.get_redditor(username)
+            redditor_exists = True
+            Willie.debug("reddit:reddit_post", pprint(vars(redditor)), "verbose")
         except:
-            redditor = False
-        if not redditor:
+            redditor_exists = False
+        if redditor_exists:
             # Use created date to determine next cake day
             cakeday = datetime.utcfromtimestamp(redditor.created_utc)  # unix date
             diff_days = date_aniv(cakeday)
