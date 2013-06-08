@@ -10,20 +10,28 @@ import praw
 import re
 from datetime import datetime
 from pprint import pprint
+from willie import web
+from urllib2 import HTTPError
 
-url='reddit\.com'
+url='(reddit\.com|redd\.it)'
+IGNORE=['hushmachine']
+TIME_OUT=20
 
 rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1')
 #TODO Add message sending ability
 #TODO Add parsing for shortlinks
 #TODO Add support for /u/username and /r/subreddit
+#TODO Support truncated post urls reddit.com/r/subreddit/comments/3k4j2kl/
+#TODO Support permalinks to comments "(up|down) Comment by commenter on [nsfw] trimmed post title at shortlink"
+#TODO Add post snippet for self posts with short titles.
 
 
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
     user='%s/u(ser)?/[^/\s]{3,}' % url
-    subm='%s/r/[^/\s]+/comments/[^/\s]{3,}/[^/\s]{3,}/?' % url
+    subm='%s((/r/[^/\s]+/comments/[^/\s]{3,}/[^/\s]{3,}/?)|(/[^/\s]{4,}/?))' % url
+    #short='%s/[^/\s]{4,}/?'
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
 
     def date_aniv(aniv, day=datetime.now()):
@@ -104,19 +112,32 @@ def reddit_post(Willie, trigger):
             Willie.say(u"That user does not exist or reddit is being squirrely.")
     # Submission Section
     elif re.match('.*?%s' % subm, trigger.bytes):
+        if trigger.nick in IGNORE:  # TODO make this a match to only the start of the nickname
+            return
         Willie.debug("reddit:reddit_post", "URL is submission", "verbose")
         full_url = re.search(
                 r'(https?://)?(www\.)?%s' % subm,
                 trigger.bytes
                 ).group(0)
+        Willie.debug("reddit:reddit_post", "matched is %s" % full_url, "verbose")
+        if re.match('.*?redd\.it', full_url):
+            Willie.debug("reddit:reddit_post", "URL is short", 'verbose')
+            try:
+                full_url=web.get_urllib_object(full_url, TIME_OUT).geturl()
+            except HTTPError:
+                Willie.debug(
+                        "reddit:reddit_post",
+                        "URL fetching timed out",
+                        'verbose'
+                        )
         Willie.debug("reddit:reddit_post", 'URL is %s' %full_url, "verbose")
-        # TODO pull back and display appropriate information for each.
         try:
             page = rc.get_submission(full_url)
-            page_exists = True
-            Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
         except:
             page_exists = False
+        else:
+            page_exists = True
+            Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
         if page_exists:
         #[self] NSFW Post by UserName to Subreddit (9999^|200v|22c) - Title is really
         #       long I guess
@@ -138,6 +159,7 @@ def reddit_post(Willie, trigger):
                     u'%ic) — ' % page.num_comments +
                     u'%s' % page.title
                     )
+            # TODO
             #for line in title_lines:
                 #say extra lines!
         else:
@@ -151,6 +173,22 @@ def reddit_post(Willie, trigger):
                 ).group(0)
         Willie.debug("reddit:reddit_post", 'URL is %s' %full_url, "verbose")
         # TODO pull back and display appropriate information for each.
+        sub_name = full_url.strip('/').rpartition('/')[2]
+        Willie.debug("reddit:reddit_post", sub_name, "verbose")
+
+        try:
+            sub = rc.get_subreddit(sub_name)
+        except:
+            sub_exists = False
+        else:
+            sub_exists = True
+            Willie.debug("reddit:reddit_post", pprint(vars(sub)), "verbose")
+        if sub_exists:
+            #do stuff?
+            pass
+        else:
+            #do other stuff
+            pass
         #Willie.say(r'Hello World!')
     # Invalid URL Section
     else:
