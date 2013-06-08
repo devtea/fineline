@@ -14,16 +14,20 @@ from willie import web
 from urllib2 import HTTPError
 
 url='(reddit\.com|redd\.it)'
-IGNORE=['hushmachine']
+IGNORE=['hushmachine','tmoister1']
 TIME_OUT=20
 
-rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1')
+#Use multiprocess handler for multiple bots on same server
+praw_multi = praw.handlers.MultiprocessHandler()
+rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1', handler=praw_multi)
+
 #TODO Add message sending ability
 #TODO Add parsing for shortlinks
 #TODO Add support for /u/username and /r/subreddit
 #TODO Support truncated post urls reddit.com/r/subreddit/comments/3k4j2kl/
 #TODO Support permalinks to comments "(up|down) Comment by commenter on [nsfw] trimmed post title at shortlink"
 #TODO Add post snippet for self posts with short titles.
+#TODO PEP 8 Formatting
 
 
 def reddit_post(Willie, trigger):
@@ -31,10 +35,10 @@ def reddit_post(Willie, trigger):
     #If you change these, you're going to have to update others too
     user='%s/u(ser)?/[^/\s]{3,}' % url
     subm='%s((/r/[^/\s]+/comments/[^/\s]{3,}/[^/\s]{3,}/?)|(/[^/\s]{4,}/?))' % url
-    #short='%s/[^/\s]{4,}/?'
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
 
     def date_aniv(aniv, day=datetime.now()):
+        Willie.debug('reddit.py:date_aniv', aniv, 'verbose')
         def set_date(year, month, day):
             try:
                 date = datetime.strptime('%i %i %i' % (year, month, day), '%Y %m %d')
@@ -42,6 +46,10 @@ def reddit_post(Willie, trigger):
                 # Catch leap days and set them appropriately on off years
                 date = datetime.strptime('%i %i %i' % (year, month, day-1), '%Y %m %d')
             return date
+        #y1, m1, d1 = aniv.strftime('%Y %m %d').split()
+        #y1, m1, d1 = int(y1), int(m1), int(d1)
+        #y2, m2, d2 = day.strftime('%Y %m %d').split()
+        #y2, m2, d2 = int(y2), int(m2), int(d2)
 
         y1, m1, d1 = aniv.strftime('%Y %m %d').split()
         y2, m2, d2 = day.strftime('%Y %m %d').split()
@@ -112,13 +120,16 @@ def reddit_post(Willie, trigger):
             Willie.say(u"That user does not exist or reddit is being squirrely.")
     # Submission Section
     elif re.match('.*?%s' % subm, trigger.bytes):
-        if trigger.nick in IGNORE:  # TODO make this a match to only the start of the nickname
-            return
+        for n in IGNORE:
+            if re.match('%s.*?' % n, trigger.nick):
+                return
         Willie.debug("reddit:reddit_post", "URL is submission", "verbose")
         full_url = re.search(
                 r'(https?://)?(www\.)?%s' % subm,
                 trigger.bytes
                 ).group(0)
+        if not re.match('^http', full_url):
+            full_url = 'http://%s' % full_url
         Willie.debug("reddit:reddit_post", "matched is %s" % full_url, "verbose")
         if re.match('.*?redd\.it', full_url):
             Willie.debug("reddit:reddit_post", "URL is short", 'verbose')
