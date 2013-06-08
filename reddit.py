@@ -22,11 +22,8 @@ praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1', handler=praw_multi)
 
 #TODO Add message sending ability
-#TODO Add parsing for shortlinks
 #TODO Add support for /u/username and /r/subreddit
-#TODO Support truncated post urls reddit.com/r/subreddit/comments/3k4j2kl/
 #TODO Support permalinks to comments "(up|down) Comment by commenter on [nsfw] trimmed post title at shortlink"
-#TODO Add post snippet for self posts with short titles.
 #TODO PEP 8 Formatting
 
 
@@ -34,7 +31,7 @@ def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
     user='%s/u(ser)?/[^/\s]{3,}' % url
-    subm='%s((/r/[^/\s]+/comments/[^/\s]{3,}/[^/\s]{3,}/?)|(/[^/\s]{4,}/?))' % url
+    subm='%s((/r/[^/\s]+/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
 
     def date_aniv(aniv, day=datetime.now()):
@@ -99,6 +96,7 @@ def reddit_post(Willie, trigger):
             else:
                 # oh shit, something went wrong
                 cake_message = u""
+                Willie.debug('reddit:reddit_post', 'Date parsing broke!', 'warning')
             Willie.say(
                     u"%s: Link Karma %i, Comment karma %i, %s" % (redditor.name,
                         redditor.link_karma, redditor.comment_karma, cake_message)
@@ -137,8 +135,6 @@ def reddit_post(Willie, trigger):
             page_exists = True
             Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
         if page_exists:
-        #[self] NSFW Post by UserName to Subreddit (9999^|200v|22c) - Title is really
-        #       long I guess
             if page.is_self:
                 page_self = u'Self'
             else:
@@ -157,9 +153,6 @@ def reddit_post(Willie, trigger):
                     u'%ic) — ' % page.num_comments +
                     u'%s' % page.title
                     )
-            # TODO
-            #for line in title_lines:
-                #say extra lines!
         else:
             Willie.say(u"That page does not exist or reddit is being squirrely.")
     # Subreddit Section
@@ -171,6 +164,7 @@ def reddit_post(Willie, trigger):
                 ).group(0)
         Willie.debug("reddit:reddit_post", 'URL is %s' %full_url, "verbose")
         # TODO pull back and display appropriate information for each.
+        # I honestly don't know what useful info there is here!
         sub_name = full_url.strip('/').rpartition('/')[2]
         Willie.debug("reddit:reddit_post", sub_name, "verbose")
 
@@ -190,7 +184,7 @@ def reddit_post(Willie, trigger):
         #Willie.say(r'Hello World!')
     # Invalid URL Section
     else:
-        Willie.debug("reddit:reddit_post", "URL is invalid", "verbose")
+        Willie.debug("reddit:reddit_post", "Matched URL is invalid", "warning")
         #fail silently
 
 reddit_post.rule = '.*?%s' % url
