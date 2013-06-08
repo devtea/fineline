@@ -46,23 +46,10 @@ def reddit_post(Willie, trigger):
                 # Catch leap days and set them appropriately on off years
                 date = datetime.strptime('%i %i %i' % (year, month, day-1), '%Y %m %d')
             return date
-        #y1, m1, d1 = aniv.strftime('%Y %m %d').split()
-        #y1, m1, d1 = int(y1), int(m1), int(d1)
-        #y2, m2, d2 = day.strftime('%Y %m %d').split()
-        #y2, m2, d2 = int(y2), int(m2), int(d2)
-
         y1, m1, d1 = aniv.strftime('%Y %m %d').split()
+        y1, m1, d1 = int(y1), int(m1), int(d1)
         y2, m2, d2 = day.strftime('%Y %m %d').split()
-
-        # Ugly int casting
-        y1=int(y1)
-        y2=int(y2)
-
-        m1=int(m1)
-        m2=int(m2)
-
-        d1=int(d1)
-        d2=int(d2)
+        y2, m2, d2 = int(y2), int(m2), int(d2)
         if m1 == m2 and d1 == d2:
             diff = 0
         else:
