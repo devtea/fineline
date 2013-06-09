@@ -68,11 +68,11 @@ rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
-    user='/u(ser)?/[^/\s]{3,20}'
-    subm=('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|'
-            '(/[^/\s]{4,}/?))') % _url
-    cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s]{3,}/?' % _url
-    subr='%s/r/[^/\s]+/?([\s.!?]|$)' % _url
+    user='/u(ser)?/[^/\s)]{3,20}'
+    subm=('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
+            '(/[^/\s)]{4,}/?))') % _url
+    cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s)]{3,}/?' % _url
+    subr='%s/r/[^/\s)]+/?([\s.!?]|$)' % _url
 
     def trc(message, length=5):
         m_list = message.split()
