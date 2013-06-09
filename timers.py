@@ -146,7 +146,7 @@ def poke(Willie, channel):
         time.sleep(1)
         Willie.msg(channel, "It's dead Jim.")
 
-def cute(Willie, channel):
+def cute(Willie, channel, is_timer=True):
     da_favs = 'http://backend.deviantart.com/rss.xml' + \
             '?q=favby%3Atdreyer1%2F50127477&type=deviation'
     pics = []
@@ -164,8 +164,9 @@ def cute(Willie, channel):
     if feed:
         for item in feed.entries:
             pics.append(item.link)
-        Willie.msg(channel, random.choice(intro))
-        time.sleep(random.uniform(1,3))
+        if is_timer:
+            Willie.msg(channel, random.choice(intro))
+            time.sleep(random.uniform(1,3))
         Willie.msg(channel, random.choice(pics))
     else:
         Willie.msg(channel, "[](/derpyshock) Oh no, I was going to " + \

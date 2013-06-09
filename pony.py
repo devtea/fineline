@@ -11,7 +11,7 @@ import timers
 def pony(willie, trigger):
     willie.debug('pony.py', 'Triggered', 'verbose')
     willie.debug('pony.py', trigger.sender, 'verbose')
-    timers.cute(willie, trigger.sender)
+    timers.cute(willie, trigger.sender, is_timer=False)
 pony.commands = ['pony']
 
 
