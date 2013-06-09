@@ -6,8 +6,11 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-import willie.web as web
 import json
+from urllib import quote
+
+import willie.web as web
+
 
 def mlfw_search(Willie, terms):
     base_url = 'http://mylittlefacewhen.com/api/v3/face/'
@@ -31,41 +34,33 @@ def mlfw_search(Willie, terms):
     except TypeError:
         return False
 
+
 def mlfw(Willie, trigger):
     """Searches mlfw and returns the top result with all tags specified."""
     Willie.debug("mlfw.py:mlfw", "Triggered ==============", "verbose")
-    Willie.debug("mlfw.py:mlfw",trigger.args, "verbose")
-    __, __, list = trigger.args[1].partition(' ')
+    Willie.debug("mlfw.py:mlfw",trigger.groups()[1], "verbose")
+    list = trigger.groups()[1]
     if not list:
         Willie.reply("try something like " + mlfw.example)
     else:
-        # Test for csv or space separated values
-        if ',' in trigger.args[1]:
-            Willie.debug("mlfw.py:mlfw", list, "verbose")
-            args = list.split(',')
-            Willie.debug("mlfw.py:mlfw", args, "verbose")
-        else:
-            args = list.split()
-        # Strip the strings
+        Willie.debug("mlfw.py:mlfw", list, "verbose")
+        args = list.split(',')
         for i, str in enumerate(args):
-            args[i] = str.strip()
+            args[i] = quote(str.strip())
         Willie.debug("mlfw.py:mlfw", args, "verbose")
         tags = '&tags__all=' + ','.join(args)
         Willie.debug("mlfw.py:mlfw", tags, "verbose")
         mlfw_result = mlfw_search(Willie, tags)
         if mlfw_result:
             Willie.debug("mlfw.py:mlfw", mlfw_result, "verbose")
-            base_url = 'http://mylittlefacewhen.com'
-            Willie.reply(base_url + mlfw_result)
+            Willie.reply('http://mylittlefacewhen.com%s' % mlfw_result)
         elif mlfw_result is False:  #looks bad, but must since might be None
             Willie.reply("Uh oh, MLFW isn't working right. Try again later.")
         else:
             Willie.reply("That doesn't seem to exist.")
 mlfw.commands = ['mlfw']
-mlfw.priority = 'medium'
 mlfw.rate = 45
 mlfw.example = "!mlfw tag one, tag two, tag three"
-
 
 
 if __name__ == "__main__":
