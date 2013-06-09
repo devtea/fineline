@@ -35,11 +35,7 @@ universal = r".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?(to )?" + \
 night.rule = r"(" + to_fineline + r")|" + \
         r"(" + to_all + r")|" + \
         r"(" + universal + r")"
-# Priorities of 'high', 'medium', and 'low' work
 night.priority = 'high'
-# Willie is multithreaded by default.
-#night.thread = False
-# Limit in seconds of users ability to trigger module
 night.rate = 1000
 
 if __name__ == "__main__":
