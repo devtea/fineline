@@ -16,6 +16,32 @@ from urllib2 import HTTPError
 url='(reddit\.com|redd\.it)'
 IGNORE=['hushmachine','tmoister1']
 TIME_OUT=20
+# IRC color tags
+# 0  White
+# 1  Black
+# 2  Blue
+# 3  Green
+# 4  Light Red
+# 5  Brown
+# 6  Purple
+# 7  Orange
+# 8  Yellow
+# 9  Light Green
+# 10 Cyan
+# 11 Light Cyan
+# 12 Light Blue
+# 13 Pink
+# 14 Grey
+# 15 Light Grey
+# Set with '\x03' then your number
+# Reset with '\x0f'
+C_RESET = u'\x0f'
+C_UP = u'\x032'  # Blue
+C_DN = u'\x037'  # Orange
+C_NSFW = u'\x034'  # Red
+C_CNT = u'\x032'  # Blue
+C_USER = u'\x036'  # Purple
+
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -99,8 +125,9 @@ def reddit_post(Willie, trigger):
                 cake_message = u""
                 Willie.debug('reddit:reddit_post', 'Date parsing broke!', 'warning')
             Willie.say(
-                    u"%s: Link Karma %i, Comment karma %i, %s" % (redditor.name,
-                        redditor.link_karma, redditor.comment_karma, cake_message)
+                    u"%s%s%s: Link Karma %i, Comment karma %i, %s" % (C_USER,
+                        redditor.name, C_RESET, redditor.link_karma,
+                        redditor.comment_karma, cake_message)
                     )
         else:
             Willie.say(u"That user does not exist or reddit is being squirrely.")
@@ -123,7 +150,7 @@ def reddit_post(Willie, trigger):
         else:
             ed = u''
         if post.over_18:
-            nsfw =  u'\x034NSFW\x0f post: '  # \x034 is red, \x0f resets
+            nsfw =  u'%sNSFW%s post: ' % (C_NSFW, C_RESET)
         else:
             nsfw = u''
         snippet = comment.body
@@ -134,10 +161,10 @@ def reddit_post(Willie, trigger):
             snippet = ' '.join([snippet_list[elem] for elem in range(15)])
             snippet = '%s...' % snippet
         Willie.say(
-                u'(%i↑|%i↓) ' % (comment.ups, comment.downs) +
-                u'Comment by %s ' % comment.author.name +
-                u'on %s\x032%s\x0f — "' % (nsfw, post.title) +
-                u'%s"' % snippet.strip()
+                u'(%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET, C_DN, comment.downs, C_RESET) +
+                u'Comment by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
+                u'on %s%s — "' % (nsfw, post.title) +
+                u'%s%s%s"' % (C_CNT, snippet.strip(), C_RESET)
                 )
         Willie.debug("", full_url, "verbose")
 
@@ -178,18 +205,18 @@ def reddit_post(Willie, trigger):
             else:
                 page_self = u'Link'
             if page.over_18:
-                nsfw =  u'\x034NSFW\x0f '  # \x034 is red, \x0f resets
+                nsfw =  u'%sNSFW%s ' % (C_NSFW, C_RESET)
             else:
                 nsfw = u''
 
             Willie.say(
                     u'[%s] ' % page_self +
                     u'%s' % nsfw +
-                    u'Post by %s ' % page.author.name +
+                    u'Post by %s%s%s ' % (C_USER, page.author.name, C_RESET) +
                     u'to %s ' % page.subreddit.display_name +
-                    u'(%i↑|%i↓|' % (page.ups, page.downs) +
+                    u'(%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET, C_DN, page.downs, C_RESET) +
                     u'%ic) — ' % page.num_comments +
-                    u'%s' % page.title
+                    u'%s%s%s' % (C_CNT, page.title, C_RESET)
                     )
         else:
             Willie.say(u"That page does not exist or reddit is being squirrely.")
