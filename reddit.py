@@ -6,10 +6,9 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-#TODO Add message sending ability
+#TODO Add message sending ability?
 #TODO Add support for /u/username and /r/subreddit
 #TODO PEP 8 Formatting
-#TODO add consistent management of color formatting
 
 import praw
 import re
@@ -69,6 +68,13 @@ def reddit_post(Willie, trigger):
     subm='%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
     cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s]{3,}/?' % url
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
+    def trc(message, length=5):
+        m_list = message.split()
+        short = message
+        if len(m_list) > length:
+            short = u' '.join([m_list[elem] for elem in range(length)])
+            short = u'%s...' % short
+        return short
 
     def date_aniv(aniv, day=datetime.now()):
         Willie.debug('reddit.py:date_aniv', aniv, 'verbose')
@@ -79,6 +85,7 @@ def reddit_post(Willie, trigger):
                 # Catch leap days and set them appropriately on off years
                 date = datetime.strptime('%i %i %i' % (year, month, day-1), '%Y %m %d')
             return date
+
         y1, m1, d1 = aniv.strftime('%Y %m %d').split()
         y1, m1, d1 = int(y1), int(m1), int(d1)
         y2, m2, d2 = day.strftime('%Y %m %d').split()
@@ -169,16 +176,13 @@ def reddit_post(Willie, trigger):
         else:
             nsfw = u''
         snippet = comment.body
-        match = re.compile(r'\n')
+        match = re.compile(r'\n')  # 2 lines, remove newline markup
         snippet = match.sub(u' ', snippet)
-        snippet_list = snippet.split()
-        if len(snippet_list) > 15:
-            snippet = ' '.join([snippet_list[elem] for elem in range(15)])
-            snippet = '%s...' % snippet
+        snippet = trc(snippet, 15)
         Willie.say(
                 u'Comment (%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET, C_DN, comment.downs, C_RESET) +
                 u'by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
-                u'on %s%s — "' % (nsfw, post.title) +
+                u'on %s%s — "' % (nsfw, trc(post.title, 15)) +
                 u'%s%s%s"' % (C_CNT, snippet.strip(), C_RESET)
                 )
         Willie.debug("", full_url, "verbose")
