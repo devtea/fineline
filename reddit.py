@@ -7,6 +7,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 import re
+import time
 from datetime import datetime
 from pprint import pprint
 from urllib2 import HTTPError
@@ -308,6 +309,61 @@ def reddit_post(Willie, trigger):
                 )
         #fail silently
 reddit_post.rule = '(.*?%s)|(.*?%s)' % (url, partial)
+
+
+def mlpds_check(Willie, trigger):
+    mlpds = rc.get_subreddit('MLPDrawingSchool')
+    new_posts = mlpds.get_new(limit=50)
+    Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
+    uncommented = []
+    for post in new_posts:
+        #Willie.debug("reddit:mlpds_check", pprint(vars(new_cmnts)), "verbose")
+        #Willie.debug("reddit:mlpds_check", pprint(vars(post)), "verbose")
+        #Willie.debug("reddit:mlpds_check", pprint(dir(post)), "verbose")
+        if post.num_comments < 2 and post.created_utc > (time.time()-(48*60*60)):
+            uncommented.append(post)
+    if uncommented:
+        uncommented.reverse()  # Reverse so list is old to new
+        post_count = len(uncommented)
+        spammy = False
+        if post_count > 2:
+            spammy = True
+        #Send private message
+        if spammy:
+            Willie.reply("There are a few, I'll send them in pm.")
+        for post in uncommented:
+            if post.num_comments == 0:
+                num_com = "There are no comments"
+            else:
+                num_com = "There is only 1 comment"
+            if post.author.name.lower()[len(post.author.name)-1] == u's':
+                apos = "'"
+            else:
+                apos = "'s"
+            c_date = datetime.utcfromtimestamp(post.created_utc)
+            f_date = c_date.strftime('%b %d')
+            if spammy:
+                Willie.msg(
+                        trigger.nick,
+                        u'%s on %s%s post (%s) on %s entitled %s"%s"%s' % (
+                            num_com, post.author.name, apos, post.short_link,
+                            f_date, C_CNT, post.title, C_RESET
+                            )
+                        )
+            else:
+                Willie.reply(
+                        u'%s on %s%s post (%s) on %s entitled %s"%s"%s' % (
+                            num_com, post.author.name, apos, post.short_link,
+                            f_date, C_CNT, post.title, C_RESET
+                            )
+                        )
+    else:
+        Willie.reply("I don't see any lonely posts. There could still be "
+                "posts that need critiquing, though: "
+                "http://mlpdrawingschool.reddit.com/")
+
+mlpds_check.commands = ['check']
+
 
 if __name__ == "__main__":
     print __doc__.strip()
