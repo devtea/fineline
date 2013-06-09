@@ -6,22 +6,22 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-#TODO Add message sending ability?
-#TODO PEP 8 Formatting
-
-import praw
 import re
 from datetime import datetime
 from pprint import pprint
-from willie import web
 from urllib2 import HTTPError
 
+import praw
+
+from willie import web
+
+#TODO PEP 8 Formatting
 url='(reddit\.com|redd\.it)'
 partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
+_ignore=['hushmachine','tmoister1']
+_TIMEOUT=20
+_UA='FineLine IRC bot 0.1 by /u/tdreyer1'
 
-IGNORE=['hushmachine','tmoister1']
-TIME_OUT=20
-UA='FineLine IRC bot 0.1 by /u/tdreyer1'
 # IRC color tags
 # 0  White
 # 1  Black
@@ -60,15 +60,17 @@ C_CAKE = [
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
-rc = praw.Reddit(user_agent=UA, handler=praw_multi)
+rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
     user='/u(ser)?/[^/\s]{3,20}'
-    subm='%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
+    subm=('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|'
+            '(/[^/\s]{4,}/?))') % url
     cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s]{3,}/?' % url
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
+
     def trc(message, length=5):
         m_list = message.split()
         short = message
@@ -79,12 +81,19 @@ def reddit_post(Willie, trigger):
 
     def date_aniv(aniv, day=datetime.now()):
         Willie.debug('reddit.py:date_aniv', aniv, 'verbose')
+
         def set_date(year, month, day):
             try:
-                date = datetime.strptime('%i %i %i' % (year, month, day), '%Y %m %d')
+                date = datetime.strptime(
+                        '%i %i %i' % (year, month, day),
+                        '%Y %m %d'
+                        )
             except ValueError:
                 # Catch leap days and set them appropriately on off years
-                date = datetime.strptime('%i %i %i' % (year, month, day-1), '%Y %m %d')
+                date = datetime.strptime(
+                        '%i %i %i' % (year, month, day-1),
+                        '%Y %m %d'
+                        )
             return date
 
         y1, m1, d1 = aniv.strftime('%Y %m %d').split()
@@ -128,19 +137,24 @@ def reddit_post(Willie, trigger):
         try:
             redditor = rc.get_redditor(username)
             redditor_exists = True
-            Willie.debug("reddit:reddit_post", pprint(vars(redditor)), "verbose")
+            Willie.debug(
+                    "reddit:reddit_post",
+                    pprint(vars(redditor)),
+                    "verbose"
+                    )
         except:
             redditor_exists = False
         if redditor_exists:
             # Use created date to determine next cake day
-            cakeday = datetime.utcfromtimestamp(redditor.created_utc)  # unix date
+            cakeday = datetime.utcfromtimestamp(redditor.created_utc)
             diff_days = date_aniv(cakeday)
             if diff_days == 0:
                 cake_message = u'HAPPY CAKEDAY!'
                 colorful_message = u''
                 cnt = 0
                 for c in cake_message:
-                    colorful_message = colorful_message + C_CAKE[cnt % len(C_CAKE)] + str(c)
+                    colorful_message = colorful_message + C_CAKE[cnt %
+                            len(C_CAKE)] + str(c)
                     cnt = cnt + 1
                 cake_message= colorful_message + u'\x0f'
             elif diff_days > 0:
@@ -148,14 +162,19 @@ def reddit_post(Willie, trigger):
             else:
                 # oh shit, something went wrong
                 cake_message = u""
-                Willie.debug('reddit:reddit_post', 'Date parsing broke!', 'warning')
+                Willie.debug(
+                        'reddit:reddit_post',
+                        'Date parsing broke!',
+                        'warning'
+                        )
             Willie.say(
-                    u"User %s%s%s: Link Karma %i, Comment karma %i, %s" % (C_USER,
-                        redditor.name, C_RESET, redditor.link_karma,
+                    u"User %s%s%s: Link Karma %i, Comment karma %i, %s" % (
+                        C_USER, redditor.name, C_RESET, redditor.link_karma,
                         redditor.comment_karma, cake_message)
                     )
         else:
-            Willie.say(u"That user does not exist or reddit is being squirrely.")
+            Willie.say(u"That user does not exist or reddit is being "
+                "squirrely.")
     # Comment Section
     elif re.match('.*?%s' % cmnt, trigger.bytes):
         Willie.debug("reddit:reddit_post", "URL is comment", "verbose")
@@ -169,7 +188,11 @@ def reddit_post(Willie, trigger):
         comment = post.comments[0]
         Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
         Willie.debug("reddit:reddit_post", pprint(vars(comment)), "verbose")
-        Willie.debug("reddit:reddit_post", pprint(vars(comment.author)), "verbose")
+        Willie.debug(
+                "reddit:reddit_post",
+                pprint(vars(comment.author)),
+                "verbose"
+                )
         if comment.edited:
             ed = u'[edited] '
         else:
@@ -179,11 +202,12 @@ def reddit_post(Willie, trigger):
         else:
             nsfw = u''
         snippet = comment.body
-        match = re.compile(r'\n')  # 2 lines, remove newline markup
+        match = re.compile(r'\n')  # 2 lines to remove newline markup
         snippet = match.sub(u' ', snippet)
         snippet = trc(snippet, 15)
         Willie.say(
-                u'Comment (%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET, C_DN, comment.downs, C_RESET) +
+                u'Comment (%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET,
+                    C_DN, comment.downs, C_RESET) +
                 u'by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
                 u'on %s%s — "' % (nsfw, trc(post.title, 15)) +
                 u'%s%s%s"' % (C_CNT, snippet.strip(), C_RESET)
@@ -192,7 +216,7 @@ def reddit_post(Willie, trigger):
 
     # Submission Section
     elif re.match('.*?%s' % subm, trigger.bytes):
-        for n in IGNORE:
+        for n in _ignore:
             if re.match('%s.*?' % n, trigger.nick):
                 return
         Willie.debug("reddit:reddit_post", "URL is submission", "verbose")
@@ -202,11 +226,15 @@ def reddit_post(Willie, trigger):
                 ).group(0)
         if not re.match('^http', full_url):
             full_url = 'http://%s' % full_url
-        Willie.debug("reddit:reddit_post", "matched is %s" % full_url, "verbose")
+        Willie.debug(
+                "reddit:reddit_post",
+                "matched is %s" % full_url,
+                "verbose"
+                )
         if re.match('.*?redd\.it', full_url):
             Willie.debug("reddit:reddit_post", "URL is short", 'verbose')
             try:
-                full_url=web.get_urllib_object(full_url, TIME_OUT).geturl()
+                full_url=web.get_urllib_object(full_url, _TIMEOUT).geturl()
             except HTTPError:
                 Willie.debug(
                         "reddit:reddit_post",
@@ -234,14 +262,16 @@ def reddit_post(Willie, trigger):
             Willie.say(
                     u'%s' % nsfw +
                     u'%s ' % page_self +
-                    u'post (%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET, C_DN, page.downs, C_RESET) +
+                    u'post (%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET,
+                        C_DN, page.downs, C_RESET) +
                     u'%ic) ' % page.num_comments +
                     u'by %s%s%s ' % (C_USER, page.author.name, C_RESET) +
                     u'to %s — ' % page.subreddit.display_name +
                     u'%s%s%s' % (C_CNT, page.title, C_RESET)
                     )
         else:
-            Willie.say(u"That page does not exist or reddit is being squirrely.")
+            Willie.say(u"That page does not exist or reddit is being "
+                "squirrely.")
     # Subreddit Section
     elif re.match('.*?%s' % subr, trigger.bytes):
         # TODO add support for bare /r/subreddit 'links'
@@ -271,11 +301,13 @@ def reddit_post(Willie, trigger):
             pass
     # Invalid URL Section
     else:
-        Willie.debug("reddit:reddit_post", "Matched URL is invalid", "warning")
+        Willie.debug(
+                "reddit:reddit_post",
+                "Matched URL is invalid",
+                "warning"
+                )
         #fail silently
 reddit_post.rule = '(.*?%s)|(.*?%s)' % (url, partial)
-
-
 
 if __name__ == "__main__":
     print __doc__.strip()
