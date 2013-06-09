@@ -7,7 +7,6 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 #TODO Add message sending ability?
-#TODO Add support for /u/username and /r/subreddit
 #TODO PEP 8 Formatting
 
 import praw
@@ -18,6 +17,8 @@ from willie import web
 from urllib2 import HTTPError
 
 url='(reddit\.com|redd\.it)'
+partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
+
 IGNORE=['hushmachine','tmoister1']
 TIME_OUT=20
 UA='FineLine IRC bot 0.1 by /u/tdreyer1'
@@ -64,7 +65,7 @@ rc = praw.Reddit(user_agent=UA, handler=praw_multi)
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
-    user='%s/u(ser)?/[^/\s]{3,20}' % url
+    user='/u(ser)?/[^/\s]{3,20}'
     subm='%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
     cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s]{3,}/?' % url
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
@@ -108,9 +109,11 @@ def reddit_post(Willie, trigger):
     if re.match('.*?%s' % user, trigger.bytes):
         Willie.debug("reddit:reddit_post", "URL is user", "verbose")
         full_url = re.search(
-                r'(https?://)?(www\.)?%s' % user,
+                r'(https?://)?(www\.)?%s?%s' % (url, user),
                 trigger.bytes
                 ).group(0)
+        if re.match('^/u', full_url):
+            full_url = 'http://reddit.com%s' % full_url
         Willie.debug("reddit:reddit_post", 'URL is %s' % full_url, "verbose")
         # If you change these, you're going to have to update others too
         username = re.split(
@@ -241,6 +244,7 @@ def reddit_post(Willie, trigger):
             Willie.say(u"That page does not exist or reddit is being squirrely.")
     # Subreddit Section
     elif re.match('.*?%s' % subr, trigger.bytes):
+        # TODO add support for bare /r/subreddit 'links'
         Willie.debug("reddit:reddit_post", "URL is subreddit", "verbose")
         full_url = re.search(
                 r'(https?://)?(www\.)?%s' % subr,
@@ -269,8 +273,7 @@ def reddit_post(Willie, trigger):
     else:
         Willie.debug("reddit:reddit_post", "Matched URL is invalid", "warning")
         #fail silently
-
-reddit_post.rule = '.*?%s' % url
+reddit_post.rule = '(.*?%s)|(.*?%s)' % (url, partial)
 
 
 
