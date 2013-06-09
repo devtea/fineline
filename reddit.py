@@ -6,6 +6,11 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+#TODO Add message sending ability
+#TODO Add support for /u/username and /r/subreddit
+#TODO PEP 8 Formatting
+#TODO add consistent management of color formatting
+
 import praw
 import re
 from datetime import datetime
@@ -16,6 +21,7 @@ from urllib2 import HTTPError
 url='(reddit\.com|redd\.it)'
 IGNORE=['hushmachine','tmoister1']
 TIME_OUT=20
+UA='FineLine IRC bot 0.1 by /u/tdreyer1'
 # IRC color tags
 # 0  White
 # 1  Black
@@ -41,17 +47,20 @@ C_DN = u'\x037'  # Orange
 C_NSFW = u'\x034'  # Red
 C_CNT = u'\x032'  # Blue
 C_USER = u'\x036'  # Purple
-
+C_CAKE = [
+        u'\x031',
+        u'\x034',
+        u'\x032',
+        u'\x033',
+        u'\x035',
+        u'\x036',
+        u'\x037',
+        u'\x0313'
+        ]
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
-rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1', handler=praw_multi)
-
-#TODO Add message sending ability
-#TODO Add support for /u/username and /r/subreddit
-#TODO PEP 8 Formatting
-#TODO add consistent management of color formatting
-
+rc = praw.Reddit(user_agent=UA, handler=praw_multi)
 
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
@@ -118,6 +127,12 @@ def reddit_post(Willie, trigger):
             diff_days = date_aniv(cakeday)
             if diff_days == 0:
                 cake_message = u'HAPPY CAKEDAY!'
+                colorful_message = u''
+                cnt = 0
+                for c in cake_message:
+                    colorful_message = colorful_message + C_CAKE[cnt % len(C_CAKE)] + str(c)
+                    cnt = cnt + 1
+                cake_message= colorful_message + u'\x0f'
             elif diff_days > 0:
                 cake_message = u"Cakeday in %i day(s)" % diff_days
             else:
@@ -125,7 +140,7 @@ def reddit_post(Willie, trigger):
                 cake_message = u""
                 Willie.debug('reddit:reddit_post', 'Date parsing broke!', 'warning')
             Willie.say(
-                    u"%s%s%s: Link Karma %i, Comment karma %i, %s" % (C_USER,
+                    u"User %s%s%s: Link Karma %i, Comment karma %i, %s" % (C_USER,
                         redditor.name, C_RESET, redditor.link_karma,
                         redditor.comment_karma, cake_message)
                     )
