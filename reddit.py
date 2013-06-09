@@ -23,15 +23,16 @@ rc = praw.Reddit(user_agent='FineLine IRC bot 0.1 by /u/tdreyer1', handler=praw_
 
 #TODO Add message sending ability
 #TODO Add support for /u/username and /r/subreddit
-#TODO Support permalinks to comments "(up|down) Comment by commenter on [nsfw] trimmed post title at shortlink"
 #TODO PEP 8 Formatting
+#TODO add consistent management of color formatting
 
 
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
-    user='%s/u(ser)?/[^/\s]{3,}' % url
-    subm='%s((/r/[^/\s]+/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
+    user='%s/u(ser)?/[^/\s]{3,20}' % url
+    subm='%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s]{3,})?/?)|(/[^/\s]{4,}/?))' % url
+    cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s]{3,}/?' % url
     subr='%s/r/[^/\s]+/?([\s.!?]|$)' % url
 
     def date_aniv(aniv, day=datetime.now()):
@@ -103,6 +104,43 @@ def reddit_post(Willie, trigger):
                     )
         else:
             Willie.say(u"That user does not exist or reddit is being squirrely.")
+    # Comment Section
+    elif re.match('.*?%s' % cmnt, trigger.bytes):
+        Willie.debug("reddit:reddit_post", "URL is comment", "verbose")
+        full_url = re.search(
+                r'(https?://)?(www\.)?%s' % cmnt,
+                trigger.bytes
+                ).group(0)
+        if not re.match('^http', full_url):
+            full_url = 'http://%s' % full_url
+        post = rc.get_submission(url=full_url)
+        comment = post.comments[0]
+        Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
+        Willie.debug("reddit:reddit_post", pprint(vars(comment)), "verbose")
+        Willie.debug("reddit:reddit_post", pprint(vars(comment.author)), "verbose")
+        if comment.edited:
+            ed = u'[edited] '
+        else:
+            ed = u''
+        if post.over_18:
+            nsfw =  u'\x034NSFW\x0f post: '  # \x034 is red, \x0f resets
+        else:
+            nsfw = u''
+        snippet = comment.body
+        match = re.compile(r'\n')
+        snippet = match.sub(u' ', snippet)
+        snippet_list = snippet.split()
+        if len(snippet_list) > 15:
+            snippet = ' '.join([snippet_list[elem] for elem in range(15)])
+            snippet = '%s...' % snippet
+        Willie.say(
+                u'(%i↑|%i↓) ' % (comment.ups, comment.downs) +
+                u'Comment by %s ' % comment.author.name +
+                u'on %s\x032%s\x0f — "' % (nsfw, post.title) +
+                u'%s"' % snippet.strip()
+                )
+        Willie.debug("", full_url, "verbose")
+
     # Submission Section
     elif re.match('.*?%s' % subm, trigger.bytes):
         for n in IGNORE:
