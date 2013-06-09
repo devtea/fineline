@@ -326,7 +326,7 @@ def mlpds_check(Willie, trigger):
         Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
         uncommented = []
         for post in new_posts:
-            if post.num_comments < 2 and post.created_utc > (time.mtime()-(48*60*60)):
+            if post.num_comments < 2 and post.created_utc > (time.time()-(48*60*60)):
                 uncommented.append(post)
         if uncommented:
             uncommented.reverse()  # Reverse so list is old to new
