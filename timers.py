@@ -94,6 +94,83 @@ def fetch_rss(Willie, feed_url):
         Willie.memory["fetch_rss_lock"].release()
 
 
+def fzoo(Willie, channel):
+    Willie.msg(channel, r"!fzoo")
+
+
+def quote(Willie, channel):
+    Willie.msg(channel, r"!quote")
+
+
+def arttip(Willie, channel):
+    Willie.msg(channel, r"!arttip")
+
+
+def sing(Willie, channel):
+    Willie.msg(channel, random.choice([
+            u"♫My little pony, my little pony!♪",
+            u"♫When I was a little filly and the sun was going down...♪",
+            u"♫Oh the Grand Galloping Gala is the best place for me!♪",
+            u"♫It's not very far; just move your little rump!♪",
+            u"♫She's an evil enchantress; She does evil dances!♪",
+            u"♫Three months of winter coolness and awesome holidays!♪",
+            u"♫Winter wrapup, winter wrapup!♪",
+            u"♫Cupcakes! Cupcakes, cupcakes, CUPCAKES!♪",
+            u"♫Thread by thread, stitching it together♪",
+            u"♫Hush now, quiet now; It's time to lay your sleepy head.♪",
+            u"♫What is this place, filled with so many wonders?♪",
+            u"♫This is your singing telegram, I hope it finds you well!♪",
+            u"♫At the Gala, at the Gala!♪",
+            u"♫Can't settle for less, 'cause I'm the best♪",
+            u"♫I'm the type of pony every pony, every pony should know♪",
+            u"♫The fire of friendship lives in our hearts♪",
+            u"♫The perfect stallion you and I must find♪",
+            u"♫'Cause I love to make you smile, smile, smile♪",
+            u"♫My big brother, best friend forever!♪",
+            u"♫This day is going to be perfect...♪",
+            u"♫Love is in bloom! A beautiful bride, a handsome groom♪",
+            u"♫I was prepared to do my best...♪",
+            u"♫We can save the Crystal Ponies with their history!♪",
+            u"♫Babs Seed, Babs Seed, what we gonna do?♪",
+            u"♫All we need to strive to be; Is part of the Apple family!♪",
+            u"♫Morning in Ponyville shimmers; Morning in Ponyville shines♪",
+            u"♫It's what my cutie mark is telling me♪",
+            u"♫I have to find a way, to make this all okay♪",
+            u"♫A True, True Friend helps a friend in need!♪",
+            u"♫You've come such a long, long way...♪"
+            ]))
+
+def poke(Willie, channel):
+    Willie.msg(channel, "\001ACTION pokes the chat\001")
+    if random.uniform(0,1) > 0.9:
+        time.sleep(1)
+        Willie.msg(channel, "It's dead Jim.")
+
+def cute(Willie, channel):
+    da_favs = 'http://backend.deviantart.com/rss.xml' + \
+            '?q=favby%3Atdreyer1%2F50127477&type=deviation'
+    pics = []
+    intro = [
+            "It's a bit slow in here right now. How about a pony pic?",
+            "I guess my owner likes this pic, but I'm not sure. " + \
+                    "What do you all think?",
+            "Y'all are boring. Have a pony.",
+            random.choice(["Pone!", "Pony!", "Poni!"]),
+            "Pony should pony pony pony",
+            "[](/ppwatching-r-90)",
+            "\001ACTION yawns blearily and a URL squirts out!\001"
+            ]
+    feed = fetch_rss(Willie, da_favs)
+    if feed:
+        for item in feed.entries:
+            pics.append(item.link)
+        Willie.msg(channel, random.choice(intro))
+        time.sleep(random.uniform(1,3))
+        Willie.msg(channel, random.choice(pics))
+    else:
+        Willie.msg(channel, "[](/derpyshock) Oh no, I was going to " + \
+                "post from DA, but something went wrong!")
+
 def slow_room(Willie):
     """A collection of actions to perform when the room is inactive for a
     period of time.
@@ -102,82 +179,8 @@ def slow_room(Willie):
     # Wait time in seconds before the bot will pipe up
     WAIT_TIME = (random.uniform(28,47) * 60)
     Willie.debug("timers:slow_room", "beep", "verbose")
-
-    def fzoo(Willie, channel):
-        Willie.msg(channel, r"!fzoo")
-
-    def quote(Willie, channel):
-        Willie.msg(channel, r"!quote")
-
-    def arttip(Willie, channel):
-        Willie.msg(channel, r"!arttip")
-
-    def sing(Willie, channel):
-        Willie.msg(channel, random.choice([
-                u"♫My little pony, my little pony!♪",
-                u"♫When I was a little filly and the sun was going down...♪",
-                u"♫Oh the Grand Galloping Gala is the best place for me!♪",
-                u"♫It's not very far; just move your little rump!♪",
-                u"♫She's an evil enchantress; She does evil dances!♪",
-                u"♫Three months of winter coolness and awesome holidays!♪",
-                u"♫Winter wrapup, winter wrapup!♪",
-                u"♫Cupcakes! Cupcakes, cupcakes, CUPCAKES!♪",
-                u"♫Thread by thread, stitching it together♪",
-                u"♫Hush now, quiet now; It's time to lay your sleepy head.♪",
-                u"♫What is this place, filled with so many wonders?♪",
-                u"♫This is your singing telegram, I hope it finds you well!♪",
-                u"♫At the Gala, at the Gala!♪",
-                u"♫Can't settle for less, 'cause I'm the best♪",
-                u"♫I'm the type of pony every pony, every pony should know♪",
-                u"♫The fire of friendship lives in our hearts♪",
-                u"♫The perfect stallion you and I must find♪",
-                u"♫'Cause I love to make you smile, smile, smile♪",
-                u"♫My big brother, best friend forever!♪",
-                u"♫This day is going to be perfect...♪",
-                u"♫Love is in bloom! A beautiful bride, a handsome groom♪",
-                u"♫I was prepared to do my best...♪",
-                u"♫We can save the Crystal Ponies with their history!♪",
-                u"♫Babs Seed, Babs Seed, what we gonna do?♪",
-                u"♫All we need to strive to be; Is part of the Apple family!♪",
-                u"♫Morning in Ponyville shimmers; Morning in Ponyville shines♪",
-                u"♫It's what my cutie mark is telling me♪",
-                u"♫I have to find a way, to make this all okay♪",
-                u"♫A True, True Friend helps a friend in need!♪",
-                u"♫You've come such a long, long way...♪"
-                ]))
-
-    def poke(Willie, channel):
-        Willie.msg(channel, "\001ACTION pokes the chat\001")
-        if random.uniform(0,1) > 0.9:
-            time.sleep(1)
-            Willie.msg(channel, "It's dead Jim.")
-
-    def cute(Willie, channel):
-        da_favs = 'http://backend.deviantart.com/rss.xml' + \
-                '?q=favby%3Atdreyer1%2F50127477&type=deviation'
-        pics = []
-        intro = [
-                "It's a bit slow in here right now. How about a pony pic?",
-                "I guess my owner likes this pic, but I'm not sure. " + \
-                        "What do you all think?",
-                "Y'all are boring. Have a pony.",
-                random.choice(["Pone!", "Pony!", "Poni!"]),
-                "Pony should pony pony pony",
-                "[](/ppwatching-r-90)",
-                "\001ACTION yawns blearily and a URL squirts out!\001"
-                ]
-        feed = fetch_rss(Willie, da_favs)
-        if feed:
-            for item in feed.entries:
-                pics.append(item.link)
-            Willie.msg(channel, random.choice(intro))
-            time.sleep(random.uniform(1,3))
-            Willie.msg(channel, random.choice(pics))
-        else:
-            Willie.msg(channel, "[](/derpyshock) Oh no, I was going to " + \
-                    "post from DA, but something went wrong!")
-
     Willie.memory["timer_lock"].acquire()
+
     try:
         for key in Willie.memory["timers"]["timer_quiet_room"]:
             if Willie.memory["timers"]["timer_quiet_room"][key] < time.time() - WAIT_TIME:
