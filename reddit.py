@@ -36,7 +36,7 @@ TIME_OUT=20
 # Set with '\x03' then your number
 # Reset with '\x0f'
 C_RESET = u'\x0f'
-C_UP = u'\x032'  # Blue
+C_UP = u'\x033'  # Green
 C_DN = u'\x037'  # Orange
 C_NSFW = u'\x034'  # Red
 C_CNT = u'\x032'  # Blue
@@ -161,8 +161,8 @@ def reddit_post(Willie, trigger):
             snippet = ' '.join([snippet_list[elem] for elem in range(15)])
             snippet = '%s...' % snippet
         Willie.say(
-                u'(%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET, C_DN, comment.downs, C_RESET) +
-                u'Comment by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
+                u'Comment (%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET, C_DN, comment.downs, C_RESET) +
+                u'by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
                 u'on %s%s — "' % (nsfw, post.title) +
                 u'%s%s%s"' % (C_CNT, snippet.strip(), C_RESET)
                 )
@@ -205,17 +205,17 @@ def reddit_post(Willie, trigger):
             else:
                 page_self = u'Link'
             if page.over_18:
-                nsfw =  u'%sNSFW%s ' % (C_NSFW, C_RESET)
+                nsfw =  u'[%sNSFW%s] ' % (C_NSFW, C_RESET)
             else:
                 nsfw = u''
 
             Willie.say(
-                    u'[%s] ' % page_self +
                     u'%s' % nsfw +
-                    u'Post by %s%s%s ' % (C_USER, page.author.name, C_RESET) +
-                    u'to %s ' % page.subreddit.display_name +
-                    u'(%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET, C_DN, page.downs, C_RESET) +
-                    u'%ic) — ' % page.num_comments +
+                    u'%s ' % page_self +
+                    u'post (%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET, C_DN, page.downs, C_RESET) +
+                    u'%ic) ' % page.num_comments +
+                    u'by %s%s%s ' % (C_USER, page.author.name, C_RESET) +
+                    u'to %s — ' % page.subreddit.display_name +
                     u'%s%s%s' % (C_CNT, page.title, C_RESET)
                     )
         else:
@@ -246,7 +246,6 @@ def reddit_post(Willie, trigger):
         else:
             #do other stuff
             pass
-        #Willie.say(r'Hello World!')
     # Invalid URL Section
     else:
         Willie.debug("reddit:reddit_post", "Matched URL is invalid", "warning")
