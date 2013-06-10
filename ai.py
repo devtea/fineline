@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 import time
 import random
+import re
 
 def derp(Willie, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
@@ -48,6 +49,7 @@ ty.rule = ("(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
 ty.priority = 'medium'
 
 
+basic_woo = "(wo[o]+[t]?)|(y[a]+y)"
 def woo(Willie, trigger):
     '''Sometimes replies to a woo with an emote'''
     if random.uniform(0,1) < 0.1:
@@ -60,8 +62,7 @@ def woo(Willie, trigger):
                 "[](/raritywooo",
                 "[](/ajyay",
                 "[](/derpydance"
-            ]) + ' "%s")' % trigger.group(0).strip())
-basic_woo = "(wo[o]+[t]?)|(y[a]+y)"
+            ]) + ' "%s")' % re.search(basic_woo, trigger.bytes).group())
 woo.rule = ('^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)') % basic_woo
 woo.priority = 'medium'
 
