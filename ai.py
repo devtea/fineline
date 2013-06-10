@@ -11,7 +11,11 @@ import re
 
 def derp(Willie, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
-    if random.uniform(0,1) < 0.1:
+    if trigger.owner:
+        prob = 1
+    else:
+        prob = 0.1
+    if random.uniform(0,1) < prob:
         time.sleep(random.uniform(1,3))
         Willie.say(random.choice([
             "[](/derpwizard)",
@@ -52,7 +56,11 @@ ty.priority = 'medium'
 basic_woo = "(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)"
 def woo(Willie, trigger):
     '''Sometimes replies to a woo with an emote'''
-    if random.uniform(0,1) < 0.1:
+    if trigger.owner:
+        prob = 1
+    else:
+        prob = 0.1
+    if random.uniform(0,1) < prob:
         time.sleep(random.uniform(1,3))
         Willie.say(random.choice([
                 "[](/flutteryay",
@@ -62,7 +70,7 @@ def woo(Willie, trigger):
                 "[](/raritywooo",
                 "[](/ajyay",
                 "[](/derpydance"
-            ]) + ' "%s")' % re.search(basic_woo, trigger.bytes).group())
+            ]) + ' "%s")' % re.search(basic_woo, trigger.bytes, flags=re.I).group())
 woo.rule = ('^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)') % basic_woo
 woo.priority = 'medium'
 
