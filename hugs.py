@@ -73,11 +73,11 @@ def hug_intercept(Willie, trigger):
             Willie.debug("","inner trigger","verbose")
             if random.uniform(0,1) < 0.08:
                 Willie.action(random.choice([
-                    "quickly jumps in between and gets the hug instead.",
-                    "shoves %s out of the way so she can " % trigger.nick + \
-                            "give the hug instead.",
-                    "steps in front of %s and " % trigger.nick + \
-                            "affectionately hugs her in a way that only " + \
+                    "quickly jumps in between them and gets the hug instead.",
+                    "leaps over and shoves %s out of the " % trigger.nick +
+                        "way so she can give the hug instead.",
+                    "intercepts %s and " % trigger.nick + \
+                            "affectionately hugs him in a way that only " + \
                             "two bots in love can manage."
                     ]))
         #smelling distance
