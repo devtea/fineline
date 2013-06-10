@@ -7,12 +7,16 @@ http://bitbucket.org/tdreyer/fineline
 """
 import random
 import time
+import re
 
 random.seed()
 
 def night(Willie, trigger):
     """Responds to people saying good night"""
-    message = random.choice(("Goodnight","'Night","Later","Bye"))
+    if re.match('.*?night', trigger.bytes):
+        message = random.choice(("Goodnight", "'Night", "Later", "Bye"))
+    else:
+        message = random.choice(("Later", "Bye"))
     punctuation = random.choice((".","","!"))
     # Test statment to filter negetive statements
     Willie.debug("ai_night.py:night", trigger.bytes, "verbose")
