@@ -18,7 +18,7 @@ def bestpony(Willie, trigger):
             "Oh, I know!", "That's easy!")))
         time.sleep(random.uniform(1,3))
 
-    Willie.say(random.choice((Willie.nick + '!', "Me of course!", "I am!")))
+    Willie.say(random.choice((Willie.nick + '!', "I of course!", "I am!")))
 
     if random.uniform(0,20) > 19:
         time.sleep(random.uniform(3,5))
