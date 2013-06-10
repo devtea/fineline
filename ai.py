@@ -49,7 +49,7 @@ ty.rule = ("(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
 ty.priority = 'medium'
 
 
-basic_woo = "(wo[o]+[t]?)|(y[a]+y)"
+basic_woo = "(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)"
 def woo(Willie, trigger):
     '''Sometimes replies to a woo with an emote'''
     if random.uniform(0,1) < 0.1:
