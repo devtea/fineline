@@ -45,19 +45,19 @@ _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
 # Set with '\x03' then your number
 # Reset with '\x0f'
 C_RESET = u'\x0f'
-C_UP = u'\x033'  # Green
-C_DN = u'\x037'  # Orange
-C_NSFW = u'\x034'  # Red
-C_CNT = u'\x032'  # Blue
-C_USER = u'\x036'  # Purple
+C_UP = u'\x0303'  # Green
+C_DN = u'\x0307'  # Orange
+C_NSFW = u'\x0304'  # Red
+C_CNT = u'\x0302'  # Blue
+C_USER = u'\x0306'  # Purple
 C_CAKE = [
-        u'\x031',
-        u'\x034',
-        u'\x032',
-        u'\x033',
-        u'\x035',
-        u'\x036',
-        u'\x037',
+        u'\x0301',
+        u'\x0304',
+        u'\x0302',
+        u'\x0303',
+        u'\x0305',
+        u'\x0306',
+        u'\x0307',
         u'\x0313'
         ]
 
@@ -75,6 +75,7 @@ def reddit_post(Willie, trigger):
     subr='%s/r/[^/\s)]+/?([\s.!?]|$)' % _url
 
     def trc(message, length=5):
+        '''Truncates messages to a specific word length'''
         m_list = message.split()
         short = message
         if len(m_list) > length:
