@@ -9,6 +9,9 @@ import time
 import random
 import re
 
+random.seed()
+
+
 def derp(Willie, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
     if trigger.owner:
@@ -121,6 +124,7 @@ def swish(Willie, trigger):
 swish.rule = "^!swo[o]+sh"
 swish.priority = 'medium'
 
+
 def slapped(Willie, trigger):
     time.sleep(random.uniform(1,3))
     Willie.reply("[](/pinkieslap)")
@@ -134,6 +138,79 @@ slapped.rule = ("(^!?(%s))|" % basic_slap +
 slapped.priority = 'medium'
 
 
+def hi(Willie, trigger):
+    """Replies to greetings."""
+    message = random.choice(("Hi","Hello","Yo","Hey","Ahoy"))
+    punctuation = random.choice((".","","!"))
+    time.sleep(random.uniform(0,3))
+    if random.uniform(0,1) > 0.5:
+        Willie.reply(message + punctuation)
+    else:
+        Willie.say(message + " " + trigger.nick + punctuation)
+prefix = r"($nickname[:,]?\s+)"
+meat = r"(hello|hi|ahoy|sup|hey|yo|afternoon|morning)"
+all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+        "folks|guys|peoples?|$nickname)"
+to_fineline = prefix + meat + '([.!\s]?$)'
+to_all =  meat + r"[,]?\s+" + all + '([.!\s]?$)'
+# Rules allow regex matches to PRIVMSG
+hi.rule = r"(" + to_fineline + r")|" + \
+        r"(" + to_all + r")"
+hi.priority = 'medium'
+hi.rate = 300
+
+
+def isbot(Willie, trigger):
+    """Replies to queries about fineline being a bot"""
+    time.sleep(random.uniform(1,2))
+    Willie.say(random.choice(("Nope, I'm just fast.",
+            "Nah, I just type really fast and know a lot.",
+            "What makes you think that?",
+            "lolno",
+            "Uh.....no?"
+            )))
+    time.sleep(random.uniform(3,5))
+    Willie.say(random.choice(("And I have hooves!",
+            "If I were a bot, how come I have hooves?",
+            "See? I have hooves! *wiggles hooves*"
+            )))
+isbot.rule = r'.*$nickname\:?,?\s+Are you a bot|.*$nickname (is )?a bot'
+isbot.priority = 'medium'
+isbot.rate = 300
+
+
+def night(Willie, trigger):
+    """Responds to people saying good night"""
+    if re.match('.*?night', trigger.bytes):
+        message = random.choice(("Goodnight", "'Night", "Later", "Bye"))
+    else:
+        message = random.choice(("Later", "Bye"))
+    punctuation = random.choice((".","","!"))
+    # Test statment to filter negetive statements
+    Willie.debug("ai_night.py:night", trigger.bytes, "verbose")
+    # Use a set intersection to filter triggering lines by keyword
+    if not set(trigger.args[1].lower().split()).intersection(set(['not','no','at'])):
+        time.sleep(1)
+        if random.uniform(0,1) > 0.5:
+            Willie.reply(message + punctuation)
+        else:
+            Willie.say(message + " " + trigger.nick + punctuation)
+prefix = r"($nickname\:?,?\s+)"
+meat = r"((good|g)?\s?'?(night|bye)|(later(s?)))"
+all = r"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+        "folks|guys|peoples?|$nickname)"
+to_fineline = prefix + meat
+to_all = r".*?" + meat + r",?\s+" + all
+universal = r".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?(to )?" + \
+            "(bed|sleep))|" + \
+            "(I'?m ((((going to)|(gonna)) ((go)|(head off))?)|(heading off))\s?(to )?(bed|sleep|crash|(pass out))))"
+night.rule = r"(" + to_fineline + r")|" + \
+        r"(" + to_all + r")|" + \
+        r"(" + universal + r")"
+night.priority = 'high'
+night.rate = 1000
+
+
 def smart_action(Willie, trigger):
     '''Hopefully a flexible, fun action system for admins'''
     Willie.debug("ai:derp", "triggered", "verbose")
@@ -145,6 +222,7 @@ def smart_action(Willie, trigger):
 basic_smart = "would you kindly|please|go"
 smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)(a|an|the|some)(OBJECT)?")
 smart_action.priority = 'medium'
+
 
 if __name__ == "__main__":
     print __doc__.strip()
