@@ -12,6 +12,7 @@ import threading
 #import string
 
 import timers_slow
+import timers_rmlpds
 
 
 def setup(Willie):
@@ -35,7 +36,11 @@ def setup(Willie):
                 "You must restart to reload the main timer thread.",
                 "warning")
     else:
-        Willie.debug("timers:daemon", "Test found no existing threads", "verbose")
+        Willie.debug(
+                "timers:daemon",
+                "Test found no existing threads",
+                "verbose"
+                )
         targs = (Willie,)
         t = threading.Thread(target=daemon, name='timer_daemon', args=targs)
         t.daemon = True # keep this thread from zombifying the whole program
@@ -44,8 +49,53 @@ def setup(Willie):
 
 def timer_manager(Willie):
     """Management function to handle threading multiple timer actions"""
-    # Not doing much yet
-    timers_slow.slow_room(Willie)
+    # Slow Room thread section
+    def t_slow(Willie):
+        timers_slow.slow_room(Willie)
+    if [n for n in threading.enumerate() if n.getName() == 't_slow']:
+        Willie.debug(
+                "timers:timer_manager",
+                "Test found thread for t_slow.",
+                "verbose"
+                )
+    else:
+        Willie.debug(
+                "timers:timer_manager",
+                "Found no thread for t_slow",
+                "verbose"
+                )
+        targs = (Willie,)
+        thread_slow = threading.Thread(
+                target=t_slow,
+                name='t_slow',
+                args=targs
+                )
+        thread_slow.daemon = True
+        thread_slow.start()
+
+    # MLPDS checker thread section
+    def t_rmlpds(Willie):
+        timers_rmlpds.rmlpds(Willie)
+    if [n for n in threading.enumerate() if n.getName() == 't_rmlpds']:
+        Willie.debug(
+                "timers:timer_manager",
+                "Test found thread for t_rmlpds.",
+                "verbose"
+                )
+    else:
+        Willie.debug(
+                "timers:timer_manager",
+                "Found no thread for t_rmlpds",
+                "verbose"
+                )
+        targs = (Willie,)
+        thread_rmlpds = threading.Thread(
+                target=t_rmlpds,
+                name='t_rmlpds',
+                args=targs
+                )
+        thread_rmlpds.daemon = True
+        thread_rmlpds.start()
 
 
 def timers_off(Willie, trigger):
