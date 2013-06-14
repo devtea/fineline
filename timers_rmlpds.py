@@ -94,7 +94,10 @@ def rmlpds(willie):
             new_posts = mlpds.get_new(limit=50)
             uncommented = []
             for post in new_posts:
-                if post.num_comments == 0  and post.created_utc > (time.time()-(48*60*60)):
+                # No comments, and between 8 and 48 hrs old
+                if post.num_comments == 0 and \
+                        post.created_utc > (time.time()-(48*60*60)) and \
+                        post.created_utc < (time.time()-(8*60*60)):
                     uncommented.append(post)
             if uncommented:
                 post_count = len(uncommented)
