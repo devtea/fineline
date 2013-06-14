@@ -109,12 +109,15 @@ def rmlpds(willie):
                             chan,
                             "Hey everyone, there are posts that might need " +
                             "critique! Here's a random one: ")
+                    if post.over_18:
+                        nsfw =  u'%s[NSFW]%s ' % (C_NSFW, C_RESET)
+                    else:
+                        nsfw = u''
                     willie.msg(
                             chan,
-                            u'%s posted on %s – %s"%s"%s [ %s ] ' % (
-                                post.author.name,
-                                f_date, C_CNT, post.title,
-                                C_RESET, post.short_link
+                            u'%s%s posted on %s – %s"%s"%s [ %s ] ' % (
+                                nsfw, post.author.name, f_date, C_CNT,
+                                post.title, C_RESET, post.short_link
                                 )
                             )
                 # There were posts, so set full timer
