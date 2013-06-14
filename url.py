@@ -16,6 +16,7 @@ import urlparse
 url_finder = None
 r_entity = re.compile(r'&[A-Za-z0-9#]+;')
 exclusion_char = '!'
+_ignore = re.compile(r'hushmachine.*')
 # These are used to clean up the title tag before actually parsing it. Not the
 # world's best way to do this, but it'll do for now.
 title_tag_data = re.compile('<(/?)title( [^>]+)?>', re.IGNORECASE)
@@ -74,37 +75,14 @@ def setup(willie):
         (exclusion_char))
 
 
-def title_command(willie, trigger):
-    """
-    Show the title or URL information for the given URL, or the last URL seen
-    in this channel.
-    """
-    if not trigger.group(2):
-        if trigger.sender not in willie.memory['last_seen_url']:
-            return
-        matched = check_callbacks(willie, trigger,
-                                  willie.memory['last_seen_url'][trigger.sender],
-                                  True)
-        if matched:
-            return
-        else:
-            urls = [willie.memory['last_seen_url'][trigger.sender]]
-    else:
-        urls = re.findall(url_finder, trigger)
-
-    results = process_urls(willie, trigger, urls)
-    for result in results[:4]:
-        message = '[ %s ] - %s' % tuple(result)
-title_command.commands = ('title')
-
-
 def title_auto(willie, trigger):
     """
     Automatically show titles for URLs. For shortened URLs/redirects, find
     where the URL redirects to and show the title for that (or call a function
     from another module to give more information).
     """
-    if re.match(willie.config.core.prefix + 'title', trigger):
+    if re.match(willie.config.core.prefix + 'title', trigger) or \
+            _ignore.match(trigger.nick):
         return
 
     urls = re.findall(url_finder, trigger)
