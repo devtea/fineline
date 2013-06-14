@@ -223,6 +223,16 @@ basic_smart = "would you kindly|please|go"
 smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)(a|an|the|some)(OBJECT)?")
 smart_action.priority = 'medium'
 
+nick_rule = r'^$nickname\s?!\s?$'
+nick_re = re.compile(nick_rule)
+def nick(Willie, trigger):
+    message = trigger.nick
+    if re.match(Willie.nick.upper(), trigger.bytes):
+        message = message.upper()
+    Willie.say(r'%s!' % message)
+nick.rule = nick_rule
+
+
 
 if __name__ == "__main__":
     print __doc__.strip()
