@@ -116,8 +116,9 @@ def rmlpds(willie):
                     willie.msg(
                             chan,
                             u'%s%s posted on %s – %s"%s"%s [ %s ] ' % (
-                                nsfw, post.author.name, f_date, C_CNT,
-                                post.title, C_RESET, post.short_link
+                                nsfw, C_USER, post.author.name, C_RESET,
+                                f_date, C_CNT, post.title, C_RESET,
+                                post.short_link
                                 )
                             )
                 # There were posts, so set full timer
