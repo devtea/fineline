@@ -91,6 +91,7 @@ def rmlpds(willie):
             # Set the timer for a 5 min. retry in case something goes wrong.
             willie.memory["timers"]["rmlpds_timer"] = time.time()-_check_interval+(5*60)
         if sub_exists:
+            willie.debug('timers_rmlpds.py', "Sub exists.", "verbose")
             new_posts = mlpds.get_new(limit=50)
             uncommented = []
             for post in new_posts:
@@ -98,9 +99,12 @@ def rmlpds(willie):
                 if post.num_comments == 0 and \
                         post.created_utc > (time.time()-(48*60*60)) and \
                         post.created_utc < (time.time()-(8*60*60)):
+                    willie.debug('timers_rmlpds.py', "Adding post to list.", "verbose")
                     uncommented.append(post)
             if uncommented:
-                post_count = len(uncommented)
+                willie.debug('timers_rmlpds.py', "There are %i uncommented posts." % len(uncommented), "verbose")
+                # There were posts, so set full timer
+                willie.memory["timers"]["rmlpds_timer"] = time.time()
                 post = random.choice(uncommented)
                 c_date = datetime.utcfromtimestamp(post.created_utc)
                 f_date = c_date.strftime('%b %d')
@@ -109,20 +113,17 @@ def rmlpds(willie):
                             chan,
                             "Hey everyone, there are posts that might need " +
                             "critique! Here's a random one: ")
+                    nsfw = u''
                     if post.over_18:
                         nsfw =  u'%s[NSFW]%s ' % (C_NSFW, C_RESET)
-                    else:
-                        nsfw = u''
                     willie.msg(
                             chan,
-                            u'%s%s posted on %s – %s"%s"%s [ %s ] ' % (
+                            u'%s%s%s%s posted on %s – %s"%s"%s [ %s ] ' % (
                                 nsfw, C_USER, post.author.name, C_RESET,
                                 f_date, C_CNT, post.title, C_RESET,
                                 post.short_link
                                 )
                             )
-                # There were posts, so set full timer
-                willie.memory["timers"]["rmlpds_timer"] = time.time()
             else:
                 # There were no posts, so set a short timer
                 willie.memory["timers"]["rmlpds_timer"] = time.time()-(_check_interval*3/4)
