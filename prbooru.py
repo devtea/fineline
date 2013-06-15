@@ -96,7 +96,7 @@ def prbooru_search(willie, tags=None, rand=True):
         willie.debug('prbooru.py', 'got back %i links' % len(links), 'verbose')
         try:
             if rand:
-                link = random.choice(links)
+                link = choice(links)
             else:
                 link = links[0]
         except IndexError:
