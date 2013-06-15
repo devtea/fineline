@@ -13,6 +13,10 @@ import time
 import threading
 
 _IGNORE = ['#fineline_testing']
+_WAIT_TIME = (random.uniform(27,52)*60)
+_REFRESH_TIME = (5*60)
+_da_faves = 'http://backend.deviantart.com/rss.xml' + \
+            '?q=favby%3Atdreyer1%2F50127477&type=deviation'
 
 def slow_room(willie):
     """A collection of actions to perform when the room is inactive for a
@@ -20,7 +24,6 @@ def slow_room(willie):
 
     """
     # Wait time in seconds before the bot will pipe up
-    WAIT_TIME = (random.uniform(27,52) * 60)
     willie.debug("timers:slow_room", "beep", "verbose")
 
     if "fetch_rss" not in willie.memory["timers"]:
@@ -51,7 +54,7 @@ def slow_room(willie):
     willie.memory["slow_timer_lock"].acquire()
     try:
         for key in willie.memory["timers"]["timer_quiet_room"]:
-            if willie.memory["timers"]["timer_quiet_room"][key] < time.time() - WAIT_TIME:
+            if willie.memory["timers"]["timer_quiet_room"][key] < time.time() - _WAIT_TIME:
                 function = random.randint(0,8)
                 if function == 0:
                     poke(willie, key)
@@ -67,6 +70,9 @@ def slow_room(willie):
                 elif function in range(5,8):  # It's easy, though, so fuck off
                     cute(willie, key)
                 willie.memory["timers"]["timer_quiet_room"][key] = time.time() # update the time to now
+            else:
+                if willie.memory["timers"]["timer_quiet_room"][key] < time.time() - _REFRESH_TIME:
+                    __ = fetch_rss(willie, _da_faves)  # update feed regularly
     finally:
         willie.memory["slow_timer_lock"].release()
 
@@ -166,8 +172,6 @@ def poke(willie, channel):
         willie.msg(channel, "It's dead Jim.")
 
 def cute(willie, channel, is_timer=True):
-    da_favs = 'http://backend.deviantart.com/rss.xml' + \
-            '?q=favby%3Atdreyer1%2F50127477&type=deviation'
     pics = []
     intro = [
             "It's a bit slow in here right now. How about a pony pic?",
@@ -179,7 +183,7 @@ def cute(willie, channel, is_timer=True):
             "[](/ppwatching-r-90)",
             "\001ACTION yawns blearily and a URL squirts out!\001"
             ]
-    feed = fetch_rss(willie, da_favs)
+    feed = fetch_rss(willie, _da_faves)
     if feed:
         for item in feed.entries:
             pics.append(item.link)
