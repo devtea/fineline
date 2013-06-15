@@ -80,7 +80,9 @@ def reddit_post(Willie, trigger):
         short = message
         if len(m_list) > length:
             short = u' '.join([m_list[elem] for elem in range(length)])
-            short = u'%s...' % short
+            short = u'%s...' % short.strip()
+        if len(short) > 100:
+            short = u'%s...' % short.strip('.')[:100]
         return short
 
     def date_aniv(aniv, day=datetime.now()):
