@@ -17,6 +17,8 @@ import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
+from colors import *
+
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3*60*60  # Seconds between checks
 _channels = ['#reddit-mlpds','#fineline_testing']  # Can be no more than 2 chans
@@ -24,42 +26,6 @@ _channels = ['#reddit-mlpds','#fineline_testing']  # Can be no more than 2 chans
 # Use multiprocess handler for multiple bots/threads on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
-
-# IRC color tags
-# 0  White
-# 1  Black
-# 2  Blue
-# 3  Green
-# 4  Light Red
-# 5  Brown
-# 6  Purple
-# 7  Orange
-# 8  Yellow
-# 9  Light Green
-# 10 Cyan
-# 11 Light Cyan
-# 12 Light Blue
-# 13 Pink
-# 14 Grey
-# 15 Light Grey
-# Set with '\x03' then your number
-# Reset with '\x0f'
-C_RESET = u'\x0f'
-C_UP = u'\x0303'  # Green
-C_DN = u'\x0307'  # Orange
-C_NSFW = u'\x0304'  # Red
-C_CNT = u'\x0302'  # Blue
-C_USER = u'\x0306'  # Purple
-C_CAKE = [
-        u'\x0301',
-        u'\x0304',
-        u'\x0302',
-        u'\x0303',
-        u'\x0305',
-        u'\x0306',
-        u'\x0307',
-        u'\x0313'
-        ]
 
 
 def rmlpds(willie):
@@ -115,15 +81,16 @@ def rmlpds(willie):
                             "critique! Here's a random one: ")
                     nsfw = u''
                     if post.over_18:
-                        nsfw =  u'%s[NSFW]%s ' % (C_NSFW, C_RESET)
+                        nsfw =  u'[%s] ' % colorize(u'NSFW', ['red'], ['b'])
                     willie.msg(
                             chan,
-                            u'%s%s%s%s posted on %s – %s"%s"%s [ %s ] ' % (
-                                nsfw, C_USER, post.author.name, C_RESET,
-                                f_date, C_CNT, post.title, C_RESET,
+                            u'%s%s posted on %s – "%s" [ %s ] ' % (
+                                nsfw,
+                                colorize(post.author.name, ['purple']),
+                                f_date,
+                                colorize(post.title, ['navy']),
                                 post.short_link
-                                )
-                            )
+                                ))
             else:
                 # There were no posts, so set a short timer
                 willie.memory["timers"]["rmlpds_timer"] = time.time()-(_check_interval*3/4)
