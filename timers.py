@@ -13,6 +13,9 @@ import threading
 
 import timers_slow
 import timers_rmlpds
+import timers_timer
+
+TIMER_FREQ = 1
 
 
 def setup(Willie):
@@ -26,7 +29,7 @@ def setup(Willie):
         while True:
             time.sleep(5)
             while _on:
-                time.sleep(5)
+                time.sleep(TIMER_FREQ)
                 timer_manager(Willie)
     # Ensure we don't spawn threads if one already exists
     if [n for n in threading.enumerate() if n.getName() == 'timer_daemon']:
@@ -36,11 +39,6 @@ def setup(Willie):
                 "You must restart to reload the main timer thread.",
                 "warning")
     else:
-        Willie.debug(
-                "timers:daemon",
-                "Test found no existing threads",
-                "verbose"
-                )
         targs = (Willie,)
         t = threading.Thread(target=daemon, name='timer_daemon', args=targs)
         t.daemon = True # keep this thread from zombifying the whole program
@@ -59,11 +57,6 @@ def timer_manager(Willie):
                 "verbose"
                 )
     else:
-        Willie.debug(
-                "timers:timer_manager",
-                "Found no thread for t_slow",
-                "verbose"
-                )
         targs = (Willie,)
         thread_slow = threading.Thread(
                 target=t_slow,
@@ -83,11 +76,6 @@ def timer_manager(Willie):
                 "verbose"
                 )
     else:
-        Willie.debug(
-                "timers:timer_manager",
-                "Found no thread for t_rmlpds",
-                "verbose"
-                )
         targs = (Willie,)
         thread_rmlpds = threading.Thread(
                 target=t_rmlpds,
@@ -96,6 +84,25 @@ def timer_manager(Willie):
                 )
         thread_rmlpds.daemon = True
         thread_rmlpds.start()
+
+    # Timers thread
+    def t_timer(Willie):
+        timers_timer.timer_check(Willie)
+    if [n for n in threading.enumerate() if n.getName() == 't_timer']:
+        Willie.debug(
+                "timers:timer_manager",
+                "Test found thread for t_timer.",
+                "verbose"
+                )
+    else:
+        targs = (Willie,)
+        thread_timer= threading.Thread(
+                target=t_timer,
+                name='t_timer',
+                args=targs
+                )
+        thread_timer.daemon = True
+        thread_timer.start()
 
 
 def timers_off(Willie, trigger):
