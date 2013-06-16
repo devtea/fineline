@@ -80,6 +80,10 @@ def new_timer(willie, trigger):
     try:
         if source not in willie.memory['timers']['timers']:
             willie.memory['timers']['timers'][source] = {}
+        if len(trigger.args[1].split()) <= 1:
+            willie.reply(("What timer? Try `%s: help timer` " +
+                    "for help") % willie.nick)
+            return
         if trigger.args[1].split()[1].startswith('del'):
             timer_del(willie, trigger)
             return
@@ -95,11 +99,7 @@ def new_timer(willie, trigger):
             willie.debug('timers_timer.py', 'now = %f' % now, 'verbose')
             possible_timer = trigger.args[1].split()
             willie.debug('timers_timer.py', possible_timer, 'verbose')
-            if len(possible_timer) <= 1:
-                willie.reply(("What timer? Try `%s: help timer` " +
-                        "for help") % willie.nick)
-                return
-            elif len(possible_timer) > 4:
+            if len(possible_timer) > 4:
                 willie.reply(("Too many arguments! Try `%s: help timer` " +
                         "for help") % willie.nick)
                 return
