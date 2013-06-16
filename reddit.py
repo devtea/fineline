@@ -17,6 +17,7 @@ import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
+from colors import *
 from willie import web
 
 _url='(reddit\.com|redd\.it)'
@@ -24,42 +25,6 @@ _partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
 _ignore=['hushmachine','tmoister1']
 _TIMEOUT=20
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
-
-# IRC color tags
-# 0  White
-# 1  Black
-# 2  Blue
-# 3  Green
-# 4  Light Red
-# 5  Brown
-# 6  Purple
-# 7  Orange
-# 8  Yellow
-# 9  Light Green
-# 10 Cyan
-# 11 Light Cyan
-# 12 Light Blue
-# 13 Pink
-# 14 Grey
-# 15 Light Grey
-# Set with '\x03' then your number
-# Reset with '\x0f'
-C_RESET = u'\x0f'
-C_UP = u'\x0303'  # Green
-C_DN = u'\x0307'  # Orange
-C_NSFW = u'\x0304'  # Red
-C_CNT = u'\x0302'  # Blue
-C_USER = u'\x0306'  # Purple
-C_CAKE = [
-        u'\x0301',
-        u'\x0304',
-        u'\x0302',
-        u'\x0303',
-        u'\x0305',
-        u'\x0306',
-        u'\x0307',
-        u'\x0313'
-        ]
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -156,14 +121,7 @@ def reddit_post(Willie, trigger):
             cakeday = datetime.utcfromtimestamp(redditor.created_utc)
             diff_days = date_aniv(cakeday)
             if diff_days == 0:
-                cake_message = u'HAPPY CAKEDAY!'
-                colorful_message = u''
-                cnt = 0
-                for c in cake_message:
-                    colorful_message = colorful_message + C_CAKE[cnt %
-                            len(C_CAKE)] + str(c)
-                    cnt = cnt + 1
-                cake_message= u'%s%s' (colorful_message, C_RESET)
+                cake_message = rainbow(u'HAPPY CAKEDAY!')
             elif diff_days > 0:
                 cake_message = u"Cakeday in %i day(s)" % diff_days
             else:
@@ -175,8 +133,9 @@ def reddit_post(Willie, trigger):
                         'warning'
                         )
             Willie.say(
-                    u"User %s%s%s: Link Karma %i, Comment karma %i, %s" % (
-                        C_USER, redditor.name, C_RESET, redditor.link_karma,
+                    u"User %s: Link Karma %i, Comment karma %i, %s" % (
+                        colorize(redditor.name, ['purple']),
+                        redditor.link_karma,
                         redditor.comment_karma, cake_message)
                     )
         else:
@@ -200,26 +159,25 @@ def reddit_post(Willie, trigger):
                 pprint(vars(comment.author)),
                 "verbose"
                 )
+        ed = u''
         if comment.edited:
             ed = u'[edited] '
-        else:
-            ed = u''
+        nsfw = u''
         if post.over_18:
-            nsfw =  u'%sNSFW%s post: ' % (C_NSFW, C_RESET)
-        else:
-            nsfw = u''
+            nsfw =  u'%s post: ' % colorize(u"NSFW", ["red"], ["bold"])
         snippet = comment.body
         match = re.compile(r'\n')  # 2 lines to remove newline markup
         snippet = match.sub(u' ', snippet)
         snippet = trc(snippet, 15)
         Willie.say(
-                u'Comment (%s↑%i%s|%s↓%i%s) ' % (C_UP, comment.ups, C_RESET,
-                    C_DN, comment.downs, C_RESET) +
-                u'by %s%s%s ' % (C_USER, comment.author.name, C_RESET) +
-                u'on %s%s — "' % (nsfw, trc(post.title, 15)) +
-                u'%s%s%s"' % (C_CNT, snippet.strip(), C_RESET)
-                )
-        Willie.debug("", full_url, "verbose")
+                u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
+                    colorize(str(comment.ups), ['green']),
+                    colorize(str(comment.downs), ['orange']),
+                    colorize(comment.author.name, ['purple']),
+                    nsfw,
+                    trc(post.title, 15),
+                    colorize(snippet.strip(), ['navy'])
+                ))
 
     # Submission Section
     elif re.match('.*?%s' % subm, trigger.bytes):
@@ -257,25 +215,23 @@ def reddit_post(Willie, trigger):
             page_exists = True
             Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
         if page_exists:
+            page_self = u'Link'
             if page.is_self:
                 page_self = u'Self'
-            else:
-                page_self = u'Link'
+            nsfw = u''
             if page.over_18:
-                nsfw =  u'[%sNSFW%s] ' % (C_NSFW, C_RESET)
-            else:
-                nsfw = u''
-
+                nsfw =  u'[%s] ' % colorize(u"NSFW", ["red"], ["bold"])
             Willie.say(
-                    u'%s' % nsfw +
-                    u'%s ' % page_self +
-                    u'post (%s↑%i%s|%s↓%i%s|' % (C_UP, page.ups, C_RESET,
-                        C_DN, page.downs, C_RESET) +
-                    u'%ic) ' % page.num_comments +
-                    u'by %s%s%s ' % (C_USER, page.author.name, C_RESET) +
-                    u'to %s — ' % page.subreddit.display_name +
-                    u'%s%s%s' % (C_CNT, page.title, C_RESET)
-                    )
+                    u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
+                            nsfw,
+                            page_self,
+                            colorize(str(page.ups), ['green']),
+                            colorize(str(page.downs), ['orange']),
+                            page.num_comments,
+                            colorize(page.author.name, ['purple']),
+                            page.subreddit.display_name,
+                            colorize(page.title, ['navy'])
+                            ))
         else:
             Willie.say(u"That page does not exist or reddit is being "
                 "squirrely.")
@@ -353,18 +309,24 @@ def mlpds_check(Willie, trigger):
                 if spammy:
                     Willie.msg(
                             trigger.nick,
-                            u'%s on %s%s post (%s) on %s entitled %s"%s"%s' % (
-                                num_com, post.author.name, apos,
-                                post.short_link, f_date, C_CNT, post.title,
-                                C_RESET
+                            u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                                num_com,
+                                colorize(post.author.name, ['purple']),
+                                apos,
+                                post.short_link,
+                                f_date,
+                                colorize(post.title, ['navy'])
                                 )
                             )
                 else:
                     Willie.reply(
-                            u'%s on %s%s post (%s) on %s entitled %s"%s"%s' % (
-                                num_com, post.author.name, apos,
-                                post.short_link, f_date, C_CNT, post.title,
-                                C_RESET
+                            u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                                num_com,
+                                colorize(post.author.name, ['purple']),
+                                apos,
+                                post.short_link,
+                                f_date,
+                                colorize(post.title, ['navy'])
                                 )
                             )
         else:
