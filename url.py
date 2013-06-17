@@ -168,21 +168,22 @@ def check_callbacks(willie, trigger, url, run=True):
 def find_title(url):
     """Return the title for the given URL."""
     content = web.get(url)
+    headers = web.head(url)
 ###REMOVING FEATRUES NOT SUPPORTED IN THIS VER OF WILLIE
-    #content_type = headers.get('Content-Type') or ''
-    #encoding_match = re.match('.*?charset *= *(\S+)', content_type)
+    content_type = headers.get('Content-Type') or ''
+    encoding_match = re.match('.*?charset *= *(\S+)', content_type)
     # If they gave us something else instead, try that
-    #if encoding_match:
-    #    try:
-    #        content = content.decode(encoding_match.group(1))
-    #    except:
-    #        encoding_match = None
+    if encoding_match:
+        try:
+            content = content.decode(encoding_match.group(1))
+        except:
+            encoding_match = None
     # They didn't tell us what they gave us, so go with UTF-8 or fail silently.
-    #if not encoding_match:
-    try:
-        content = content.decode('utf-8')
-    except:
-        return
+    if not encoding_match:
+        try:
+            content = content.decode('utf-8')
+        except:
+            return
 
     # Some cleanup that I don't really grok, but was in the original, so
     # we'll keep it (with the compiled regexes made global) for now.
