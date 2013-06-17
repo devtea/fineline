@@ -12,6 +12,7 @@ from htmlentitydefs import name2codepoint
 import willie.web as web
 import urllib2
 import urlparse
+from socket import timeout
 
 url_finder = None
 r_entity = re.compile(r'&[A-Za-z0-9#]+;')
@@ -86,7 +87,10 @@ def title_auto(willie, trigger):
         return
 
     urls = re.findall(url_finder, trigger)
-    results = process_urls(willie, trigger, urls)
+    try:
+        results = process_urls(willie, trigger, urls)
+    except timeout:
+        return  # The url timed out, so lets be quiet.
     willie.memory['last_seen_url'][trigger.sender] = urls[-1]
 
     for result in results[:4]:
