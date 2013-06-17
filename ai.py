@@ -1,3 +1,4 @@
+# coding=utf8
 """
 ai.py - A simple Willie module for misc silly ai
 Copyright 2013, Tim Dreyer
@@ -120,7 +121,7 @@ def swish(Willie, trigger):
         time.sleep(random.uniform(1,3))
         Willie.debug("swoosh", trigger.group(0), "verbose")
         i = "i"*(len(trigger.group(0))-5)
-        Willie.say("[](/dhexcited) Sw%ssh! <3" % i)
+        Willie.say("[](/dhexcited) Sw%ssh! ♥" % i)
 swish.rule = "^!swo[o]+sh"
 swish.priority = 'medium'
 
