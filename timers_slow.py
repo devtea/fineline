@@ -119,7 +119,9 @@ def fetch_rss(willie, feed_url):
 
 
 def fzoo(willie, channel):
-    willie.msg(channel, r"!fzoo")
+    x = random.uniform(0,1)
+    oos = 'o'*int(50*x**4 - x**3 - 5*x**2 + 2)
+    willie.msg(channel, r"!fzo%s ♥" % oos)
 
 
 def quote(willie, channel):
