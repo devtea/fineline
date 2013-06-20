@@ -111,11 +111,6 @@ def reddit_post(Willie, trigger):
             redditor_exists = False
         else:
             redditor_exists = True
-            Willie.debug(
-                    "reddit:reddit_post",
-                    pprint(vars(redditor)),
-                    "verbose"
-                    )
         if redditor_exists:
             # Use created date to determine next cake day
             cakeday = datetime.utcfromtimestamp(redditor.created_utc)
@@ -152,13 +147,8 @@ def reddit_post(Willie, trigger):
             full_url = 'http://%s' % full_url
         post = rc.get_submission(url=full_url)
         comment = post.comments[0]
-        Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
-        Willie.debug("reddit:reddit_post", pprint(vars(comment)), "verbose")
-        Willie.debug(
-                "reddit:reddit_post",
-                pprint(vars(comment.author)),
-                "verbose"
-                )
+        #Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
+        #Willie.debug("reddit:reddit_post", pprint(vars(comment)), "verbose")
         ed = u''
         if comment.edited:
             ed = u'[edited] '
@@ -213,7 +203,7 @@ def reddit_post(Willie, trigger):
             page_exists = False
         else:
             page_exists = True
-            Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
+            #Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
         if page_exists:
             page_self = u'Link'
             if page.is_self:
@@ -254,7 +244,7 @@ def reddit_post(Willie, trigger):
             sub_exists = False
         else:
             sub_exists = True
-            Willie.debug("reddit:reddit_post", pprint(vars(sub)), "verbose")
+            #Willie.debug("reddit:reddit_post", pprint(vars(sub)), "verbose")
         if sub_exists:
             #do stuff?
             pass
@@ -282,7 +272,7 @@ def mlpds_check(Willie, trigger):
         sub_exists = True
     if sub_exists:
         new_posts = mlpds.get_new(limit=50)
-        Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
+        #Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
         uncommented = []
         for post in new_posts:
             if post.num_comments < 2 and post.created_utc > (time.time()-(48*60*60)):
