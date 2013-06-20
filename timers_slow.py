@@ -191,6 +191,9 @@ def last_activity(willie, trigger):
     if trigger.sender.startswith("#") and \
             trigger.sender not in _IGNORE:
         willie.debug("timers:last_activity", trigger.sender, "verbose")
+        if 'slow_timer_lock' not in willie.memory:
+            willie.debug('timers_slow:last_activity', 'WTF Devs', 'warning')
+            setup(willie)
         willie.memory["slow_timer_lock"].acquire()
         try:
             willie.memory["slow_timer"][trigger.sender] = time.time()
