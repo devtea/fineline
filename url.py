@@ -111,6 +111,7 @@ def process_urls(willie, trigger, urls):
 
     results = []
     for url in urls:
+        url = url.strip('()[]{}<>').rstrip('.!?,')
         if not url.startswith(exclusion_char):
             # Magic stuff to account for international domain names
             url = iri_to_uri(url)
