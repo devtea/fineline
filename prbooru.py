@@ -124,8 +124,6 @@ def prbooru(willie, trigger):
         willie.debug('prbooru.py', 'random', 'verbose')
         link = prbooru_search(willie) # Request a random image else:
     else:
-        if len(tags_list) == 1:
-            willie.reply("Okay, this might take a few seconds.")
         willie.debug('prbooru.py', 'tags', 'verbose')
         link = prbooru_search(willie, tags=tags_list) # Get image from tags
     if link:
