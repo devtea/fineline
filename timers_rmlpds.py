@@ -27,23 +27,16 @@ _channels = ['#reddit-mlpds','#fineline_testing']  # Can be no more than 2 chans
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 
+def setup(willie):
+    if "rmlpds_timer" not in willie.memory:
+        # Set the timer and do the first check in a minute
+        willie.memory["rmlpds_timer"] = time.time()-_check_interval+60
+    if "rmlpds_timer_lock" not in willie.memory:
+        willie.memory["rmlpds_timer_lock"] = threading.Lock()
 
 def rmlpds(willie):
     """Checks the subreddit for unattended recent posts."""
-    if "rmlpds_timer" not in willie.memory["timers"]:
-        willie.debug('timers_rmlpds.py',
-                'rmlpds_timer not found, adding',
-                'verbose'
-                )
-        # Set the timer and do the first check in a minute
-        willie.memory["timers"]["rmlpds_timer"] = time.time()-_check_interval+60
-    if "rmlpds_timer_lock" not in willie.memory:
-        willie.debug('timers_rmlpds.py',
-                'rmlpds_timer_lock not found, adding',
-                'verbose'
-                )
-        willie.memory["rmlpds_timer_lock"] = threading.Lock()
-    if willie.memory["timers"]["rmlpds_timer"] > time.time()-_check_interval:
+    if willie.memory["rmlpds_timer"] > time.time()-_check_interval:
         return  # return if not enough time has elapsed since last full run
     willie.memory["rmlpds_timer_lock"].acquire()
     try:
@@ -55,7 +48,7 @@ def rmlpds(willie):
             sub_exists = True
         finally:
             # Set the timer for a 5 min. retry in case something goes wrong.
-            willie.memory["timers"]["rmlpds_timer"] = time.time()-_check_interval+(5*60)
+            willie.memory["rmlpds_timer"] = time.time()-_check_interval+(5*60)
         if sub_exists:
             willie.debug('timers_rmlpds.py', "Sub exists.", "verbose")
             new_posts = mlpds.get_new(limit=50)
@@ -70,7 +63,7 @@ def rmlpds(willie):
             if uncommented:
                 willie.debug('timers_rmlpds.py', "There are %i uncommented posts." % len(uncommented), "verbose")
                 # There were posts, so set full timer
-                willie.memory["timers"]["rmlpds_timer"] = time.time()
+                willie.memory["rmlpds_timer"] = time.time()
                 post = random.choice(uncommented)
                 c_date = datetime.utcfromtimestamp(post.created_utc)
                 f_date = c_date.strftime('%b %d')
@@ -93,7 +86,7 @@ def rmlpds(willie):
                                 ))
             else:
                 # There were no posts, so set a short timer
-                willie.memory["timers"]["rmlpds_timer"] = time.time()-(_check_interval*3/4)
+                willie.memory["rmlpds_timer"] = time.time()-(_check_interval*3/4)
                 willie.debug(
                         "timers_rmlpds",
                         "No uncommented posts found.",

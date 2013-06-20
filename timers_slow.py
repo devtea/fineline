@@ -12,49 +12,34 @@ import random
 import time
 import threading
 
-_IGNORE = ['#fineline_testing']
+# Wait time in seconds before the bot will pipe up
 _WAIT_TIME = (random.uniform(27,52)*60)
-_REFRESH_TIME = (5*60)
+_IGNORE = ['#fineline_testing']
+_REFRESH_TIME = (5*60) # Time between RSS refreshes
 _da_faves = 'http://backend.deviantart.com/rss.xml' + \
             '?q=favby%3Atdreyer1%2F50127477&type=deviation'
+
+
+def setup(willie):
+    if "fetch_rss" not in willie.memory:
+        willie.memory["fetch_rss"] = {}
+    if "fetch_rss_lock" not in willie.memory:
+        willie.memory["fetch_rss_lock"] = threading.Lock()
+    if "slow_timer" not in willie.memory:
+        willie.memory["slow_timer"] = {}
+    if "slow_timer_lock" not in willie.memory:
+        willie.memory["slow_timer_lock"] = threading.Lock()
+
 
 def slow_room(willie):
     """A collection of actions to perform when the room is inactive for a
     period of time.
 
     """
-    # Wait time in seconds before the bot will pipe up
-    willie.debug("timers:slow_room", "beep", "verbose")
-
-    if "fetch_rss" not in willie.memory["timers"]:
-        willie.debug('timers_slow.py',
-                '"fetch_rss not found, adding"',
-                'verbose'
-                )
-        willie.memory["timers"]["fetch_rss"] = {}
-    if "timer_quiet_room" not in willie.memory["timers"]:
-        willie.debug('timers_slow.py',
-                '"timer_quiet_room not found, adding"',
-                'verbose'
-                )
-        willie.memory["timers"]["timer_quiet_room"] = {}
-    if "fetch_rss_lock" not in willie.memory:
-        willie.debug('timers_slow.py',
-                '"fetch_rss_lock not found, adding"',
-                'verbose'
-                )
-        willie.memory["fetch_rss_lock"] = threading.Lock()
-    if "slow_timer_lock" not in willie.memory:
-        willie.debug('timers_slow.py',
-                '"slow_timer_lock not found, adding"',
-                'verbose'
-                )
-        willie.memory["slow_timer_lock"] = threading.Lock()
-
     willie.memory["slow_timer_lock"].acquire()
     try:
-        for key in willie.memory["timers"]["timer_quiet_room"]:
-            if willie.memory["timers"]["timer_quiet_room"][key] < time.time() - _WAIT_TIME:
+        for key in willie.memory["slow_timer"]:
+            if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME:
                 function = random.randint(0,8)
                 if function == 0:
                     poke(willie, key)
@@ -69,9 +54,9 @@ def slow_room(willie):
                 # This is a bad way to do probablity and you should feel bad
                 elif function in range(5,8):  # It's easy, though, so fuck off
                     cute(willie, key)
-                willie.memory["timers"]["timer_quiet_room"][key] = time.time() # update the time to now
+                willie.memory["slow_timer"][key] = time.time() # update the time to now
             else:
-                if willie.memory["timers"]["timer_quiet_room"][key] < time.time() - _REFRESH_TIME:
+                if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
                     __ = fetch_rss(willie, _da_faves)  # update feed regularly
     finally:
         willie.memory["slow_timer_lock"].release()
@@ -85,8 +70,8 @@ def fetch_rss(willie, feed_url):
     def refresh_feed(willie, url):
         try:
             feedparser.parse(url)
-            willie.memory["timers"]["fetch_rss"][feed_url].append(time.time())
-            willie.memory["timers"]["fetch_rss"][feed_url].append(
+            willie.memory["fetch_rss"][feed_url].append(time.time())
+            willie.memory["fetch_rss"][feed_url].append(
                     feedparser.parse(feed_url))
             willie.debug("timers:fetch_rss", "Updated feed and stored " + \
                     "cached version.", "verbose")
@@ -96,13 +81,13 @@ def fetch_rss(willie, feed_url):
     willie.memory["fetch_rss_lock"].acquire()
     try:
         # {feed_url: [time, feed]}
-        if feed_url in willie.memory["timers"]["fetch_rss"]:
+        if feed_url in willie.memory["fetch_rss"]:
             willie.debug(
                     "timers:fetch_rss",
                     "Found cached RSS feed, checking age.",
                     "verbose"
                     )
-            if willie.memory["timers"]["fetch_rss"][feed_url][0] > time.time() - (60*60*48): # refresh every 48 hours
+            if willie.memory["fetch_rss"][feed_url][0] > time.time() - (60*60*48): # refresh every 48 hours
                 willie.debug(
                         "timers:fetch_rss",
                         "Feed is young, using cached version",
@@ -111,9 +96,9 @@ def fetch_rss(willie, feed_url):
             else:
                 refresh_feed(willie, feed_url)
         else:  # No cached version, try to get new
-            willie.memory["timers"]["fetch_rss"][feed_url] = []
+            willie.memory["fetch_rss"][feed_url] = []
             refresh_feed(willie, feed_url)
-        return willie.memory["timers"]["fetch_rss"][feed_url][1]
+        return willie.memory["fetch_rss"][feed_url][1]
     finally:
         willie.memory["fetch_rss_lock"].release()
 
@@ -126,6 +111,8 @@ def fzoo(willie, channel):
 
 def quote(willie, channel):
     willie.msg(channel, r"!quote")
+    time.sleep(random.uniform(3,5))
+    willie.msg(channel, r"[](/ppfear)")
 
 
 def arttip(willie, channel):
@@ -206,7 +193,7 @@ def last_activity(willie, trigger):
         willie.debug("timers:last_activity", trigger.sender, "verbose")
         willie.memory["slow_timer_lock"].acquire()
         try:
-            willie.memory["timers"]["timer_quiet_room"][trigger.sender] = time.time()
+            willie.memory["slow_timer"][trigger.sender] = time.time()
         finally:
             willie.memory["slow_timer_lock"].release()
 last_activity.rule = '.*'
