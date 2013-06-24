@@ -326,7 +326,7 @@ def mlpds_check(Willie, trigger):
     else:
         Willie.reply("Reddit is being squirrely so I can't check posts "
                 "right now. Sorry!")
-mlpds_check.commands = ['queue','check','posts','que']
+mlpds_check.commands = ['queue','check','posts','que','crit','critique']
 mlpds_check.rate = 120
 
 
