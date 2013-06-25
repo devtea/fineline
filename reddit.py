@@ -36,7 +36,7 @@ def reddit_post(Willie, trigger):
     user='/u(ser)?/[^/\s)]{3,20}'
     subm=('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
             '(/[^/\s)]{4,}/?))') % _url
-    cmnt='%s/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s)]{3,}/?' % _url
+    cmnt='%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s?]{3,}/?)(?:\?context=\d{,2})?' % _url
     subr='%s/r/[^/\s)]+/?([\s.!?]|$)' % _url
 
     def trc(message, length=5):
@@ -139,10 +139,11 @@ def reddit_post(Willie, trigger):
     # Comment Section
     elif re.match('.*?%s' % cmnt, trigger.bytes):
         Willie.debug("reddit:reddit_post", "URL is comment", "verbose")
-        full_url = re.search(
-                r'(https?://)?(www\.)?%s' % cmnt,
-                trigger.bytes
-                ).group(0)
+        full_url = ''.join(
+                re.search(
+                    r'(https?://)?(www\.)?%s' % cmnt,
+                    trigger.bytes
+                    ).groups())
         if not re.match('^http', full_url):
             full_url = 'http://%s' % full_url
         post = rc.get_submission(url=full_url)
