@@ -254,7 +254,11 @@ def seen(willie, trigger):
 
     willie.memory['seen_lock'].acquire()
     try:
-        if nn in willie.memory['seen']:
+        if nn.lower() == willie.nick.lower():
+            willie.reply("[](/ohcomeon \"I'm right here!\")")
+        elif nn.lower() == trigger.nick.lower():
+            willie.reply("What am I, blind?")
+        elif nn in willie.memory['seen']:
             last = willie.memory['seen'][nn][0]
             chan = willie.memory['seen'][nn][1]
             msg = willie.memory['seen'][nn][2]
