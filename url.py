@@ -1,12 +1,10 @@
 """
 url.py - Willie URL title module
-Copyright 2010-2011, Michael Yanovich, yanovich.net, Kenneth Sham
-Copyright 2012-2013 Edward Powell
+Copyright 2013 Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
 http://willie.dftba.net
 """
-
 import re
 from htmlentitydefs import name2codepoint
 import willie.web as web
@@ -111,7 +109,7 @@ def process_urls(willie, trigger, urls):
 
     results = []
     for url in urls:
-        url = url.strip('()[]{}<>').rstrip('.!?,')
+        url = url.strip('()[]{}<>').rstrip('.!?,\001')
         if not url.startswith(exclusion_char):
             # Magic stuff to account for international domain names
             url = iri_to_uri(url)
