@@ -70,8 +70,8 @@ def seen_reload(willie):
                     )
             nn = Nick(nick)
             data = json.loads(unescape(json_data))
-            time = data['time']
-            assert type(time) is FloatType
+            time = float(data['time'])
+            assert type(time) is FloatType, '%r is not float' % time
             chan = data['channel']
             msg = data['message']
             r_tup = (time, chan, msg)
@@ -83,10 +83,11 @@ def seen_reload(willie):
 def seen_insert(willie, nick, data):
     # TODO change data imput to dict
     # TODO Just pass data through to databasae
+
     assert isinstance(nick, basestring)
     assert type(data) is TupleType
     assert len(data) == 3
-    assert type(data[0]) is FloatType
+    assert type(data[0]) is FloatType, '%r is not float' % data[0]
     assert isinstance(data[1], basestring)
     assert isinstance(data[2], basestring)
     nn = Nick(nick)
