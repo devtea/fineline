@@ -9,6 +9,7 @@ http://bitbucket.org/tdreyer/fineline
 import threading
 import time
 import random
+import re
 from datetime import datetime
 from urllib2 import HTTPError
 
@@ -20,7 +21,8 @@ from requests import HTTPError
 from colors import *
 
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
-_check_interval = 3*60*60  # Seconds between checks
+#_check_interval = 3*60*60  # Seconds between checks
+_check_interval = 3*5  # Seconds between checks
 _channels = ['#reddit-mlpds','#fineline_testing']  # Can be no more than 2 chans
 
 # Use multiprocess handler for multiple bots/threads on same server
@@ -33,6 +35,76 @@ def setup(willie):
         willie.memory["rmlpds_timer"] = time.time()-_check_interval+60
     if "rmlpds_timer_lock" not in willie.memory:
         willie.memory["rmlpds_timer_lock"] = threading.Lock()
+
+
+def filter_posts(posts):
+    def is_livestream(post):
+        livestreams = [
+                u'livestream.com',
+                u'twitch.tv',
+                u'justin.tv',
+                u'youtube.com',
+                u'ustream.tv',
+                u'nicovideo.jp'
+                ]
+        for s in livestreams:
+            if post.url and re.findall(s, post.url):
+                return True
+        if post.title and re.search('\[stream\]', post.title, re.IGNORECASE):
+            return True
+        if post.is_self and post.selftext and re.search(
+                r'\b(live)?stream(ing)?\b',
+                post.title,
+                flags=re.IGNORECASE
+                ):
+            links = re.findall(
+                    r'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+                    post.selftext,
+                    flags=re.IGNORECASE
+                    )
+            for link in links:
+                for s in livestreams:
+                    if re.findall(s, link, flags=re.IGNORECASE):
+                        return True
+        return False
+
+    def is_lounge(post):
+        if post.title and re.search(r'\blounge\b', post.title, re.IGNORECASE):
+            return True
+        return False
+
+    def is_theme(post):
+        if post.title and post.is_self and  re.match(
+                r'weekly (drawing )?theme',
+                post.title,
+                flags=re.IGNORECASE
+                ):
+            return True
+        return False
+
+    def is_biweekly(post):
+        if post.title and post.is_self and re.search(
+                r'(st|rd|nd|th) bi-weekly( drawing)? challenge',
+                post.title,
+                flags=re.IGNORECASE
+                ):
+            return True
+        return False
+
+    criticable = []
+    if posts:
+        for p in posts:
+            self = p.is_self  #Boolean
+            title = p.title
+            body = p.selftext
+            auth = p.author
+            url = p.url
+
+            if is_livestream(p) or is_lounge(p) or is_theme(p) or is_biweekly(p):
+                continue
+            criticable.append(p)
+    return criticable
+
 
 def rmlpds(willie):
     """Checks the subreddit for unattended recent posts."""
@@ -52,14 +124,7 @@ def rmlpds(willie):
         if sub_exists:
             willie.debug('timers_rmlpds.py', "Sub exists.", "verbose")
             new_posts = mlpds.get_new(limit=50)
-            uncommented = []
-            for post in new_posts:
-                # No comments, and between 8 and 48 hrs old
-                if post.num_comments == 0 and \
-                        post.created_utc > (time.time()-(48*60*60)) and \
-                        post.created_utc < (time.time()-(8*60*60)):
-                    willie.debug('timers_rmlpds.py', "Adding post to list.", "verbose")
-                    uncommented.append(post)
+            uncommented = filter_posts(new_posts)
             if uncommented:
                 willie.debug('timers_rmlpds.py', "There are %i uncommented posts." % len(uncommented), "verbose")
                 # There were posts, so set full timer
