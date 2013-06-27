@@ -124,7 +124,15 @@ def rmlpds(willie):
         if sub_exists:
             willie.debug('timers_rmlpds.py', "Sub exists.", "verbose")
             new_posts = mlpds.get_new(limit=50)
-            uncommented = filter_posts(new_posts)
+            uncommented = []
+            for post in new_posts:
+                # No comments, and between 8 and 48 hrs old
+                if post.num_comments == 0 and \
+                        post.created_utc > (time.time()-(48*60*60)) and \
+                        post.created_utc < (time.time()-(8*60*60)):
+                    willie.debug('timers_rmlpds.py', "Adding post to list.", "verbose")
+                    uncommented.append(post)
+            uncommented = filter_posts(uncommented)
             if uncommented:
                 willie.debug('timers_rmlpds.py', "There are %i uncommented posts." % len(uncommented), "verbose")
                 # There were posts, so set full timer
