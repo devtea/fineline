@@ -21,8 +21,7 @@ from requests import HTTPError
 from colors import *
 
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
-#_check_interval = 3*60*60  # Seconds between checks
-_check_interval = 3*5  # Seconds between checks
+_check_interval = 3*60*60  # Seconds between checks
 _channels = ['#reddit-mlpds','#fineline_testing']  # Can be no more than 2 chans
 
 # Use multiprocess handler for multiple bots/threads on same server
