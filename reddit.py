@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 from pprint import pprint
 from urllib2 import HTTPError
+from socket import timeout
 
 import praw
 import praw.errors
@@ -25,6 +26,9 @@ _partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
 _ignore=['hushmachine','tmoister1']
 _TIMEOUT=20
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
+_timout_message = 'Sorry, reddit is unavailable right now.'
+_bad_reddit_msg = "That doesn't seem to exist on reddit."
+_bad_user_msg = "That user doesn't seem to exist."
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -107,35 +111,33 @@ def reddit_post(Willie, trigger):
                 )
         try:
             redditor = rc.get_redditor(username)
-        except (InvalidUser, HTTPError):
-            redditor_exists = False
+        except (InvalidUser):
+            Willie.say(_bad_user_msg)
+            return
+        except (HTTPError, timeout):
+            Willie.say(_timeout_message)
+            return
+        # Use created date to determine next cake day
+        cakeday = datetime.utcfromtimestamp(redditor.created_utc)
+        diff_days = date_aniv(cakeday)
+        if diff_days == 0:
+            cake_message = rainbow(u'HAPPY CAKEDAY!')
+        elif diff_days > 0:
+            cake_message = u"Cakeday in %i day(s)" % diff_days
         else:
-            redditor_exists = True
-        if redditor_exists:
-            # Use created date to determine next cake day
-            cakeday = datetime.utcfromtimestamp(redditor.created_utc)
-            diff_days = date_aniv(cakeday)
-            if diff_days == 0:
-                cake_message = rainbow(u'HAPPY CAKEDAY!')
-            elif diff_days > 0:
-                cake_message = u"Cakeday in %i day(s)" % diff_days
-            else:
-                # oh shit, something went wrong
-                cake_message = u""
-                Willie.debug(
-                        'reddit:reddit_post',
-                        'Date parsing broke!',
-                        'warning'
-                        )
-            Willie.say(
-                    u"User %s: Link Karma %i, Comment karma %i, %s" % (
-                        colorize(redditor.name, ['purple']),
-                        redditor.link_karma,
-                        redditor.comment_karma, cake_message)
+            # oh shit, something went wrong
+            cake_message = u""
+            Willie.debug(
+                    'reddit:reddit_post',
+                    'Date parsing broke!',
+                    'warning'
                     )
-        else:
-            Willie.say(u"That user does not exist or reddit is being "
-                "squirrely.")
+        Willie.say(
+                u"User %s: Link Karma %i, Comment karma %i, %s" % (
+                    colorize(redditor.name, ['purple']),
+                    redditor.link_karma,
+                    redditor.comment_karma, cake_message)
+                )
     # Comment Section
     elif re.match('.*?%s' % cmnt, trigger.bytes):
         Willie.debug("reddit:reddit_post", "URL is comment", "verbose")
@@ -146,10 +148,13 @@ def reddit_post(Willie, trigger):
                     ).groups())
         if not re.match('^http', full_url):
             full_url = 'http://%s' % full_url
-        post = rc.get_submission(url=full_url)
+        try:
+            post = rc.get_submission(url=full_url)
+        except (HTTPError, timeout):
+                Willie.say(_timeout_message)
+                return
         comment = post.comments[0]
         #Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
-        #Willie.debug("reddit:reddit_post", pprint(vars(comment)), "verbose")
         ed = u''
         if comment.edited:
             ed = u'[edited] '
@@ -191,41 +196,35 @@ def reddit_post(Willie, trigger):
             Willie.debug("reddit:reddit_post", "URL is short", 'verbose')
             try:
                 full_url=web.get_urllib_object(full_url, _TIMEOUT).geturl()
-            except (InvalidSubreddit, HTTPError):
-                Willie.debug(
-                        "reddit:reddit_post",
-                        "URL fetching timed out",
-                        'verbose'
-                        )
+            except InvalidSubreddit:
+                Willie.say(_bad_reddit_msg)
+                return
+            except (HTTPError, timeout):
+                Willie.say(_timeout_message)
+                return
         Willie.debug("reddit:reddit_post", 'URL is %s' %full_url, "verbose")
         try:
             page = rc.get_submission(full_url)
-        except HTTPError:
-            page_exists = False
-        else:
-            page_exists = True
-            #Willie.debug("reddit:reddit_post", pprint(vars(page)), "verbose")
-        if page_exists:
-            page_self = u'Link'
-            if page.is_self:
-                page_self = u'Self'
-            nsfw = u''
-            if page.over_18:
-                nsfw =  u'[%s] ' % colorize(u"NSFW", ["red"], ["bold"])
-            Willie.say(
-                    u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
-                            nsfw,
-                            page_self,
-                            colorize(str(page.ups), ['green']),
-                            colorize(str(page.downs), ['orange']),
-                            page.num_comments,
-                            colorize(page.author.name, ['purple']),
-                            page.subreddit.display_name,
-                            colorize(page.title, ['navy'])
-                            ))
-        else:
-            Willie.say(u"That page does not exist or reddit is being "
-                "squirrely.")
+        except (HTTPError, timeout):
+            Willie.say(_timeout_message)
+            return
+        page_self = u'Link'
+        if page.is_self:
+            page_self = u'Self'
+        nsfw = u''
+        if page.over_18:
+            nsfw =  u'[%s] ' % colorize(u"NSFW", ["red"], ["bold"])
+        Willie.say(
+                u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
+                        nsfw,
+                        page_self,
+                        colorize(str(page.ups), ['green']),
+                        colorize(str(page.downs), ['orange']),
+                        page.num_comments,
+                        colorize(page.author.name, ['purple']),
+                        page.subreddit.display_name,
+                        colorize(page.title, ['navy'])
+                        ))
     # Subreddit Section
     elif re.match('.*?%s' % subr, trigger.bytes):
         Willie.debug("reddit:reddit_post", "URL is subreddit", "verbose")
@@ -241,17 +240,13 @@ def reddit_post(Willie, trigger):
 
         try:
             sub = rc.get_subreddit(sub_name)
-        except (InvalidSubreddit, HTTPError):
-            sub_exists = False
-        else:
-            sub_exists = True
-            #Willie.debug("reddit:reddit_post", pprint(vars(sub)), "verbose")
-        if sub_exists:
-            #do stuff?
-            pass
-        else:
-            #do other stuff
-            pass
+        except InvalidSubreddit:
+            #Willie.say(_bad_reddit_msg)
+            return
+        except (HTTPError, timeout):
+            #Willie.say(_timeout_message)
+            return
+        #do stuff?
     # Invalid URL Section
     else:
         Willie.debug(
@@ -267,66 +262,64 @@ def mlpds_check(Willie, trigger):
     '''Checks for posts within the last 48h with fewer than 2 comments'''
     try:
         mlpds = rc.get_subreddit('MLPDrawingSchool')
-    except (InvalidSubreddit, HTTPError):
-        sub_exists = False
-    else:
-        sub_exists = True
-    if sub_exists:
-        new_posts = mlpds.get_new(limit=50)
-        #Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
-        uncommented = []
-        for post in new_posts:
-            if post.num_comments < 2 and post.created_utc > (time.time()-(48*60*60)):
-                uncommented.append(post)
-        if uncommented:
-            uncommented.reverse()  # Reverse so list is old to new
-            post_count = len(uncommented)
-            spammy = False
-            if post_count > 2:
-                spammy = True
+    except InvalidSubreddit:
+        Willie.say(_bad_reddit_msg)
+        return
+    except (HTTPError, timeout):
+        Willie.say(_timeout_message)
+        return
+    new_posts = mlpds.get_new(limit=50)
+    #Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
+    uncommented = []
+    for post in new_posts:
+        if post.num_comments < 2 and post.created_utc > (time.time()-(48*60*60)):
+            uncommented.append(post)
+    if uncommented:
+        uncommented.reverse()  # Reverse so list is old to new
+        post_count = len(uncommented)
+        spammy = False
+        if post_count > 2:
+            spammy = True
+        if spammy:
+            Willie.reply("There are a few, I'll send them in pm.")
+        for post in uncommented:
+            if post.num_comments == 0:
+                num_com = "There are no comments"
+            else:
+                num_com = "There is only 1 comment"
+            if post.author.name.lower()[len(post.author.name)-1] == u's':
+                apos = "'"
+            else:
+                apos = "'s"
+            c_date = datetime.utcfromtimestamp(post.created_utc)
+            f_date = c_date.strftime('%b %d')
             if spammy:
-                Willie.reply("There are a few, I'll send them in pm.")
-            for post in uncommented:
-                if post.num_comments == 0:
-                    num_com = "There are no comments"
-                else:
-                    num_com = "There is only 1 comment"
-                if post.author.name.lower()[len(post.author.name)-1] == u's':
-                    apos = "'"
-                else:
-                    apos = "'s"
-                c_date = datetime.utcfromtimestamp(post.created_utc)
-                f_date = c_date.strftime('%b %d')
-                if spammy:
-                    Willie.msg(
-                            trigger.nick,
-                            u'%s on %s%s post (%s) on %s entitled "%s"' % (
-                                num_com,
-                                colorize(post.author.name, ['purple']),
-                                apos,
-                                post.short_link,
-                                f_date,
-                                colorize(post.title, ['navy'])
-                                )
+                Willie.msg(
+                        trigger.nick,
+                        u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                            num_com,
+                            colorize(post.author.name, ['purple']),
+                            apos,
+                            post.short_link,
+                            f_date,
+                            colorize(post.title, ['navy'])
                             )
-                else:
-                    Willie.reply(
-                            u'%s on %s%s post (%s) on %s entitled "%s"' % (
-                                num_com,
-                                colorize(post.author.name, ['purple']),
-                                apos,
-                                post.short_link,
-                                f_date,
-                                colorize(post.title, ['navy'])
-                                )
+                        )
+            else:
+                Willie.reply(
+                        u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                            num_com,
+                            colorize(post.author.name, ['purple']),
+                            apos,
+                            post.short_link,
+                            f_date,
+                            colorize(post.title, ['navy'])
                             )
-        else:
-            Willie.reply("I don't see any lonely posts. There could still be "
-                    "posts that need critiquing, though: "
-                    "http://mlpdrawingschool.reddit.com/")
+                        )
     else:
-        Willie.reply("Reddit is being squirrely so I can't check posts "
-                "right now. Sorry!")
+        Willie.reply("I don't see any lonely posts. There could still be "
+                "posts that need critiquing, though: "
+                "http://mlpdrawingschool.reddit.com/")
 mlpds_check.commands = ['queue','check','posts','que','crit','critique']
 mlpds_check.rate = 120
 
