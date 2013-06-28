@@ -26,9 +26,10 @@ _partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
 _ignore=['hushmachine','tmoister1']
 _TIMEOUT=20
 _UA='FineLine IRC bot 0.1 by /u/tdreyer1'
-_timout_message = 'Sorry, reddit is unavailable right now.'
+_timeout_message = 'Sorry, reddit is unavailable right now.'
 _bad_reddit_msg = "That doesn't seem to exist on reddit."
 _bad_user_msg = "That user doesn't seem to exist."
+_error_msg = "That doesn't exist, or reddit is being squirrely."
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -37,7 +38,7 @@ rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 def reddit_post(Willie, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
-    user='/u(ser)?/[^/\s)]{3,20}'
+    user=r'/u(ser)?/[^/\s)"\'\}\]]{3,20}'
     subm=('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
             '(/[^/\s)]{4,}/?))') % _url
     cmnt='%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}/[^/\s?]{3,}/?)(?:\?context=\d{,2})?' % _url
@@ -114,7 +115,10 @@ def reddit_post(Willie, trigger):
         except (InvalidUser):
             Willie.say(_bad_user_msg)
             return
-        except (HTTPError, timeout):
+        except HTTPError:
+            Willie.say(_error_msg)
+            return
+        except timeout:
             Willie.say(_timeout_message)
             return
         # Use created date to determine next cake day
@@ -150,9 +154,12 @@ def reddit_post(Willie, trigger):
             full_url = 'http://%s' % full_url
         try:
             post = rc.get_submission(url=full_url)
-        except (HTTPError, timeout):
-                Willie.say(_timeout_message)
-                return
+        except HTTPError:
+            Willie.say(_error_msg)
+            return
+        except timeout:
+            Willie.say(_timeout_message)
+            return
         comment = post.comments[0]
         #Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
         ed = u''
@@ -199,13 +206,19 @@ def reddit_post(Willie, trigger):
             except InvalidSubreddit:
                 Willie.say(_bad_reddit_msg)
                 return
-            except (HTTPError, timeout):
+            except HTTPError:
+                Willie.say(_error_msg)
+                return
+            except timeout:
                 Willie.say(_timeout_message)
                 return
         Willie.debug("reddit:reddit_post", 'URL is %s' %full_url, "verbose")
         try:
             page = rc.get_submission(full_url)
-        except (HTTPError, timeout):
+        except HTTPError:
+            Willie.say(_error_msg)
+            return
+        except timeout:
             Willie.say(_timeout_message)
             return
         page_self = u'Link'
@@ -243,7 +256,10 @@ def reddit_post(Willie, trigger):
         except InvalidSubreddit:
             #Willie.say(_bad_reddit_msg)
             return
-        except (HTTPError, timeout):
+        except HTTPError:
+            #Willie.say(_error_msg)
+            return
+        except timeout:
             #Willie.say(_timeout_message)
             return
         #do stuff?
@@ -265,7 +281,10 @@ def mlpds_check(Willie, trigger):
     except InvalidSubreddit:
         Willie.say(_bad_reddit_msg)
         return
-    except (HTTPError, timeout):
+    except HTTPError:
+        Willie.say(_error_msg)
+        return
+    except timeout:
         Willie.say(_timeout_message)
         return
     new_posts = mlpds.get_new(limit=50)
