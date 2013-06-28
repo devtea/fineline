@@ -139,11 +139,14 @@ def rmlpds(willie):
                 post = random.choice(uncommented)
                 c_date = datetime.utcfromtimestamp(post.created_utc)
                 f_date = c_date.strftime('%b %d')
+                num = 'is at least 1 post'
+                if len(uncommented) > 1:
+                    num = 'are at least %i posts' % len(uncommented)
                 for chan in _channels:
                     willie.msg(
                             chan,
-                            "Hey everyone, there are posts that might need " +
-                            "critique! Here's a random one: ")
+                            ("Hey everyone, there %s that might need " +
+                                "critique! Here's a random one: ") % num )
                     nsfw = u''
                     if post.over_18:
                         nsfw =  u'[%s] ' % colorize(u'NSFW', ['red'], ['b'])
