@@ -15,6 +15,7 @@ from datetime import timedelta
 _rtime = re.compile(r'^((\d{1,2}:){1,2})?\d{1,2}$')
 _rquiet = re.compile(r'(^q$)|(^quiet$)|(^p$)|(^private$)', flags=re.I)
 
+
 def setup(willie):
     if 'user_timers' not in willie.memory:
         willie.memory['user_timers'] = {}
@@ -29,8 +30,8 @@ def format_sec(sec):
         formatted = '%i sec' % sec
         return formatted
     elif sec < 3600:
-        mins = sec/60
-        sec = sec - mins*60
+        mins = sec / 60
+        sec = sec - mins * 60
         formatted = '%i min, %i sec' % (mins, sec)
         return formatted
     else:
@@ -51,11 +52,11 @@ def new_timer(willie, trigger):
             if len(times) == 1:
                 return int(times[0])
             elif len(times) == 2:
-                dur = int(times[0])*60 + int(times[1])
+                dur = int(times[0]) * 60 + int(times[1])
                 assert type(dur) is IntType
                 return dur
             else:
-                dur = int(times[0])*60*60 + int(times[1])*60 + int(times[2])
+                dur = int(times[0]) * 60 * 60 + int(times[1]) * 60 + int(times[2])
                 assert type(dur) is IntType
                 return dur
             assert type(seconds) is IntType
@@ -72,11 +73,11 @@ def new_timer(willie, trigger):
         assert type(quiet) is BooleanType
 
         willie.memory['user_timers'][src][target.lower()] = (
-                target,
-                quiet,
-                end_time_unix,
-                reminder
-                )
+            target,
+            quiet,
+            end_time_unix,
+            reminder
+        )
 
     source = trigger.args[0]  # e.g. '#fineline_testing'
     willie.memory['user_timers_lock'].acquire()
@@ -84,8 +85,9 @@ def new_timer(willie, trigger):
         if source not in willie.memory['user_timers']:
             willie.memory['user_timers'][source] = {}
         if len(trigger.args[1].split()) <= 1:
-            willie.reply(("What timer? Try `%s: help timer` " +
-                    "for help") % willie.nick)
+            willie.reply(
+                ("What timer? Try `%s: help timer` for help") % willie.nick
+            )
             return
         if trigger.args[1].split()[1].startswith('del'):
             timer_del(willie, trigger)
@@ -94,8 +96,10 @@ def new_timer(willie, trigger):
             timer_status(willie, trigger)
             return
         if trigger.nick.lower() in willie.memory['user_timers'][source]:
-            willie.reply(("Sorry, %s, you already have a timer running. Use " +
-                    "`!timer del` to remove.") % trigger.nick)
+            willie.reply(
+                ("Sorry, %s, you already have a timer running. " +
+                    "Use `!timer del` to remove.") % trigger.nicki
+            )
             return
         else:
             now = time()
@@ -103,8 +107,10 @@ def new_timer(willie, trigger):
             possible_timer = trigger.args[1].split()
             willie.debug('timers_timer.py', possible_timer, 'verbose')
             if len(possible_timer) > 4:
-                willie.reply(("Too many arguments! Try `%s: help timer` " +
-                        "for help") % willie.nick)
+                willie.reply(
+                    ("Too many arguments! Try `%s: help timer` " +
+                        "for help") % willie.nick
+                )
                 return
             else:
                 willie.debug('timers_timer.py', 'POP!', 'verbose')
@@ -125,10 +131,12 @@ def new_timer(willie, trigger):
                 try:
                     end = parse_time(duration)
                 except ValueError:
-                    willie.reply(("I don't understand! Try `%s: help timer` " +
-                            "for help") % willie.nick)
+                    willie.reply(
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % willie.nick
+                    )
                     return
-                end_time = time()+end
+                end_time = time() + end
                 if not possible_timer:
                     add_timer(source, trigger.nick, end_time)
                     willie.reply("Timer added!")
@@ -143,7 +151,12 @@ def new_timer(willie, trigger):
                 if _rtime.match(next_argument):
                     rem = parse_time(next_argument)
                     if not possible_timer:
-                        add_timer(source, trigger.nick, end_time, reminder=rem)
+                        add_timer(
+                            source,
+                            trigger.nick,
+                            end_time,
+                            reminder=rem
+                        )
                         willie.reply("Timer added!")
                         return
                 elif _rquiet.match(next_argument):
@@ -151,26 +164,42 @@ def new_timer(willie, trigger):
                         add_timer(source, trigger.nick, end_time, quiet=True)
                         willie.reply("Timer added! Watch for a /msg.")
                         return
-                    qu=True
+                    qu = True
                 else:
-                    willie.reply(("I don't understand! Try `%s: help timer` " +
-                            "for help") % willie.nick)
+                    willie.reply(
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % willie.nick
+                    )
                     return
 
                 next_argument = possible_timer.pop(0)
                 # []
                 if _rtime.match(next_argument) and not rem:
                     rem = parse_time(next_argument)
-                    add_timer(source, trigger.nick, end_time, reminder=rem, quiet=qu)
+                    add_timer(
+                        source,
+                        trigger.nick,
+                        end_time,
+                        reminder=rem,
+                        quiet=qu
+                    )
                     willie.reply("Timer added! Watch for a /msg.")
                     return
                 elif _rquiet.match(next_argument) and not qu:
-                    add_timer(source, trigger.nick, end_time, reminder=rem, quiet=True)
+                    add_timer(
+                        source,
+                        trigger.nick,
+                        end_time,
+                        reminder=rem,
+                        quiet=True
+                    )
                     willie.reply("Timer added! Watch for a /msg.")
                     return
                 else:
-                    willie.reply(("I don't understand! Try `%s: help timer` " +
-                            "for help") % willie.nick)
+                    willie.reply(
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % willie.nick
+                    )
                 return
     finally:
         willie.memory['user_timers_lock'].release()
@@ -185,7 +214,11 @@ def auto_quiet_on_part(willie, trigger):
         if source in willie.memory['user_timers'] and \
                 trigger.nick.lower() in willie.memory['user_timers'][source]:
             q, t, r = willie.memory['user_timers'][source][trigger.nick.lower()]
-            willie.memory['user_timers'][source][trigger.nick.lower()] = (True, t, r)
+            willie.memory['user_timers'][source][trigger.nick.lower()] = (
+                True,
+                t,
+                r
+            )
     finally:
         willie.memory['user_timers_lock'].release()
 auto_quiet_on_part.event = 'PART'
@@ -199,7 +232,11 @@ def auto_quiet_on_quit(willie, trigger):
         if source in willie.memory['user_timers'] and \
                 trigger.nick.lower() in willie.memory['user_timers'][source]:
             q, t, r = willie.memory['user_timers'][source][trigger.nick.lower()]
-            willie.memory['user_timers'][source][trigger.nick.lower()] = (True, t, r)
+            willie.memory['user_timers'][source][trigger.nick.lower()] = (
+                True,
+                t,
+                r
+            )
     finally:
         willie.memory['user_timers_lock'].release()
 auto_quiet_on_quit.event = 'QUIT'
@@ -212,27 +249,34 @@ def timer_check(willie):
     willie.debug('timers_timer:timer_check', 'now = %f' % now, 'verbose')
     try:
         for chan in willie.memory['user_timers']:
-            willie.debug('timers_timer:timer_check', "found channel %s" % chan, 'verbose')
+            willie.debug(
+                'timers_timer:timer_check',
+                "found channel %s" % chan,
+                'verbose'
+            )
             for user in willie.memory['user_timers'][chan]:
                 n, q, e, r = willie.memory['user_timers'][chan][user]
                 willie.debug(
-                        'timers_timer:timer_check',
-                        'nick=%s  quiet=%r, time=%f, remind=%r' % ( n, q, e, r),
-                        'verbose'
-                        )
+                    'timers_timer:timer_check',
+                    'nick=%s  quiet=%r, time=%f, remind=%r' % (n, q, e, r),
+                    'verbose'
+                )
                 if e < now:
                     del willie.memory['user_timers'][chan][user]
                     if q:
-                        willie.msg(n, 'Time is up!') #handle caps?
+                        willie.msg(n, 'Time is up!')
                     else:
                         willie.msg(chan, '%s, time is up!' % n)
                     return
-                elif r and r > e-now:
+                elif r and r > e - now:
                     willie.memory['user_timers'][chan][user] = (n, q, e, None)
                     if q:
                         willie.msg(n, 'You have %s remaining.' % format_sec(r))
                     else:
-                        willie.msg(chan, '%s, you have %s remaining.' % (n, format_sec(r)))
+                        willie.msg(
+                            chan,
+                            '%s, you have %s remaining.' % (n, format_sec(r))
+                        )
     finally:
         willie.memory['user_timers_lock'].release()
 
@@ -241,7 +285,7 @@ def timer_del(willie, trigger):
     # this will be called from new_timer,  assume it is a correct call
     if trigger.admin:
         cmd = trigger.args[1].split()
-        willie.debug('',cmd,'verbose')
+        willie.debug('', cmd, 'verbose')
         if len(cmd) == 2:
             if trigger.nick.lower() in willie.memory['user_timers'][trigger.args[0]]:
                 del willie.memory['user_timers'][trigger.args[0]][trigger.nick.lower()]
@@ -262,11 +306,10 @@ def timer_del(willie, trigger):
 def timer_status(willie, trigger):
     if trigger.nick.lower() in willie.memory['user_timers'][trigger.args[0]]:
         n, q, e, r = willie.memory['user_timers'][trigger.args[0]][trigger.nick.lower()]
-        willie.debug('', e-time(), 'verbose')
-        willie.reply("You have %s remaining." % format_sec(e-time()))
+        willie.debug('', e - time(), 'verbose')
+        willie.reply("You have %s remaining." % format_sec(e - time()))
     else:
         willie.reply("You don't have a timer.")
-
 
 
 if __name__ == "__main__":
