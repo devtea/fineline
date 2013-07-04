@@ -9,6 +9,7 @@ http://bitbucket.org/tdreyer/fineline
 import time
 import random
 import re
+from willie.tools import Nick
 
 random.seed()
 
@@ -94,6 +95,11 @@ def badbot(Willie, trigger):
                 "[](/aj05)",
                 "[](/pinkiefear)"
                 ]))
+    elif Nick(trigger.nick) == Nick('DarkFlame'):
+        Willie.say(random.choice(
+            '[](/ppnowhy "Why are you so mean to me?!")',
+            '[](/ppnowhy "Why do you hate me?!")'
+            ))
     elif random.uniform(0,1) < 0.1:
         Willie.reply(random.choice([
             "[](/derpsrs)",
@@ -128,13 +134,17 @@ swish.priority = 'medium'
 
 def slapped(Willie, trigger):
     time.sleep(random.uniform(1,3))
+    Willie.reply(random.choice([
+            'Stop that!',
+            'Hey!'
+            ]))
     Willie.reply("[](/pinkieslap)")
-basic_slap = "slap[p]?[s]?|hit[s]?|smack[s]?"
-slapped.rule = ("(^!?(%s))|" % basic_slap +
+basic_slap = "slap[p]?[s]?|hit[s]?|smack[s]?\b"
+slapped.rule = ("(^!(%s))|" % basic_slap +
         "(\001ACTION [A-Za-z0-9,.'!\s]*?(%s)" % basic_slap +
                 "[A-Za-z0-9,.'!\s]+?$nickname)|" +
         "(\001ACTION [A-Za-z0-9,.'!\s]+?$nickname" +
-                "[A-Za-z0-9,.'!\s]*?(%s))" % basic_slap
+                "[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
         )
 slapped.priority = 'medium'
 
