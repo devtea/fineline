@@ -1,6 +1,6 @@
 # coding=utf8
 """
-timers_rmlpds.py - A simple willie module template
+rmlpds_checker.py - A simple willie module template
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -124,7 +124,7 @@ def rmlpds(willie):
             willie.memory["rmlpds_timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            willie.debug(u'timers_rmlpds.py', u"Sub exists.", u"verbose")
+            willie.debug(u'rmlpds_checker.py', u"Sub exists.", u"verbose")
             new_posts = mlpds.get_new(limit=50)
             uncommented = []
             for post in new_posts:
@@ -133,7 +133,7 @@ def rmlpds(willie):
                     post.created_utc > (time.time() - (48 * 60 * 60)) and \
                         post.created_utc < (time.time() - (8 * 60 * 60)):
                     willie.debug(
-                        u'timers_rmlpds.py',
+                        u'rmlpds_checker.py',
                         u"Adding post to list.",
                         u"verbose"
                     )
@@ -141,7 +141,7 @@ def rmlpds(willie):
             uncommented = filter_posts(uncommented)
             if uncommented:
                 willie.debug(
-                    u'timers_rmlpds.py',
+                    u'rmlpds_checker.py',
                     u"There are %i uncommented posts." % len(uncommented),
                     u"verbose"
                 )
@@ -178,12 +178,12 @@ def rmlpds(willie):
                 willie.memory["rmlpds_timer"] = time.time() - \
                     (_check_interval * 3 / 4)
                 willie.debug(
-                    u"timers_rmlpds",
+                    u"rmlpds_checker",
                     u"No uncommented posts found.",
                     u"verbose"
                 )
         else:
-            willie.debug(u"timers_rmlpds", u"Cannot check posts.", u"warning")
+            willie.debug(u"rmlpds_checker", u"Cannot check posts.", u"warning")
     finally:
         willie.memory["rmlpds_timer_lock"].release()
 
