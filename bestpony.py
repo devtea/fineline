@@ -14,10 +14,9 @@ from willie.module import commands
 random.seed()
 
 
-@commands('bestpony')
+@commands(u'bestpony')
 def bestpony(Willie, trigger):
     """Responds with who it thinks is the best pony."""
-
     if random.uniform(0, 3) > 2:
         Willie.say(random.choice([u"Well, let's see",
                                   u"Hmm...",
@@ -26,9 +25,10 @@ def bestpony(Willie, trigger):
                                   u"That's easy!"
                                   ]))
         time.sleep(random.uniform(1, 3))
-
-    Willie.say(random.choice((Willie.nick + '!', "I, of course!", "I am!")))
-
+    Willie.say(random.choice([Willie.nick + u"!",
+                              u"I, of course!",
+                              u"I am!"
+                              ]))
     if random.uniform(0, 20) > 19:
         time.sleep(random.uniform(3, 5))
         Willie.say("Okay, just kidding. It's really Pinkie Pie.")
