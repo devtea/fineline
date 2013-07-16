@@ -6,14 +6,17 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 
-import timers_slow
+import slow_room
 
+from willie.module import commands
+
+
+@commands(u'pony', u'pon[ie]')
 def pony(willie, trigger):
     '''Returns pony pic'''
-    willie.debug('pony.py', 'Triggered', 'verbose')
-    willie.debug('pony.py', trigger.sender, 'verbose')
-    timers_slow.cute(willie, trigger.sender, is_timer=False)
-pony.commands = ['pony', 'pon[ie]']
+    willie.debug(u'pony.py', u'Triggered', u'verbose')
+    willie.debug(u'pony.py', trigger.sender, u'verbose')
+    slow_room.cute(willie, trigger.sender, is_timer=False)
 
 
 if __name__ == "__main__":
