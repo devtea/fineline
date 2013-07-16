@@ -12,7 +12,7 @@ import random
 import time
 import threading
 
-from willie.module import interval
+from willie.module import interval, rule, commands
 
 # Wait time in seconds before the bot will pipe up
 _WAIT_TIME = (random.uniform(27, 52) * 60)
@@ -39,6 +39,7 @@ def slow_room(willie):
     period of time.
 
     """
+
     willie.memory["slow_timer_lock"].acquire()
     try:
         for key in willie.memory["slow_timer"]:
@@ -71,6 +72,7 @@ def fetch_rss(willie, feed_url):
     cache, or if it will need to be reloaded.
 
     '''
+
     def refresh_feed(willie, url):
         try:
             feedparser.parse(url)
@@ -191,6 +193,7 @@ def cute(willie, channel, is_timer=True):
                             u"post from DA, but something went wrong!")
 
 
+@rule(u'.*')
 def last_activity(willie, trigger):
     """Keeps track of the last activity for a room"""
     if trigger.sender.startswith("#") and \
@@ -208,8 +211,14 @@ def last_activity(willie, trigger):
             willie.memory["slow_timer"][trigger.sender] = time.time()
         finally:
             willie.memory["slow_timer_lock"].release()
-last_activity.rule = '.*'
-last_activity.priority = 'low'
+
+
+@commands(u'pony', u'pon[ie]')
+def pony(willie, trigger):
+    '''Returns pony pic'''
+    willie.debug(u'pony.py', u'Triggered', u'verbose')
+    willie.debug(u'pony.py', trigger.sender, u'verbose')
+    cute(willie, trigger.sender, is_timer=False)
 
 
 if __name__ == "__main__":
