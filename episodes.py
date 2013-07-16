@@ -55,7 +55,7 @@ def get_ep(se):
     return u"I can't seem to find that episode."
 
 
-@commands('reload_eps')
+@commands(u'reload_eps')
 def reload_eps(Willie, trigger):
     """ADMIN: Reloads cached episodes from the database."""
     Willie.debug(u"episodes.py:reload_eps", u"Triggered", u"verbose")
@@ -70,8 +70,8 @@ def reload_eps(Willie, trigger):
                      )
 
 
-@commands('add_ep')
-@example('!add_ep S00E00 This is not a title')
+@commands(u'add_ep')
+@example(u'!add_ep S00E00 This is not a title')
 def add_ep(Willie, trigger):
     """ADMIN: Adds an episode to the database. Admin only"""
     Willie.debug(u"episodes.py:add_ep", u"Triggered", u"verbose")
@@ -81,11 +81,11 @@ def add_ep(Willie, trigger):
         command = trigger.args[1].split()
         if len(command) > 2:
             #Test the second argument for sanity, eg 'S01E03'
-            if re.match(r'^S\d{1,2}E\d{1,2}$',
+            if re.match(ur'^S\d{1,2}E\d{1,2}$',
                         command[1],
                         flags=re.IGNORECASE
                         ):
-                Willie.debug("episodes.py:episode", "Ep is sane", "verbose")
+                Willie.debug(u"episodes.py:episode", u"Ep is sane", u"verbose")
                 season, __, ep = trigger.args[1].split()[1].upper().partition(
                     u"E"
                 )
@@ -97,8 +97,8 @@ def add_ep(Willie, trigger):
                              u'verbose'
                              )
                 message = get_ep([season, ep])
-                if message.startswith('T'):
-                    Willie.reply("That episode already exists!")
+                if message.startswith(u'T'):
+                    Willie.reply(u"That episode already exists!")
                     Willie.reply(message)
                 else:
                     Willie.db.episodes.update(
@@ -110,61 +110,64 @@ def add_ep(Willie, trigger):
                         ("season", "episode")  # Keys
                     )
                     reload(Willie)  # Ineffecient, but easy...
-                    Willie.reply("Successfully added!")
+                    Willie.reply(u"Successfully added!")
             else:
-                Willie.debug("episodes.py:episode",
-                             "Argument is insane",
-                             "verbose"
+                Willie.debug(u"episodes.py:episode",
+                             u"Argument is insane",
+                             u"verbose"
                              )
-                Willie.reply("I don't understand that.")
+                Willie.reply(u"I don't understand that.")
         else:
-            Willie.debug("episodes.py:episode", "Not enough args", "verbose")
-            Willie.reply("Uh, what episode?")
+            Willie.debug(u"episodes.py:episode",
+                         u"Not enough args",
+                         u"verbose"
+                         )
+            Willie.reply(u"Uh, what episode?")
     else:
-        Willie.debug("episodes.py",
-                     "%s just tried to add an episode..." % trigger.nick,
-                     "always"
+        Willie.debug(u"episodes.py",
+                     u"%s just tried to add an episode..." % trigger.nick,
+                     u"always"
                      )
 
 
-@commands('episode', 'ep')
-@example('!episode S02E11')
+@commands(u'episode', u'ep')
+@example(u'!episode S02E11')
 def episode(Willie, trigger):
     """Returns a specified episode by season and episode."""
-    Willie.debug("episodes.py:episode", "Triggered", "verbose")
+    Willie.debug(u"episodes.py:episode", u"Triggered", u"verbose")
     #test the arguments returned, e.g. ['.episode', 'S01E03']
     if len(trigger.args[1].split()) == 2:
         #Test the second argument for sanity, eg 'S01E03'
-        if re.match(r'^S\d{1,2}E\d{1,2}$',
+        if re.match(ur'^S\d{1,2}E\d{1,2}$',
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):
-            Willie.debug("episodes.py:episode",
-                         "Argument is sane",
-                         "verbose"
+            Willie.debug(u"episodes.py:episode",
+                         u"Argument is sane",
+                         u"verbose"
                          )
-            season, __, ep = trigger.args[1].split()[1].upper().partition("E")
-            Willie.reply(get_ep([int(season.lstrip("S")), int(ep)]))
+            season, __, ep = trigger.args[1].split()[1].upper().partition(u"E")
+            Willie.reply(get_ep([int(season.lstrip(u"S")), int(ep)]))
         else:
-            Willie.debug("episodes.py:episode",
-                         "Argument is insane",
-                         "verbose"
+            Willie.debug(u"episodes.py:episode",
+                         u"Argument is insane",
+                         u"verbose"
                          )
-            Willie.reply(("I don't understand that. Try '%s: help " +
-                         "episode'") % Willie.nick)
+            Willie.reply((u"I don't understand that. Try '%s: help " +
+                         u"episode'") % Willie.nick)
     elif len(trigger.args[1].split()) > 2:
-        Willie.debug("episodes.py:episode", "too many args", "verbose")
-        Willie.reply("I don't understand that. Try '%s: help " +
-                     "episode'" % Willie.nick)
+        Willie.debug(u"episodes.py:episode", u"too many args", u"verbose")
+        Willie.reply(u"I don't understand that. Try '%s: help " +
+                     u"episode'" % Willie.nick)
     else:
-        Willie.debug("episodes.py:episode", "Not enough args", "verbose")
+        Willie.debug(u"episodes.py:episode", u"Not enough args", u"verbose")
         randep(Willie, trigger)
 
 
-@commands('randep', 'rep', 'randomep')
+@commands(u'randep', u'rep', u'randomep')
 def randep(Willie, trigger):
     """Returns a random episode."""
-    Willie.debug("episodes.py:randep", "Triggered", "verbose")
+    Willie.debug(u"episodes.py:randep", u"Triggered", u"verbose")
     season = random.randint(1, len(episodes))
     episode = random.randint(1, len(episodes[season]))
     Willie.reply(get_ep([season, episode]))
