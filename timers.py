@@ -253,7 +253,6 @@ def auto_quiet_on_quit(willie, trigger):
 def timer_check(willie):
     now = time()
     willie.memory['user_timers_lock'].acquire()
-    willie.debug(u'timers_timer:timer_check', u'now = %f' % now, u'verbose')
     try:
         for chan in willie.memory['user_timers']:
             willie.debug(
