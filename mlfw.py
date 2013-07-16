@@ -10,7 +10,7 @@ import json
 from urllib import quote
 
 import willie.web as web
-from willie.modules import commands, example
+from willie.module import commands, example
 
 
 def mlfw_search(Willie, terms):
