@@ -5,6 +5,7 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+
 from time import time
 import threading
 import os
@@ -28,15 +29,15 @@ cen = timezone(u"US/Central")  #log timezone
 
 def escape(ucode):
     escaped = ucode
-    escaped = re.sub('"', '&quot;', escaped)
-    escaped = re.sub("'", '&apos;', escaped)
+    escaped = re.sub(u'"', u'&quot;', escaped)
+    escaped = re.sub(u"'", u'&apos;', escaped)
     return escaped
 
 
 def unescape(ucode):
     unescaped = ucode
-    unescaped = re.sub('&quot;', '"', unescaped)
-    unescaped = re.sub('&apos;', "'", unescaped)
+    unescaped = re.sub(u'&quot;', u'"', unescaped)
+    unescaped = re.sub(u'&apos;', u"'", unescaped)
     return unescaped
 
 # Bot framework is stupid about importing, so we need to override so that
@@ -99,7 +100,7 @@ def seen_insert(willie, nick, data):
     assert isinstance(nick, basestring)
     assert type(data) is TupleType
     assert len(data) == 3
-    assert type(data[0]) is FloatType, '%r is not float' % data[0]
+    assert type(data[0]) is FloatType, u'%r is not float' % data[0]
     assert isinstance(data[1], basestring)
     assert isinstance(data[2], basestring)
     nn = Nick(nick)
@@ -130,7 +131,7 @@ def seen_insert(willie, nick, data):
 '''
 
 
-@commands('seen_load_logs')
+@commands(u'seen_load_logs')
 def load_from_logs(willie, trigger):
     if trigger.owner:
         willie.reply(u"Alright, I'll start looking through the logs, " +
@@ -243,10 +244,8 @@ def seen_recorder(willie, trigger):
         return  # ignore priv msg
     nn = Nick(trigger.nick)
     now = time()
-    msg = trigger.args[1].strip().decode('utf-8', 'replace')
-    willie.debug(u'raw message', type(msg), u'verbose')
-    willie.debug(u'raw message', msg, u'verbose')
-    chan = trigger.args[0].decode('utf-8', 'replace')
+    msg = trigger.args[1].strip().encode('utf-8', 'replace')
+    chan = trigger.args[0].encode('utf-8', 'replace')
 
     data = (now, chan, msg)
 
