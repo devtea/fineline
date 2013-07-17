@@ -39,7 +39,6 @@ def unescape(ucode):
     unescaped = re.sub('&apos;', "'", unescaped)
     return unescaped
 
-
 # Bot framework is stupid about importing, so we need to override so that
 # the colors module is always available for import.
 try:
