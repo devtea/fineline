@@ -43,11 +43,12 @@ try:
     import colors
 except:
     try:
+        print "trying manual import of colors"
         fp, pathname, description = imp.find_module('colors',
                                                     ['./.willie/modules/']
                                                     )
-        mod_color = imp.load_module('colors', fp, pathname, description)
-        sys.modules['colors'] = mod_color
+        colors = imp.load_source('colors', pathname, fp)
+        sys.modules['colors'] = colors
     finally:
         if fp:
             fp.close()
