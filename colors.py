@@ -60,8 +60,10 @@ def colorize(text, colors=[], styles=[]):
     assert type(styles) is ListType, u"Styles must be in a list."
     assert len(colors) < 3, u"Too many colors."
     assert len(styles) < 4, u"Too many styles."
+    print type(text)
+    #text = text.encode('utf-8', 'replace')
     if colors or styles:
-        message = u'%s' % text
+        message = text
         if len(colors) == 1:
             try:
                 message = u'\x03%s%s%s' % (COLORS[colors[0].lower()],
