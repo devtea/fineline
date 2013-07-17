@@ -11,6 +11,8 @@ import time
 import random
 import re
 from datetime import datetime
+import imp
+import sys
 #from urllib2 import HTTPError
 
 import praw
@@ -18,7 +20,7 @@ import praw.errors
 from praw.errors import InvalidSubreddit
 from requests import HTTPError
 
-from colors import *
+#from colors import *
 from willie.module import interval
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
@@ -28,6 +30,21 @@ _channels = [u'#reddit-mlpds', u'#fineline_testing']
 # Use multiprocess handler for multiple bots/threads on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
+
+# Bot framework is stupid about importing, so we need to override so that
+# the colors module is always available for import.
+try:
+    import colors
+except:
+    try:
+        fp, pathname, description = imp.find_module('colors',
+                                                    ['./.willie/modules/']
+                                                    )
+        mod_color = imp.load_module('colors', fp, pathname, description)
+        sys.modules['colors'] = mod_color
+    finally:
+        if fp:
+            fp.close()
 
 
 def setup(willie):
@@ -162,14 +179,17 @@ def rmlpds(willie):
                         )
                         nsfw = u''
                         if post.over_18:
-                            nsfw = u'[%s] ' % colorize(u'NSFW', ['red'], ['b'])
+                            nsfw = u'[%s] ' % colors.colorize(u'NSFW',
+                                                              ['red'],
+                                                              ['b']
+                                                              )
                         willie.msg(
                             chan,
                             u'%s%s posted on %s – "%s" [ %s ] ' % (
                                 nsfw,
-                                colorize(post.author.name, ['purple']),
+                                colors.colorize(post.author.name, ['purple']),
                                 f_date,
-                                colorize(post.title, ['navy']),
+                                colors.colorize(post.title, ['navy']),
                                 post.short_link
                             )
                         )

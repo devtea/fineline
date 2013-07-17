@@ -11,13 +11,15 @@ import time
 from datetime import datetime
 #from urllib2 import HTTPError
 from socket import timeout
+import imp
+import sys
 
 import praw
 import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
-from colors import *
+#from colors import *
 from willie import web
 from willie.module import commands, rule, rate
 
@@ -34,6 +36,21 @@ _error_msg = u"That doesn't exist, or reddit is being squirrely."
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
+
+# Bot framework is stupid about importing, so we need to override so that
+# the colors module is always available for import.
+try:
+    import colors
+except:
+    try:
+        fp, pathname, description = imp.find_module('colors',
+                                                    ['./.willie/modules/']
+                                                    )
+        mod_color = imp.load_module('colors', fp, pathname, description)
+        sys.modules['colors'] = mod_color
+    finally:
+        if fp:
+            fp.close()
 
 
 @rule(u'(.*?%s)|(.*?%s)' % (_url, _partial))
@@ -129,7 +146,7 @@ def reddit_post(Willie, trigger):
         cakeday = datetime.utcfromtimestamp(redditor.created_utc)
         diff_days = date_aniv(cakeday)
         if diff_days == 0:
-            cake_message = rainbow(u'HAPPY CAKEDAY!')
+            cake_message = colors.rainbow(u'HAPPY CAKEDAY!')
         elif diff_days > 0:
             cake_message = u"Cakeday in %i day(s)" % diff_days
         else:
@@ -140,7 +157,7 @@ def reddit_post(Willie, trigger):
                          'warning'
                          )
         Willie.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
-            colorize(redditor.name, [u'purple']),
+            colors.colorize(redditor.name, [u'purple']),
             redditor.link_karma,
             redditor.comment_karma, cake_message)
         )
@@ -166,19 +183,19 @@ def reddit_post(Willie, trigger):
         #Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
         nsfw = u''
         if post.over_18:
-            nsfw = u'%s post: ' % colorize(u"NSFW", [u"red"], [u"bold"])
+            nsfw = u'%s post: ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
         snippet = comment.body
         match = re.compile(ur'\n')  # 2 lines to remove newline markup
         snippet = match.sub(u' ', snippet)
         snippet = trc(snippet, 15)
         Willie.say(
             u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
-                colorize(str(comment.ups), [u'green']),
-                colorize(str(comment.downs), [u'orange']),
-                colorize(comment.author.name, [u'purple']),
+                colors.colorize(str(comment.ups), [u'green']),
+                colors.colorize(str(comment.downs), [u'orange']),
+                colors.colorize(comment.author.name, [u'purple']),
                 nsfw,
                 trc(post.title, 15),
-                colorize(snippet.strip(), [u'navy'])
+                colors.colorize(snippet.strip(), [u'navy'])
             )
         )
 
@@ -227,17 +244,17 @@ def reddit_post(Willie, trigger):
             page_self = u'Self'
         nsfw = u''
         if page.over_18:
-            nsfw = u'[%s] ' % colorize(u"NSFW", [u"red"], [u"bold"])
+            nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
         Willie.say(
             u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
                 nsfw,
                 page_self,
-                colorize(str(page.ups), [u'green']),
-                colorize(str(page.downs), [u'orange']),
+                colors.colorize(str(page.ups), [u'green']),
+                colors.colorize(str(page.downs), [u'orange']),
                 page.num_comments,
-                colorize(page.author.name, [u'purple']),
+                colors.colorize(page.author.name, [u'purple']),
                 page.subreddit.display_name,
-                colorize(page.title, [u'navy'])
+                colors.colorize(page.title, [u'navy'])
             )
         )
 
@@ -323,22 +340,22 @@ def mlpds_check(Willie, trigger):
                     trigger.nick,
                     u'%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
-                        colorize(post.author.name, [u'purple']),
+                        colors.colorize(post.author.name, [u'purple']),
                         apos,
                         post.short_link,
                         f_date,
-                        colorize(post.title, [u'navy'])
+                        colors.colorize(post.title, [u'navy'])
                     )
                 )
             else:
                 Willie.reply(
                     u'%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
-                        colorize(post.author.name, [u'purple']),
+                        colors.colorize(post.author.name, [u'purple']),
                         apos,
                         post.short_link,
                         f_date,
-                        colorize(post.title, [u'navy'])
+                        colors.colorize(post.title, [u'navy'])
                     )
                 )
     else:
