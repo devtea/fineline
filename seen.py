@@ -13,12 +13,11 @@ import json
 from pytz import timezone
 from types import *
 from datetime import timedelta, datetime
+import imp
+import sys
 
 from willie.tools import Nick
 from willie.module import commands, example, priority, rule
-
-import colors
-
 
 log_dir = u''
 log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
@@ -40,6 +39,21 @@ def unescape(ucode):
     unescaped = re.sub('&apos;', "'", unescaped)
     return unescaped
 
+
+# Bot framework is stupid about importing, so we need to override so that
+# the colors module is always available for import.
+try:
+    import colors
+except:
+    try:
+        fp, pathname, description = imp.find_module('colors',
+                                                    ['./.willie/modules/']
+                                                    )
+        mod_color = imp.load_module('colors', fp, pathname, description)
+        sys.modules['colors'] = mod_color
+    finally:
+        if fp:
+            fp.close()
 
 def setup(willie):
     global log_dir
