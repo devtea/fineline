@@ -44,7 +44,7 @@ def commands(willie, trigger):
                 ]
         names = u', '.join(sorted(cmds))
     willie.reply(u'Commands I recognise: ' + names + u'.')
-    willie.reply((u"For help, do '%s: help example?' where example is the " +
+    willie.reply((u"For help, do '!help example' where example is the " +
                   u"name of the command you want help for.") % willie.nick)
 
 
@@ -52,7 +52,7 @@ def commands(willie, trigger):
 @priority('low')
 def help(willie, trigger):
     response = (
-        u'Hi! I\'m %s and I\'m a pony. Say ".commands" to me in private ' +
+        u'Hi! I\'m %s and I\'m a pony. Say "!commands" to me in private ' +
         u'for a list of the things I can do. Say hi to my master, %s!'
     ) % (willie.nick, willie.config.owner)
     willie.reply(response)
