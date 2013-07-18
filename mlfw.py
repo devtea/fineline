@@ -43,7 +43,7 @@ def mlfw(Willie, trigger):
     Willie.debug(u"mlfw.py:mlfw", trigger.groups()[1], u"verbose")
     list = trigger.groups()[1]
     if not list:
-        Willie.reply(u"try something like %" % mlfw.example)
+        Willie.reply(u"try something like %s" % mlfw.example)
     else:
         Willie.debug(u"mlfw.py:mlfw", list, u"verbose")
         args = list.split(u',')
