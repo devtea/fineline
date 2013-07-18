@@ -21,6 +21,7 @@ from requests import HTTPError
 
 #from colors import *
 from willie import web
+from willie.tools import Nick
 from willie.module import commands, rule, rate
 
 _url = u'(reddit\.com|redd\.it)'
@@ -32,6 +33,7 @@ _timeout_message = u'Sorry, reddit is unavailable right now.'
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
+_ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -109,6 +111,11 @@ def reddit_post(Willie, trigger):
             diff = aniv - day  # diff is timedelta object
             diff = int(diff.total_seconds() / (24 * 60 * 60))
         return diff
+
+    trigger_nick = Nick(trigger.nick)
+    for i in _ignore:
+        if i == trigger_nick:
+            return
 
     # User Section
     if re.match(u'.*?%s' % user, trigger.bytes):
