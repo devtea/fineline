@@ -260,12 +260,15 @@ smart_action.priority = 'medium'
 """
 
 
-@rule(ur'^$nickname\s?!\s?$')
+@rule(ur'^$nickname\s?[!\.]\s?$')
 def nick(Willie, trigger):
     message = trigger.nick
     if re.match(Willie.nick.upper(), trigger.bytes):
         message = message.upper()
-    Willie.say(ur'%s!' % message)
+    if re.findall('!', trigger.bytes):
+        Willie.say(u'%s!' % message)
+    else:
+        Willie.say(u'%s.' % message)
 
 
 if __name__ == "__main__":
