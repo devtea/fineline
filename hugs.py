@@ -45,6 +45,8 @@ def hug_intercept(Willie, trigger):
         if re.match(u"\001ACTION\s.+?%s.+?" % Willie.nick, trigger.args[1]):
             time.sleep(1)
             Willie.say(random.choice([u":D", u"Aww, thanks!"]))
+        elif re.findall(Willie.nick, trigger.args[1]):
+            return
         #special hugging
         elif re.match(u"\001ACTION\sdrags.+?into the closet", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
