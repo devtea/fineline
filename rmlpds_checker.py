@@ -189,7 +189,7 @@ def rmlpds(willie):
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
                                 f_date,
-                                colors.colorize(post.title, ['navy']),
+                                colors.colorize(post.title, ['blue']),
                                 post.short_link
                             )
                         )

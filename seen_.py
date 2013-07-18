@@ -301,7 +301,7 @@ def seen(willie, trigger):
                          colors.colorize(nn, [u'purple']),
                          chan,
                          t,
-                         colors.colorize(msg, [u'navy'])
+                         colors.colorize(msg, [u'blue'])
                          ))
             return
         else:

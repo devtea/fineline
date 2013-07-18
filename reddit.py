@@ -196,7 +196,7 @@ def reddit_post(Willie, trigger):
                 colors.colorize(comment.author.name, [u'purple']),
                 nsfw,
                 trc(post.title, 15),
-                colors.colorize(snippet.strip(), [u'navy'])
+                colors.colorize(snippet.strip(), [u'blue'])
             )
         )
 
@@ -255,7 +255,7 @@ def reddit_post(Willie, trigger):
                 page.num_comments,
                 colors.colorize(page.author.name, [u'purple']),
                 page.subreddit.display_name,
-                colors.colorize(page.title, [u'navy'])
+                colors.colorize(page.title, [u'blue'])
             )
         )
 
@@ -345,7 +345,7 @@ def mlpds_check(Willie, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(post.title, [u'navy'])
+                        colors.colorize(post.title, [u'blue'])
                     )
                 )
             else:
@@ -356,7 +356,7 @@ def mlpds_check(Willie, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(post.title, [u'navy'])
+                        colors.colorize(post.title, [u'blue'])
                     )
                 )
     else:
