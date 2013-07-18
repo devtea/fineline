@@ -76,7 +76,8 @@ def filter_posts(posts):
                 flags=re.IGNORECASE
         ):
             links = re.findall(
-                ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+            #    ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+                r'(?u)(%s?(?:http|https|ftp)(?:://[^\[\]\(\)\{\}\<\>,!\s]+))',
                 post.selftext,
                 flags=re.IGNORECASE
             )
