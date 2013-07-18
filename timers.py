@@ -156,6 +156,10 @@ def new_timer(willie, trigger):
                 # []
                 if _rtime.match(next_argument):
                     rem = parse_time(next_argument)
+                    if rem >= end:
+                        willie.reply("Your reminder must be shorter than " +
+                                     "your timer!")
+                        return
                     if not possible_timer:
                         add_timer(
                             source,
