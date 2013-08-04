@@ -30,7 +30,7 @@ def setup(bot):
     try:
         file_list = os.listdir(bot.memory['streaming']['source_dir'])
     except OSError:
-        bot.debug('streamer.py', 'Unable to load list of files.', 'verbose')
+        bot.debug('streamer.py', 'Unable to load list of files.', 'warning')
         raise
     else:
         file_list.sort()
@@ -103,7 +103,7 @@ def stream(bot, trigger):
                 bot.reply(u"Sorry, I don't seem to have that.")
                 return
             a, b = (arg_ep[0:3], arg_ep[3:6])
-            re_eps = re.compile('%s(?:...)?%s(?:...)?' % (a, b))
+            re_eps = re.compile(u'%s(?:...)?%s(?:...)?' % (a, b))
             results = [m.group(0) for e in bot.memory['streaming']['ep_list']
                        for m in [re_eps.search(os.path.splitext(e)[0])] if m]
             if results:
@@ -118,7 +118,7 @@ def stream(bot, trigger):
 
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream s01e01"
         arg_1 = trigger.args[1].split()[1].upper()
-        if arg_1 == u'QUEUE' or arg_1 == u'QUE''':
+        if arg_1 == u'QUEUE' or arg_1 == u'QUE':
             get_queue(bot)
         elif arg_1 == u'LIST':
             list_media(bot, trigger)
@@ -200,12 +200,12 @@ def list_media(bot, trigger):
 def streaming(bot, trigger):
     '''To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
-        bot.reply('Now plaing at %s - %s' % (
+        bot.reply(u'Now plaing at %s - %s' % (
             bot.memory['streaming']['loc'],
             bot.memory['streaming']['title'],
         ))
     else:
-        bot.reply('Nothing streaming right now.')
+        bot.reply(u'Nothing streaming right now.')
 
 
 if __name__ == "__main__":
