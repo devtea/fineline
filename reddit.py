@@ -253,6 +253,9 @@ def reddit_post(Willie, trigger):
         nsfw = u''
         if page.over_18:
             nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
+        pname = u'[deleted]'
+        if page.author:
+            pname = colors.colorize(page.author.name, [u'purple'])
         Willie.say(
             u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
                 nsfw,
@@ -260,7 +263,7 @@ def reddit_post(Willie, trigger):
                 colors.colorize(str(page.ups), [u'green']),
                 colors.colorize(str(page.downs), [u'orange']),
                 page.num_comments,
-                colors.colorize(page.author.name, [u'purple']),
+                pname,
                 page.subreddit.display_name,
                 colors.colorize(page.title, [u'blue'])
             )
