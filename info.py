@@ -47,8 +47,8 @@ def commands(willie, trigger):
                 ]
         names = u', '.join(sorted(cmds))
     willie.reply(u'Commands I recognise: ' + names + u'.')
-    willie.reply((u"For help, do '!help example' where example is the " +
-                  u"name of the command you want help for.") % willie.nick)
+    willie.reply(u"For help, do '!help example' where example is the " +
+                 u"name of the command you want help for.")
 
 
 @rule('$nick' r'(?i)help(?:[?!]+)?$')
