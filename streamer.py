@@ -196,7 +196,7 @@ def list_media(bot, trigger):
         bot.msg(trigger.nick, line)
 
 
-@commands('streaming', 'now_playing', 'np')
+@commands('streaming', 'now_playing', 'np', 'now_streaming', 'ns')
 def streaming(bot, trigger):
     '''To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
