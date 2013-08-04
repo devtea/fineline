@@ -16,7 +16,10 @@ from willie.module import commands, rule, example, priority
 def doc(willie, trigger):
     """Shows a command's documentation, and possibly an example."""
     name = trigger.group(2)
-    name = name.lower()
+    if name:
+        name = name.lower()
+    else:
+        return
 
     if (name in willie.doc
             and not willie.doc[name][0].startswith(u"ADMIN")):
