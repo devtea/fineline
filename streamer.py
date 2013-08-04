@@ -87,8 +87,14 @@ def stream(bot, trigger):
         '''Processes provided video name.'''
         arg_ep = name
         # First check for simple matches.
-        if arg_ep in [os.path.splitext(i)[0] for i
+        if arg_ep in [os.path.splitext(i)[0].upper() for i
                       in bot.memory['streaming']['ep_list']]:
+            # To account for varied case in filenames, we need to get the right
+            # name from the list of good filenames.
+            index = [os.path.splitext(i)[0].upper()
+                     for i in bot.memory['streaming']['ep_list']].index(arg_ep)
+            arg_ep = os.path.splitext(bot.memory['streaming']['ep_list'].pop(
+                index))[0]
             enqueue(bot, arg_ep)
         # Next check for regexable strings
         elif len(arg_ep) == 6:
