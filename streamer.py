@@ -8,9 +8,13 @@ http://bitbucket.org/tdreyer/fineline
 import os
 import re
 import subprocess
+import textwrap
+import time
 from collections import deque
 
 from willie.module import commands, example, interval
+
+_CHAN_EXC = []
 
 
 def setup(bot):
@@ -29,10 +33,11 @@ def setup(bot):
         bot.debug('streamer.py', 'Unable to load list of files.', 'verbose')
         raise
     else:
+        file_list.sort()
         bot.memory['streaming']['ep_list'] = file_list
 
 
-@interval(8)
+@interval(2)
 def queue_watcher(bot, trigger=None):
     if bot.memory['streaming']['live']:
         return
@@ -42,6 +47,8 @@ def queue_watcher(bot, trigger=None):
 
 def start_stream(bot, ep):
     for channel in bot.channels:
+        if channel in _CHAN_EXC:
+            continue
         bot.msg(
             channel,
             u'Starting stream of %s at %s.' % (
@@ -61,19 +68,24 @@ def start_stream(bot, ep):
             shell=True
         )
     finally:
+        time.sleep(15)
         bot.memory['streaming']['live'] = False
 
 
-@example('!stream S01E03')
+@example('!stream add S01E03')
 @commands('stream')
 def stream(bot, trigger):
-    '''Adds a video to be streamed.'''
+    '''Adds or removes a video from the streaming queue. Use "!stream add
+ <name>" to add a video, or "!stream del <name>" to remove it. Do
+ "!stream list" for a list of available videos. Do "!stream queue" to
+ see the videos queued for streaming.'''
     def scrub(i):
         '''Scrub input for safe REGEX'''
         return re.sub(u'[\\\.\?|^$*+([{]', u'', i)
 
-    if len(trigger.args[1].split()) == 2:
-        arg_ep = trigger.args[1].split()[1].upper()
+    def process(name):
+        '''Processes provided video name.'''
+        arg_ep = name
         # First check for simple matches.
         if arg_ep in [os.path.splitext(i)[0] for i
                       in bot.memory['streaming']['ep_list']]:
@@ -97,11 +109,32 @@ def stream(bot, trigger):
         else:
             bot.reply(u"Sorry, I don't seem to have that.")
             return  # TODO is this really necessary?
-    elif len(trigger.args[1].split()) > 2:
+
+    if len(trigger.args[1].split()) == 2:  # E.G. "!stream s01e01"
+        arg_1 = trigger.args[1].split()[1].upper()
+        if arg_1 == u'QUEUE' or arg_1 == u'QUE''':
+            get_queue(bot)
+        elif arg_1 == u'LIST':
+            list_media(bot, trigger)
+        else:
+            process(arg_1)
+    elif len(trigger.args[1].split()) == 3:  # E.G. "!stream add s01e01"
+        arg_1 = trigger.args[1].split()[1].upper()
+        arg_2 = trigger.args[1].split()[2].upper()
+        if arg_1 == u'ADD':
+            process(arg_2)
+        elif arg_1 == u'DEL':
+            dequeue(bot, arg_2)
+        else:
+            bot.debug(u"episodes.py:episode", u"insane args", u"verbose")
+            bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
+                      u"streamer'")
+    elif len(trigger.args[1].split()) > 3:
         bot.debug(u"episodes.py:episode", u"too many args", u"verbose")
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                   u"streamer'")
     else:
+        bot.reply(u'Stream what?! See the help for details.')
         bot.debug(u"episodes.py:episode", u"Not enough args", u"verbose")
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                   u"streamer'")
@@ -116,32 +149,29 @@ def enqueue(bot, ep):
         bot.reply(u"Sorry, the queue is full.")
 
 
-@commands('dequeue')
-def dequeue(bot, trigger):
+def dequeue(bot, video):
     '''Removes a video from the queue.'''
-    ep = trigger.args[1].split()[1].upper()
     try:
-        bot.memory['streaming']['deque'].remove(ep)
+        bot.memory['streaming']['deque'].remove(video)
     except ValueError:
         bot.reply(u"I don't have that in my queue.")
     else:
-        bot.reply(u"%s removed." % ep)
+        bot.reply(u"%s removed." % video)
 
 
 def promote():
     '''Moves a video up one spot in the queue.'''
     # TODO
-    pass
+    return
 
 
 def demote():
     '''Moves a video down one spot in the queue.'''
     # TODO
-    pass
+    return
 
 
-@commands('play_queue')
-def get_queue(bot, trigger):
+def get_queue(bot):
     if len(bot.memory['streaming']['deque']) == 0:
         bot.reply(u'The stream queue is currently empty.')
     else:
@@ -150,25 +180,23 @@ def get_queue(bot, trigger):
         )
 
 
-def list_media():
-    # TODO
-    pass
+def list_media(bot, trigger):
+    bot.reply(u'Sending you the list in PM.')
+    for line in textwrap.wrap(
+            u'Available videos: %s' % ', '.join(
+                [os.path.splitext(i)[0]
+                    for i in bot.memory['streaming']['ep_list']]),
+            200):
+        bot.msg(trigger.nick, line)
 
 
-@commands('now_playing', 'np')
-def check_stream(bot, trigger):
+@commands('streaming', 'now_playing', 'np')
+def streaming(bot, trigger):
+    '''To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
         bot.reply('Now plaing: %s' % bot.memory['streaming']['title'])
     else:
         bot.reply('Nothing streaming right now.')
-
-
-@commands('streaming')
-def streaming(bot, trigger):
-    '''To add or remove a video from the queue, see !stream.
- For the current video, see !now_playing.
- For the current queue, see !play_queue.'''
-    return
 
 
 if __name__ == "__main__":
