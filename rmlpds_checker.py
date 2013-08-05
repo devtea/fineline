@@ -76,7 +76,7 @@ def filter_posts(posts):
                 flags=re.IGNORECASE
         ):
             links = re.findall(
-            #    ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+                #ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
                 r'(?u)(%s?(?:http|https|ftp)(?:://[^\[\]\(\)\{\}\<\>,!\s]+))',
                 post.selftext,
                 flags=re.IGNORECASE
@@ -167,7 +167,9 @@ def rmlpds(willie):
                 willie.memory["rmlpds_timer"] = time.time()
                 post = random.choice(uncommented)
                 c_date = datetime.utcfromtimestamp(post.created_utc)
-                f_date = c_date.strftime('%b %d')
+                td = datetime.utcnow() - c_date
+                hr = td.total_seconds() / 60 / 60
+                t = u'%i hours ago' % hr
                 num = u'is at least 1 post'
                 if len(uncommented) > 1:
                     num = u'are at least %i posts' % len(uncommented)
@@ -186,10 +188,10 @@ def rmlpds(willie):
                                                               )
                         willie.msg(
                             chan,
-                            u'%s%s posted on %s – "%s" [ %s ] ' % (
+                            u'%s%s posted %s – "%s" [ %s ] ' % (
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
-                                f_date,
+                                t,
                                 colors.colorize(post.title, ['blue']),
                                 post.short_link
                             )
