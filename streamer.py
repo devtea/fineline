@@ -10,7 +10,7 @@ import re
 import subprocess
 import textwrap
 import time
-from datetime import now
+from datetime import datetime
 from collections import deque
 
 from willie.module import commands, example, interval
@@ -58,7 +58,7 @@ def start_stream(bot, ep):
             )
         )
     bot.debug(
-        now(),
+        datetime.now(),
         'streamer.py Starting stream of %s' % ep,
         'always')
     bot.memory['streaming']['live'] = True
