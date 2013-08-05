@@ -10,6 +10,7 @@ import re
 import subprocess
 import textwrap
 import time
+from datetime import now
 from collections import deque
 
 from willie.module import commands, example, interval
@@ -56,6 +57,10 @@ def start_stream(bot, ep):
                 bot.memory['streaming']['loc']
             )
         )
+    bot.debug(
+        now(),
+        'streamer.py Starting stream of %s' % ep,
+        'always')
     bot.memory['streaming']['live'] = True
     bot.memory['streaming']['title'] = ep
     try:
@@ -93,8 +98,8 @@ def stream(bot, trigger):
             # name from the list of good filenames.
             index = [os.path.splitext(i)[0].upper()
                      for i in bot.memory['streaming']['ep_list']].index(arg_ep)
-            arg_ep = os.path.splitext(bot.memory['streaming']['ep_list'].pop(
-                index))[0]
+            arg_ep = os.path.splitext(bot.memory['streaming']['ep_list'
+                                                              ][index])[0]
             enqueue(bot, arg_ep)
         # Next check for regexable strings
         elif len(arg_ep) == 6:
@@ -134,16 +139,16 @@ def stream(bot, trigger):
         else:
             bot.debug(u"episodes.py:episode", u"insane args", u"verbose")
             bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                      u"streamer'")
+                      u"stream'")
     elif len(trigger.args[1].split()) > 3:
         bot.debug(u"episodes.py:episode", u"too many args", u"verbose")
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                  u"streamer'")
+                  u"stream'")
     else:
         bot.reply(u'Stream what?! See the help for details.')
         bot.debug(u"episodes.py:episode", u"Not enough args", u"verbose")
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                  u"streamer'")
+                  u"stream'")
 
 
 def enqueue(bot, ep):
