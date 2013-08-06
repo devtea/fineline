@@ -205,7 +205,7 @@ def list_media(bot, trigger):
 def streaming(bot, trigger):
     '''To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
-        bot.reply(u'Now plaing at %s - %s' % (
+        bot.reply(u'Now playing at %s - %s' % (
             bot.memory['streaming']['loc'],
             bot.memory['streaming']['title'],
         ))
