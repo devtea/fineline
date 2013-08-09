@@ -1,5 +1,5 @@
 """
-streamer.py - A simple willie module to stream recorded video to justin.tv
+streams.py - A simple willie module to track livestreams from popular services
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -186,8 +186,11 @@ class twitchtv(justintv):
 
 
 def setup(bot):
-    # TODO Run through database and instantiate all stored streams
+    # TODO remove these erasures when you load from database
     bot.memory['streams'] = []
+    bot.memory['feat_streams'] = []
+
+    # TODO Run through database and instantiate all stored streams
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
 
@@ -215,14 +218,15 @@ def sceencasting(bot, trigger):
         elif arg1 == 'del':
             remove_stream(bot, arg2)
             return
-        elif arg1 == 'subscribe':
+        elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
             # TODO
             return
-        elif arg1 == 'favorite':
-            # TODO
+        elif arg1 == 'feature' or arg1 == 'unfeature':
+            feature(bot, arg1, arg2)
             return
         elif arg1 == 'info' or arg1 == 'list':
             # TODO
+            list_streams(bot, arg2)
             return
     elif len(trigger.args[1].split()) == 4:  # E.G. "!stream add user service"
         arg1 = trigger.args[1].split()[1].lower()
@@ -234,14 +238,15 @@ def sceencasting(bot, trigger):
         elif arg1 == 'del':
             remove_stream(bot, (arg2, arg3))
             return
-        elif arg1 == 'subscribe':
+        elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
             # TODO
             return
-        elif arg1 == 'favorite':
-            # TODO
+        elif arg1 == 'feature' or arg1 == 'unfeature':
+            feature(bot, arg1, (arg2, arg3))
             return
         elif arg1 == 'info' or arg1 == 'list':
             # TODO
+            list_streams(bot, arg2)
             return
     # TODO Print help, we either got nothing, or too much
     bot.reply("I don't understand that, try '!help livestream' for info.")
@@ -313,27 +318,55 @@ def add_stream(bot, user):
         # TODO say help message
 
 
-def list_streams(bot):
-    if len(bot.memory['streams']) == 0:
-        bot.say("I've got nothing.")
+def list_streams(bot, arg=None):
+    if arg == 'featured':
+        if len(bot.memory['feat_streams']) == 0:
+            bot.say("I've got nothing.")
+            return
+        for i in bot.memory['feat_streams']:
+            if isinstance(i, justintv):
+                source = 'justin.tv'
+            elif isinstance(i, livestream):
+                source = 'livestream.com'
+            elif isinstance(i, newlivestream):
+                source = 'new.livestream.com'
+            elif isinstance(i, twitchtv):
+                source = 'twitch.tv'
+            else:
+                source = 'NONE?WTF'
+            live = ''
+            if i.is_live():
+                # TODO Add color
+                live = '[LIVE] '
+            # TODO Add URL
+            bot.say('%s%s on %s [ %s ]' % (
+                live, i.name, source, i.channel_url))
         return
-    for i in bot.memory['streams']:
-        if isinstance(i, justintv):
-            source = 'justin.tv'
-        elif isinstance(i, livestream):
-            source = 'livestream.com'
-        elif isinstance(i, newlivestream):
-            source = 'new.livestream.com'
-        elif isinstance(i, twitchtv):
-            source = 'twitch.tv'
-        else:
-            source = 'NONE?WTF'
-        live = ''
-        if i.is_live():
-            # TODO Add color
-            live = '[LIVE] '
-        # TODO Add URL
-        bot.say('%s%s on %s [ %s ]' % (live, i.name, source, i.channel_url))
+    elif arg == 'subscribed' or arg == 'subscriptions':
+        # TODO
+        return
+    else:
+        if len(bot.memory['streams']) == 0:
+            bot.say("I've got nothing.")
+            return
+        for i in bot.memory['streams']:
+            if isinstance(i, justintv):
+                source = 'justin.tv'
+            elif isinstance(i, livestream):
+                source = 'livestream.com'
+            elif isinstance(i, newlivestream):
+                source = 'new.livestream.com'
+            elif isinstance(i, twitchtv):
+                source = 'twitch.tv'
+            else:
+                source = 'NONE?WTF'
+            live = ''
+            if i.is_live():
+                # TODO Add color
+                live = '[LIVE] '
+            # TODO Add URL
+            bot.say('%s%s on %s [ %s ]' % (
+                live, i.name, source, i.channel_url))
 
 
 def remove_stream(bot, user):
@@ -341,31 +374,47 @@ def remove_stream(bot, user):
     try:
         u, s = parse_service(user)
     except TypeError:
+        # TODO say help message
         bot.say('Bad Input')
         return
-        # TODO say help message
     if s == 'livestream':
         for i in bot.memory['streams']:
             if i.name.lower() == u.lower() and isinstance(i, livestream):
                 bot.memory['streams'].remove(i)
+                try:
+                    bot.memory['feat_streams'].remove(i)
+                except ValueError:
+                    pass
                 bot.say(u'Stream removed.')
                 return
     elif s == 'new.livestream':
         for i in bot.memory['streams']:
             if i.name.lower() == u.lower() and isinstance(i, newlivestream):
                 bot.memory['streams'].remove(i)
+                try:
+                    bot.memory['feat_streams'].remove(i)
+                except ValueError:
+                    pass
                 bot.say(u'Stream removed.')
                 return
     elif s == 'justin.tv':
         for i in bot.memory['streams']:
             if i.name.lower() == u.lower() and isinstance(i, justintv):
                 bot.memory['streams'].remove(i)
+                try:
+                    bot.memory['feat_streams'].remove(i)
+                except ValueError:
+                    pass
                 bot.say(u'Stream removed.')
                 return
     else:
         for i in bot.memory['streams']:
             if i.name.lower() == u.lower() and isinstance(i, twitchtv):
                 bot.memory['streams'].remove(i)
+                try:
+                    bot.memory['feat_streams'].remove(i)
+                except ValueError:
+                    pass
                 bot.say(u'Stream removed.')
                 return
     bot.say(u"I don't have that stream.")
@@ -383,6 +432,94 @@ def update_streams(bot, trigger):
 def subscribe():
     # Allows users to soft subscribe to a stream and get whispers on live
     # status change
+    return
+
+
+def feature(bot, switch, channel):
+    assert isinstance(channel, basestring) or type(channel) is tuple
+    try:
+        u, s = parse_service(channel)
+    except TypeError:
+        # TODO say help message
+        bot.say('Bad Input')
+        return
+    if switch == 'feature':
+        if s == 'livestream':
+            for i in bot.memory['streams']:
+                if i.name.lower() == u.lower() and isinstance(i, livestream):
+                    if i in bot.memory['feat_streams']:
+                        bot.say(u"That's already featured!")
+                        return
+                    else:
+                        bot.memory['feat_streams'].append(i)
+                        bot.say(u'Done!')
+                        return
+        elif s == 'new.livestream':
+            for i in bot.memory['streams']:
+                if i.name.lower() == u.lower() and \
+                        isinstance(i, newlivestream):
+                    if i in bot.memory['feat_streams']:
+                        bot.say(u"That's already featured!")
+                        return
+                    else:
+                        bot.memory['feat_streams'].append(i)
+                        bot.say(u'Done!')
+                        return
+        elif s == 'justin.tv':
+            for i in bot.memory['streams']:
+                if i.name.lower() == u.lower() and isinstance(i, justintv):
+                    if i in bot.memory['feat_streams']:
+                        bot.say(u"That's already featured!")
+                        return
+                    else:
+                        bot.memory['feat_streams'].append(i)
+                        bot.say(u'Done!')
+                        return
+        else:
+            for i in bot.memory['streams']:
+                if i.name.lower() == u.lower() and isinstance(i, twitchtv):
+                    if i in bot.memory['feat_streams']:
+                        bot.say(u"That's already featured!")
+                        return
+                    else:
+                        bot.memory['feat_streams'].append(i)
+                        bot.say(u'Done!')
+                        return
+        bot.say(u"Not a channel or that channel hasn't been added yet!")
+        return
+    else:
+        # TODO remove featured channel
+        if s == 'livestream':
+            for i in bot.memory['feat_streams']:
+                if i.name.lower() == u.lower() and isinstance(i, livestream):
+                    bot.memory['feat_streams'].remove(i)
+                    bot.say(u'Done!')
+                    return
+        elif s == 'new.livestream':
+            for i in bot.memory['feat_streams']:
+                if i.name.lower() == u.lower() and \
+                        isinstance(i, newlivestream):
+                    bot.memory['feat_streams'].remove(i)
+                    bot.say(u'Done!')
+                    return
+        elif s == 'justin.tv':
+            for i in bot.memory['feat_streams']:
+                if i.name.lower() == u.lower() and isinstance(i, justintv):
+                    bot.memory['feat_streams'].remove(i)
+                    bot.say(u'Done!')
+                    return
+        else:
+            for i in bot.memory['feat_streams']:
+                if i.name.lower() == u.lower() and isinstance(i, twitchtv):
+                    bot.memory['feat_streams'].remove(i)
+                    bot.say(u'Done!')
+                    return
+        # TODO
+        bot.say('bad data or channel not featured')
+
+
+def info():
+    # TODO
     return
 
 
