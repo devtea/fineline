@@ -24,23 +24,145 @@ _services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream']
 
 
 class stream(object):
-    '''docstring'''
-    name = 'dummy'
+    '''General stream object. To be extended for each individual API.'''
+    _url = None
+    _settings = {}
+    _live = False
+    _nsfw = False
+    _last_update = None
+    _service = None
 
     def __init__(self, name, alias=None):
         super(stream, self).__init__()
-        self.name = name
-        self.alias = alias
-        self.live = False
+        self._name = name
+        self._alias = alias
 
-    def is_live(self):
-        '''Returns a boolean value for the live status of the stream.'''
-        return self.live
+    def __str__(self):
+        # TODO parse unicode to str
+        return '%s on %s' % (self.name(), self.service())
+
+    def __unicode__(self):
+        return u'%s on %s' % (self.name(), self.service())
+
+    def __repr__(self):
+        return self.url()
+
+    # TODO def for default string return - format appropriate for list function
+
+    @property
+    def live(self):
+        return self._live
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def service(self):
+        return self._service
+
+    @property
+    def url(self):
+        return self._url
+
+    @property
+    def nsfw(self):
+        return self._nsfw
 
     def update(self):
         # Dummy function to be extended by children. Use to hit the appropriate
         # streaming site and update object variables.
         return
+
+
+class justintv(stream):
+    # http://www.justin.tv/p/api
+    _base_url = 'http://api.justin.tv/api/'
+    _service = 'justin.tv'
+    #_header_info = ''
+
+    def __init__(self, name, alias=None):
+        super(justintv, self).__init__(name, alias)
+        self._name = name
+        self.update()
+
+    def update(self):
+        # Update stream info
+        try:
+            # TODO move this url shit to a variable
+            self._results = web.get(u'%sstream/list.json?channel=%s' % (
+                self._base_url, self._name))
+        except timeout:
+            raise
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            print "Bad Json loaded from justin.tv"
+            raise
+        except IndexError:
+            raise
+        except TypeError:
+            raise
+        if self._form_j:
+            # We got results here, it means the stream is live
+            if not self._live:
+                self._last_update = datetime.now()
+                self._live = True
+            print 'got json'
+            print json.dumps(self._form_j, indent=4)
+            try:
+                raise ValueError(self._form_j['error'])
+            except KeyError:
+                # the object has no key 'error' so nothing's wrong
+                pass
+            except TypeError:
+                # The object is probably valid, dict inside list
+                pass
+            # Load data [{...}]
+            for s in self._form_j[0]:
+                self._settings[s] = self._form_j[0][s]
+        else:
+            # Update channel info only, no stream
+            try:
+                # TODO move this url shit to a variable
+                self._results = web.get(u'%schannel/show/%s.json' % (
+                    self._base_url, self._name))
+            except timeout:
+                raise
+            try:
+                self._form_j = json.loads(self._results)
+            except ValueError:
+                print "Bad Json loaded from justin.tv"
+                raise
+            except IndexError:
+                raise
+            except TypeError:
+                raise
+            if self._live:
+                self._live = False
+                self._last_update = datetime.now()
+            print 'got json'
+            print json.dumps(self._form_j, indent=4)
+            try:
+                raise ValueError(self._form_j['error'])
+            except KeyError:
+                pass
+            for s in self._form_j:
+                self._settings[s] = self._form_j[s]
+        self._url = self._settings['channel_url']
+        # NSFW flag is either True or None
+        if self._settings['mature']:
+            self._nsfw = True
+        else:
+            self._nsfw = False
+
+
+class youtube(stream):
+    pass
+
+
+class ustream(stream):
+    pass
 
 
 class livestream(stream):
@@ -53,131 +175,6 @@ class livestream(stream):
 class newlivestream(stream):
     # http://www.livestream.com/userguide/?title=Channel_API_2.0
     pass
-
-
-class justintv(stream):
-    # http://www.justin.tv/p/api
-    base_url = 'http://api.justin.tv/api/'
-    header_info = ''
-
-    def __init__(self, name, alias=None):
-        super(justintv, self).__init__(name, alias)
-        self.name = name
-        self.update()
-
-    def update(self):
-        # Update stream info
-        try:
-            self.results = web.get(u'%sstream/list.json?channel=%s' % (
-                self.base_url, self.name))
-        except timeout:
-            raise
-        try:
-            self.form_j = json.loads(self.results)
-        except ValueError:
-            print "Bad Json loaded from justin.tv"
-            #print self.results
-            raise
-        except IndexError:
-            raise
-        except TypeError:
-            raise
-        if self.form_j:
-            # We got results, so grab all info from here
-            if not self.live:
-                self.last_update = datetime.now()
-                self.live = True
-            print 'got json'
-            print json.dumps(self.form_j, indent=4)
-            try:
-                raise ValueError(self.form_j['error'])
-            except KeyError:
-                # the object has no key 'error'
-                pass
-            except TypeError:
-                # The object is probably valid, dict inside list
-                pass
-            # Load data
-            self.id = self.form_j[0]['id']
-            self.title = self.form_j[0]['title']
-            #self.description = self.form_ji['channel']['description']
-            #self.about = self.form_j['about']
-            self.status = self.form_j[0]['channel']['status']
-            self.category = self.form_j[0]['channel']['category']
-            self.category_title = self.form_j[0]['channel']['category_title']
-            self.subcategory = self.form_j[0]['channel']['subcategory']
-            self.subcategory_title = self.form_j[0]['channel'][
-                'subcategory_title']
-            self.tags = self.form_j[0]['channel']['tags']
-            self.mature = self.form_j[0]['channel']['mature']
-            self.channel_url = self.form_j[0]['channel']['channel_url']
-            print ''
-            print 'id: %s' % self.id
-            print 'title: %s' % self.title
-            #print 'description: %s' % self.description
-            #print 'about: %s' % self.about
-            print 'status: %s' % self.status
-            print 'category: %s' % self.category
-            print 'category_title: %s' % self.category_title
-            print 'subcategory: %s' % self.subcategory
-            print 'subcategory_title: %s' % self.subcategory_title
-            print 'tags: %s' % self.tags
-            print 'mature: %s' % self.mature
-            print 'url: %s' % self.channel_url
-            print 'live: %s' % self.live
-        else:
-            # Update channel info only, no stream
-            try:
-                self.results = web.get(u'%schannel/show/%s.json' % (
-                    self.base_url, self.name))
-            except timeout:
-                raise
-            try:
-                self.form_j = json.loads(self.results)
-            except ValueError:
-                print "Bad Json loaded from justin.tv"
-                #print self.results
-                raise
-            except IndexError:
-                raise
-            except TypeError:
-                raise
-            if self.live:
-                self.live = False
-                self.last_update = datetime.now()
-            print 'got json'
-            print json.dumps(self.form_j, indent=4)
-            try:
-                raise ValueError(self.form_j['error'])
-            except KeyError:
-                pass
-            # Load data
-            self.id = self.form_j['id']
-            self.title = self.form_j['title']
-            self.description = self.form_j['description']
-            self.about = self.form_j['about']
-            self.status = self.form_j['status']
-            self.category = self.form_j['category']
-            self.category_title = self.form_j['category_title']
-            self.subcategory = self.form_j['subcategory']
-            self.subcategory_title = self.form_j['subcategory_title']
-            self.tags = self.form_j['tags']
-            self.mature = self.form_j['mature']
-            self.channel_url = self.form_j['channel_url']
-            print ''
-            print 'id: %s' % self.id
-            print 'title: %s' % self.title
-            print 'description: %s' % self.description
-            print 'about: %s' % self.about
-            print 'status: %s' % self.status
-            print 'category: %s' % self.category
-            print 'category_title: %s' % self.category_title
-            print 'subcategory: %s' % self.subcategory
-            print 'subcategory_title: %s' % self.subcategory_title
-            print 'tags: %s' % self.tags
-            print 'mature: %s' % self.mature
-            print 'url: %s' % self.channel_url
-            print 'live: %s' % self.live
 
 
 class twitchtv(justintv):
@@ -197,12 +194,8 @@ def setup(bot):
 
 @commands('test')
 def sceencasting(bot, trigger):
-    #bob = justintv('http://justin.tv/tdreyer1')
-    #print bob.name
     if len(trigger.args[1].split()) == 2:  # E.G. "!ls url"
         arg1 = trigger.args[1].split()[1].lower()
-        # TODO Parse to see if URL or bad imput. Parse URL like 'add url'
-
         if arg1 == 'list':
             list_streams(bot)
             return
@@ -219,13 +212,12 @@ def sceencasting(bot, trigger):
             remove_stream(bot, arg2)
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            # TODO
+            subscribe(bot, arg1, arg2)
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             feature(bot, arg1, arg2)
             return
         elif arg1 == 'info' or arg1 == 'list':
-            # TODO
             list_streams(bot, arg2)
             return
     elif len(trigger.args[1].split()) == 4:  # E.G. "!stream add user service"
@@ -239,21 +231,20 @@ def sceencasting(bot, trigger):
             remove_stream(bot, (arg2, arg3))
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            # TODO
+            subscribe(bot, arg1, (arg2, arg3))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             feature(bot, arg1, (arg2, arg3))
             return
         elif arg1 == 'info' or arg1 == 'list':
-            # TODO
-            list_streams(bot, arg2)
+            list_streams(bot, arg1, (arg2, arg3))
             return
     # TODO Print help, we either got nothing, or too much
     bot.reply("I don't understand that, try '!help livestream' for info.")
 
 
 def parse_service(service):
-    '''Takes a string or tuple (chan, service) and returns (chan, service)'''
+    '''Takes a url string or tuple and returns (chan, service)'''
     assert type(service) is str or type(service) is unicode or \
         type(service) is tuple
     if type(service) is tuple:
@@ -287,12 +278,20 @@ def add_stream(bot, user):
         # TODO say help message
 
     if s == 'livestream':
-        # TODO test to see if it already exists
-        # TODO Add to list
+        for i in bot.memory['streams']:
+            if i.name.lower() == u and isinstance(i, livestream):
+                bot.reply(u'I already have that one.')
+                return
+        # TODO catch exceptions from setup
+        bot.memory['streams'].append(livestream(u))
         return
     elif s == 'new.livestream':
-        # TODO test to see if it already exists
-        # TODO Add to list
+        for i in bot.memory['streams']:
+            if i.name.lower() == u and isinstance(i, newlivestream):
+                bot.reply(u'I already have that one.')
+                return
+        # TODO catch exceptions from setup
+        bot.memory['streams'].append(newlivestream(u))
         return
     elif s == 'justin.tv':
         for i in bot.memory['streams']:
@@ -310,8 +309,12 @@ def add_stream(bot, user):
             bot.reply(u'Stream added.')
         return
     elif s == 'twitch.tv':
-        # TODO test to see if it already exists
-        # TODO Add to list
+        for i in bot.memory['streams']:
+            if i.name.lower() == u and isinstance(i, twitchtv):
+                bot.reply(u'I already have that one.')
+                return
+        # TODO catch exceptions from setup
+        bot.memory['streams'].append(twitchtv(u))
         return
     else:
         bot.say("Bad Input: this shouldn't ever happen...")
@@ -335,12 +338,12 @@ def list_streams(bot, arg=None):
             else:
                 source = 'NONE?WTF'
             live = ''
-            if i.is_live():
+            if i.live:
                 # TODO Add color
                 live = '[LIVE] '
             # TODO Add URL
             bot.say('%s%s on %s [ %s ]' % (
-                live, i.name, source, i.channel_url))
+                live, i.name, source, i.url))
         return
     elif arg == 'subscribed' or arg == 'subscriptions':
         # TODO
@@ -361,12 +364,12 @@ def list_streams(bot, arg=None):
             else:
                 source = 'NONE?WTF'
             live = ''
-            if i.is_live():
+            if i.live:
                 # TODO Add color
                 live = '[LIVE] '
             # TODO Add URL
             bot.say('%s%s on %s [ %s ]' % (
-                live, i.name, source, i.channel_url))
+                live, i.name, source, i.url))
 
 
 def remove_stream(bot, user):
