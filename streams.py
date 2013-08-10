@@ -148,8 +148,8 @@ class justintv(stream):
             for s in self._form_j:
                 self._settings[s] = self._form_j[s]
         self._url = self._settings['channel_url']
-        # NSFW flag is either True or None
-        if self._settings['mature']:
+        # NSFW flag is one of ['true', 'false', None]
+        if self._settings['mature'] == 'true':
             self._nsfw = True
         else:
             self._nsfw = False
@@ -349,48 +349,18 @@ def remove_stream(bot, user):
         # TODO say help message
         bot.say('Bad Input')
         return
-    if s == 'livestream':
-        # TODO implement some kind of eq() to streamline this
-        for i in bot.memory['streams']:
-            if i.name.lower() == u.lower() and isinstance(i, livestream):
-                bot.memory['streams'].remove(i)
-                try:
-                    bot.memory['feat_streams'].remove(i)
-                except ValueError:
-                    pass
-                bot.say(u'Stream removed.')
-                return
-    elif s == 'new.livestream':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u.lower() and isinstance(i, newlivestream):
-                bot.memory['streams'].remove(i)
-                try:
-                    bot.memory['feat_streams'].remove(i)
-                except ValueError:
-                    pass
-                bot.say(u'Stream removed.')
-                return
-    elif s == 'justin.tv':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u.lower() and isinstance(i, justintv):
-                bot.memory['streams'].remove(i)
-                try:
-                    bot.memory['feat_streams'].remove(i)
-                except ValueError:
-                    pass
-                bot.say(u'Stream removed.')
-                return
+    for i in [a for a in bot.memory['streams']
+              if a.name == u and a.service == s]:
+        try:
+            bot.memory['feat_streams'].remove(i)
+        except ValueError:
+            # Stream is not in the featured list
+            pass
+        bot.memory['streams'].remove(i)
+        bot.say(u'Stream removed.')
+        return
     else:
-        for i in bot.memory['streams']:
-            if i.name.lower() == u.lower() and isinstance(i, twitchtv):
-                bot.memory['streams'].remove(i)
-                try:
-                    bot.memory['feat_streams'].remove(i)
-                except ValueError:
-                    pass
-                bot.say(u'Stream removed.')
-                return
-    bot.say(u"I don't have that stream.")
+        bot.say(u"I don't have that stream.")
 
 
 @commands('update', 'reload', 'refresh')
@@ -417,80 +387,27 @@ def feature(bot, switch, channel):
         bot.say('Bad Input')
         return
     if switch == 'feature':
-        if s == 'livestream':
-            for i in bot.memory['streams']:
-                if i.name.lower() == u.lower() and isinstance(i, livestream):
-                    if i in bot.memory['feat_streams']:
-                        bot.say(u"That's already featured!")
-                        return
-                    else:
-                        bot.memory['feat_streams'].append(i)
-                        bot.say(u'Done!')
-                        return
-        elif s == 'new.livestream':
-        # TODO implement some kind of eq() to streamline this
-            for i in bot.memory['streams']:
-                if i.name.lower() == u.lower() and \
-                        isinstance(i, newlivestream):
-                    if i in bot.memory['feat_streams']:
-                        bot.say(u"That's already featured!")
-                        return
-                    else:
-                        bot.memory['feat_streams'].append(i)
-                        bot.say(u'Done!')
-                        return
-        elif s == 'justin.tv':
-            for i in bot.memory['streams']:
-                if i.name.lower() == u.lower() and isinstance(i, justintv):
-                    if i in bot.memory['feat_streams']:
-                        bot.say(u"That's already featured!")
-                        return
-                    else:
-                        bot.memory['feat_streams'].append(i)
-                        bot.say(u'Done!')
-                        return
-        else:
-            for i in bot.memory['streams']:
-                if i.name.lower() == u.lower() and isinstance(i, twitchtv):
-                    if i in bot.memory['feat_streams']:
-                        bot.say(u"That's already featured!")
-                        return
-                    else:
-                        bot.memory['feat_streams'].append(i)
-                        bot.say(u'Done!')
-                        return
+        for i in [a for a in bot.memory['streams']
+                  if a.name == u and a.service == s]:
+            if i in bot.memory['feat_streams']:
+                bot.say(u"That's already featured!")
+                return
+            else:
+                bot.memory['feat_streams'].append(i)
+                bot.say(u'Done!')
+                return
+        bot.say(u"Not a channel or that channel hasn't been added yet!")
+        return
+    elif switch == 'unfeature':
+        for i in [a for a in bot.memory['feat_streams']
+                  if a.name == u and a.service == s]:
+            bot.memory['feat_streams'].remove(i)
+            bot.say(u'Stream unfeatured.')
+            return
         bot.say(u"Not a channel or that channel hasn't been added yet!")
         return
     else:
-        # TODO remove featured channel
-        # TODO implement some kind of eq() to streamline this
-        if s == 'livestream':
-            for i in bot.memory['feat_streams']:
-                if i.name.lower() == u.lower() and isinstance(i, livestream):
-                    bot.memory['feat_streams'].remove(i)
-                    bot.say(u'Done!')
-                    return
-        elif s == 'new.livestream':
-            for i in bot.memory['feat_streams']:
-                if i.name.lower() == u.lower() and \
-                        isinstance(i, newlivestream):
-                    bot.memory['feat_streams'].remove(i)
-                    bot.say(u'Done!')
-                    return
-        elif s == 'justin.tv':
-            for i in bot.memory['feat_streams']:
-                if i.name.lower() == u.lower() and isinstance(i, justintv):
-                    bot.memory['feat_streams'].remove(i)
-                    bot.say(u'Done!')
-                    return
-        else:
-            for i in bot.memory['feat_streams']:
-                if i.name.lower() == u.lower() and isinstance(i, twitchtv):
-                    bot.memory['feat_streams'].remove(i)
-                    bot.say(u'Done!')
-                    return
-        # TODO
-        bot.say('bad data or channel not featured')
+        bot.reply(u"Oh shit, I don't know what just happened.")
 
 
 def info():
