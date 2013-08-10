@@ -39,15 +39,13 @@ class stream(object):
 
     def __str__(self):
         # TODO parse unicode to str
-        return '%s on %s' % (self.name(), self.service())
+        return '%s on %s' % (self.name, self.service)
 
     def __unicode__(self):
-        return u'%s on %s' % (self.name(), self.service())
+        return u'%s on %s' % (self.name, self.service)
 
     def __repr__(self):
-        return self.url()
-
-    # TODO def for default string return - format appropriate for list function
+        return self.name()
 
     @property
     def live(self):
@@ -182,14 +180,35 @@ class twitchtv(justintv):
     pass
 
 
+class StreamFactory(object):
+    def newStream(self, channel, service):
+        # TODO catch exceptions from object instantiations
+        if service == 'justin.tv':
+            return justintv(channel)
+        elif service == 'twitch.tv':
+            return twitchtv(channel)
+        elif service == 'new.livesteam':
+            return newlivestream(channel)
+        elif service == 'livestream':
+            return livestream(channel)
+        else:
+            return None
+
+
 def setup(bot):
     # TODO remove these erasures when you load from database
+    # TODO consider making these unique sets
     bot.memory['streams'] = []
     bot.memory['feat_streams'] = []
+    bot.memory['streamFac'] = StreamFactory()
 
     # TODO Run through database and instantiate all stored streams
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
+    if 'feat_streams' not in bot.memory:
+        bot.memory['feat_streams'] = []
+    if 'streamFac' not in bot.memory:
+        bot.memory['streamFac'] = StreamFactory()
 
 
 @commands('test')
@@ -276,74 +295,31 @@ def add_stream(bot, user):
         bot.say('Bad Input')
         return
         # TODO say help message
-
-    if s == 'livestream':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u and isinstance(i, livestream):
-                bot.reply(u'I already have that one.')
-                return
-        # TODO catch exceptions from setup
-        bot.memory['streams'].append(livestream(u))
-        return
-    elif s == 'new.livestream':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u and isinstance(i, newlivestream):
-                bot.reply(u'I already have that one.')
-                return
-        # TODO catch exceptions from setup
-        bot.memory['streams'].append(newlivestream(u))
-        return
-    elif s == 'justin.tv':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u and isinstance(i, justintv):
-                bot.reply(u'I already have that one.')
-                return
-        try:
-            bot.memory['streams'].append(justintv(u))
-        except ValueError as detail:
-            bot.debug(u'streams.py',
-                      u'Error adding jtv user: %s' % detail,
-                      u'warning')
-            bot.reply(u"Sorry, I couldn't find that channel.")
-        else:
-            bot.reply(u'Stream added.')
-        return
-    elif s == 'twitch.tv':
-        for i in bot.memory['streams']:
-            if i.name.lower() == u and isinstance(i, twitchtv):
-                bot.reply(u'I already have that one.')
-                return
-        # TODO catch exceptions from setup
-        bot.memory['streams'].append(twitchtv(u))
+    if [a for a in bot.memory['streams'] if a.name == u and a.service == s]:
+        bot.reply(u'I already have that one.')
         return
     else:
-        bot.say("Bad Input: this shouldn't ever happen...")
-        # TODO say help message
+        # TODO may need a try block here
+        bot.memory['streams'].append(bot.memory['streamFac'].newStream(u, s))
+        bot.say('added stream')
 
 
 def list_streams(bot, arg=None):
+    # TODO add logic to /msg when list is too long (>4?)
     if arg == 'featured':
         if len(bot.memory['feat_streams']) == 0:
             bot.say("I've got nothing.")
             return
         for i in bot.memory['feat_streams']:
-            if isinstance(i, justintv):
-                source = 'justin.tv'
-            elif isinstance(i, livestream):
-                source = 'livestream.com'
-            elif isinstance(i, newlivestream):
-                source = 'new.livestream.com'
-            elif isinstance(i, twitchtv):
-                source = 'twitch.tv'
-            else:
-                source = 'NONE?WTF'
+            nsfw = ''
+            if i.nsfw:
+                # TODO Add color
+                nsfw = '[NSFW] '
             live = ''
             if i.live:
                 # TODO Add color
                 live = '[LIVE] '
-            # TODO Add URL
-            bot.say('%s%s on %s [ %s ]' % (
-                live, i.name, source, i.url))
+            bot.say('%s%s%s [ %s ]' % (nsfw, live, i, i.url))
         return
     elif arg == 'subscribed' or arg == 'subscriptions':
         # TODO
@@ -353,23 +329,16 @@ def list_streams(bot, arg=None):
             bot.say("I've got nothing.")
             return
         for i in bot.memory['streams']:
-            if isinstance(i, justintv):
-                source = 'justin.tv'
-            elif isinstance(i, livestream):
-                source = 'livestream.com'
-            elif isinstance(i, newlivestream):
-                source = 'new.livestream.com'
-            elif isinstance(i, twitchtv):
-                source = 'twitch.tv'
-            else:
-                source = 'NONE?WTF'
+            nsfw = ''
+            if i.nsfw:
+                # TODO Add color
+                nsfw = '[NSFW] '
             live = ''
             if i.live:
                 # TODO Add color
                 live = '[LIVE] '
             # TODO Add URL
-            bot.say('%s%s on %s [ %s ]' % (
-                live, i.name, source, i.url))
+            bot.say('%s%s%s [ %s ]' % (nsfw, live, i, i.url))
 
 
 def remove_stream(bot, user):
@@ -381,6 +350,7 @@ def remove_stream(bot, user):
         bot.say('Bad Input')
         return
     if s == 'livestream':
+        # TODO implement some kind of eq() to streamline this
         for i in bot.memory['streams']:
             if i.name.lower() == u.lower() and isinstance(i, livestream):
                 bot.memory['streams'].remove(i)
@@ -458,6 +428,7 @@ def feature(bot, switch, channel):
                         bot.say(u'Done!')
                         return
         elif s == 'new.livestream':
+        # TODO implement some kind of eq() to streamline this
             for i in bot.memory['streams']:
                 if i.name.lower() == u.lower() and \
                         isinstance(i, newlivestream):
@@ -492,6 +463,7 @@ def feature(bot, switch, channel):
         return
     else:
         # TODO remove featured channel
+        # TODO implement some kind of eq() to streamline this
         if s == 'livestream':
             for i in bot.memory['feat_streams']:
                 if i.name.lower() == u.lower() and isinstance(i, livestream):
@@ -525,6 +497,11 @@ def info():
     # TODO
     return
 
+
+def url_watcher():
+    # TODO Write function that watches for stream URLs in chat, and post info
+    # about them. Don't forget to exclude these from the regular URL watcher
+    return
 
 if __name__ == "__main__":
     print __doc__.strip()
