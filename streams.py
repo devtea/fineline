@@ -20,6 +20,8 @@ _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
 _re_nls = re.compile('(?<=new\.livestream\.com/)[^/(){}[\]]+')
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
+_re_us = re.compile('(?<=ustream\.tv/)[^/(){}[\]]+')
+_re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream']
 _SUB = ('?',)  # This will be replaced in setup()
@@ -130,8 +132,8 @@ class justintv(stream):
             raise
         except TypeError:
             raise
-        print 'got json'
-        print json.dumps(self._form_j, indent=4)
+        #print 'got json'
+        #print json.dumps(self._form_j, indent=4)
         try:
             raise ValueError(self._form_j['error'])
         except KeyError:
@@ -160,8 +162,8 @@ class justintv(stream):
             if not self._live:
                 self._last_update = time.time()
                 self._live = True
-            print 'got json'
-            print json.dumps(self._form_j, indent=4)
+            #print 'got json'
+            #print json.dumps(self._form_j, indent=4)
             try:
                 raise ValueError(self._form_j['error'])
             except KeyError:
@@ -233,6 +235,11 @@ class StreamFactory(object):
 def setup(bot):
     # TODO remove these erasures when you load from database
     # TODO consider making these unique sets
+    bot.debug(
+        u'streams.py',
+        u'Starting stream setup, this may take a bit.',
+        'always'
+    )
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
     if 'feat_streams' not in bot.memory:
@@ -688,12 +695,11 @@ def announcer(bot):
             chan,
             'Hey everyone, %s has started streaming at %s' % (strm.name,
                                                               strm.url))
-
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
-    _announce_interval = 5 * 60
+    _announce_interval = 10 * 60
     # Min time between messages to channel or user
-    _msg_interval = 5 * 60
+    _msg_interval = 20 * 60
     # TODO lock
     with bot.memory['streamLock']:
         for s in [a for a in bot.memory['streamSubs']
@@ -734,12 +740,17 @@ def announcer(bot):
                     pass
 
 
+@interval(60)
+def jtv_updater(bot):
+    print 'starting jtv updater'
+    now = time.time()
+    for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
+        s.update()
+        time.sleep(1)
+    print 'jtv updater complete in %s seconds.' % (time.time() - now)
+
+
 def info():
-    # TODO
-    return
-
-
-def jtv_updater():
     # TODO
     return
 
