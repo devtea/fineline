@@ -11,7 +11,6 @@ import re
 import time
 import threading
 from socket import timeout
-from datetime import datetime
 
 import willie.web as web
 from willie.module import commands, interval
@@ -159,7 +158,7 @@ class justintv(stream):
         if self._form_j:
             # We got results here, it means the stream is live
             if not self._live:
-                self._last_update = datetime.now()
+                self._last_update = time.time()
                 self._live = True
             print 'got json'
             print json.dumps(self._form_j, indent=4)
@@ -178,7 +177,7 @@ class justintv(stream):
             # No results means stream's not live
             if self._live:
                 self._live = False
-                self._last_update = datetime.now()
+                self._last_update = time.time()
         self._url = self._settings['channel_url']
         # NSFW flag is one of ['true', 'false', None]
         if self._settings['mature'] == 'true':
@@ -244,6 +243,8 @@ def setup(bot):
         bot.memory['streamLock'] = threading.Lock()
     if 'streamSubs' not in bot.memory:
         bot.memory['streamSubs'] = {}
+    if 'streamMsg' not in bot.memory:
+        bot.memory['streamMsg'] = {}
 
     # database stuff
     global _SUB
@@ -501,11 +502,12 @@ def remove_stream(bot, user):
 
 @commands('update', 'reload', 'refresh')
 def update_streams(bot, trigger):
-    bot.reply(u'updating streams')
-    for i in bot.memory['streams']:
-        i.update()
-        time.sleep(10)
-    bot.reply(u'Streams updated')
+    with bot.memory['streamLock']:
+        bot.reply(u'updating streams')
+        for i in bot.memory['streams']:
+            i.update()
+            time.sleep(10)
+        bot.reply(u'Streams updated')
 
 
 def feature(bot, switch, channel, quiet=False):
@@ -674,6 +676,62 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     bot.reply(msg)
                 else:
                     bot.debug('streams:subscribe', msg, 'warning')
+
+
+@interval(60)
+def announcer(bot):
+    def whisper(nick, strm):
+        bot.msg(nick, '%s has started streaming at %s' % (strm.name, strm.url))
+
+    def announce(chan, strm):
+        bot.msg(
+            chan,
+            'Hey everyone, %s has started streaming at %s' % (strm.name,
+                                                              strm.url))
+
+    # IMPORTANT _msg_interval must be larger than _announce_interval
+    # Time in which to consider streams having been updated recently
+    _announce_interval = 5 * 60
+    # Min time between messages to channel or user
+    _msg_interval = 5 * 60
+    # TODO lock
+    with bot.memory['streamLock']:
+        for s in [a for a in bot.memory['streamSubs']
+                  if a.live and a.updated > time.time() - _announce_interval]:
+            for n in bot.memory['streamSubs'][s]:
+                if n not in bot.memory['streamMsg']:
+                    bot.memory['streamMsg'][n] = {}
+                if s not in bot.memory['streamMsg'][n]:
+                    # TODO may error if nick isn't on server
+                    whisper(n, s)
+                    bot.memory['streamMsg'][n][s] = time.time()
+                # TODO change next line to 20 minutes or so
+                elif bot.memory['streamMsg'][n][s] < \
+                        time.time() - _msg_interval:
+                    # TODO may error if nick isn't on server
+                    whisper(n, s)
+                    bot.memory['streamMsg'][n][s] = time.time()
+                else:
+                    # Nick was msg'd about stream too recently. The stream may
+                    # be experiencing trouble so we don't want to spam them
+                    pass
+        for s in [a for a in bot.memory['feat_streams']
+                  if a.live and a.updated > time.time() - _announce_interval]:
+            for n in bot.channels:
+                if n not in bot.memory['streamMsg']:
+                    bot.memory['streamMsg'][n] = {}
+                if s not in bot.memory['streamMsg'][n]:
+                    announce(n, s)
+                    bot.memory['streamMsg'][n][s] = time.time()
+                # TODO change next line to 20 minutes or so
+                elif bot.memory['streamMsg'][n][s] < \
+                        time.time() - _msg_interval:
+                    announce(n, s)
+                    bot.memory['streamMsg'][n][s] = time.time()
+                else:
+                    # Chan was msg'd about stream too recently. The stream may
+                    # be experiencing trouble so we don't want to spam
+                    pass
 
 
 def info():
