@@ -9,6 +9,7 @@ http://bitbucket.org/tdreyer/fineline
 import json
 import re
 import time
+import threading
 from socket import timeout
 from datetime import datetime
 
@@ -21,6 +22,7 @@ _re_nls = re.compile('(?<=new\.livestream\.com/)[^/(){}[\]]+')
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream']
+_SUB = ('?',)  # This will be replaced in setup()
 
 
 class stream(object):
@@ -198,22 +200,63 @@ class StreamFactory(object):
 def setup(bot):
     # TODO remove these erasures when you load from database
     # TODO consider making these unique sets
-    bot.memory['streams'] = []
-    bot.memory['feat_streams'] = []
-    bot.memory['streamFac'] = StreamFactory()
-
-    # TODO Run through database and instantiate all stored streams
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
     if 'feat_streams' not in bot.memory:
         bot.memory['feat_streams'] = []
     if 'streamFac' not in bot.memory:
         bot.memory['streamFac'] = StreamFactory()
+    if 'streamLock' not in bot.memory:
+        bot.memory['streamLock'] = threading.Lock()
+
+    # database stuff
+    global _SUB
+    _SUB = (bot.db.substitution,)
+
+    with bot.memory['streamLock']:
+        dbcon = bot.db.connect()  # sqlite3 connection
+        cur = dbcon.cursor()
+        # If our tables don't exist, create them
+        try:
+            cur.execute('''CREATE TABLE IF NOT EXISTS streams
+                           (channel text, service text)''')
+            cur.execute('''CREATE TABLE IF NOT EXISTS feat_streams
+                           (channel text, service text)''')
+            dbcon.commit()
+        finally:
+            cur.close()
+            dbcon.close()
+    if not bot.memory['streams']:
+        load_from_db(bot)
+
+
+@commands('reload_streams')
+def load_from_db(bot, trigger=None):
+    with bot.memory['streamLock']:
+        bot.memory['streams'] = []
+        bot.memory['feat_streams'] = []
+        dbcon = bot.db.connect()  # sqlite3 connection
+        cur = dbcon.cursor()
+        try:
+            cur.execute('SELECT channel, service FROM streams')
+            stream_rows = cur.fetchall()
+            cur.execute('SELECT channel, service FROM feat_streams')
+            feat_rows = cur.fetchall()
+        finally:
+            cur.close()
+            dbcon.close()
+        for c, s in stream_rows:
+            time.sleep(2)
+            bot.memory['streams'].append(bot.memory['streamFac'].newStream(c,
+                                                                           s))
+    for c, s in feat_rows:
+        time.sleep(2)
+        feature(bot, 'feature', (c, s), quiet=True)
 
 
 @commands('test')
 def sceencasting(bot, trigger):
-    if len(trigger.args[1].split()) == 2:  # E.G. "!ls url"
+    if len(trigger.args[1].split()) == 2:  # E.G. "!stream url"
         arg1 = trigger.args[1].split()[1].lower()
         if arg1 == 'list':
             list_streams(bot)
@@ -264,8 +307,7 @@ def sceencasting(bot, trigger):
 
 def parse_service(service):
     '''Takes a url string or tuple and returns (chan, service)'''
-    assert type(service) is str or type(service) is unicode or \
-        type(service) is tuple
+    assert isinstance(service, basestring) or type(service) is tuple
     if type(service) is tuple:
         if service[0] in _services:
             return (service[1], service[0])
@@ -287,7 +329,7 @@ def parse_service(service):
 
 
 def add_stream(bot, user):
-    assert type(user) is str or type(user) is unicode or type(user) is tuple
+    assert isinstance(user, basestring) or type(user) is tuple
 
     try:
         u, s = parse_service(user)
@@ -300,7 +342,23 @@ def add_stream(bot, user):
         return
     else:
         # TODO may need a try block here
-        bot.memory['streams'].append(bot.memory['streamFac'].newStream(u, s))
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        with bot.memory['streamLock']:
+            try:
+                cur.execute('''SELECT COUNT(*) FROM streams
+                               WHERE channel=%s
+                               AND service=%s''' % (_SUB * 2), (u, s))
+                if cur.fetchone()[0] == 0:
+                    print 'ADD: count was != 0'
+                    cur.execute('''INSERT INTO streams (channel, service)
+                                   VALUES (%s, %s)''' % (_SUB * 2), (u, s))
+                    dbcon.commit()
+            finally:
+                cur.close()
+                dbcon.close()
+            bot.memory['streams'].append(bot.memory['streamFac'].newStream(u,
+                                                                           s))
         bot.say('added stream')
 
 
@@ -342,25 +400,40 @@ def list_streams(bot, arg=None):
 
 
 def remove_stream(bot, user):
-    assert type(user) is str or type(user) is unicode or type(user) is tuple
+    assert isinstance(user, basestring) or type(user) is tuple
+
     try:
         u, s = parse_service(user)
     except TypeError:
         # TODO say help message
         bot.say('Bad Input')
         return
-    for i in [a for a in bot.memory['streams']
-              if a.name == u and a.service == s]:
-        try:
-            bot.memory['feat_streams'].remove(i)
-        except ValueError:
-            # Stream is not in the featured list
-            pass
-        bot.memory['streams'].remove(i)
-        bot.say(u'Stream removed.')
-        return
-    else:
-        bot.say(u"I don't have that stream.")
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    with bot.memory['streamLock']:
+        for i in [a for a in bot.memory['streams']
+                  if a.name == u and a.service == s]:
+            try:
+                cur.execute('''DELETE FROM feat_streams
+                               WHERE channel = %s
+                               AND service = %s''' % (_SUB * 2), (u, s))
+                cur.execute('''DELETE FROM streams
+                               WHERE channel = %s
+                               AND service = %s''' % (_SUB * 2), (u, s))
+                dbcon.commit()
+            finally:
+                cur.close()
+                dbcon.close()
+            try:
+                bot.memory['feat_streams'].remove(i)
+            except ValueError:
+                # Stream is not in the featured list
+                pass
+            bot.memory['streams'].remove(i)
+            bot.say(u'Stream removed.')
+            return
+        else:
+            bot.say(u"I don't have that stream.")
 
 
 @commands('update', 'reload', 'refresh')
@@ -378,36 +451,89 @@ def subscribe():
     return
 
 
-def feature(bot, switch, channel):
+def feature(bot, switch, channel, quiet=False):
     assert isinstance(channel, basestring) or type(channel) is tuple
     try:
         u, s = parse_service(channel)
     except TypeError:
         # TODO say help message
-        bot.say('Bad Input')
+        msg = 'Bad Input'
+        if not quiet:
+            bot.say(msg)
+        else:
+            bot.debug('streams:load_from_db', msg, 'warning')
         return
-    if switch == 'feature':
-        for i in [a for a in bot.memory['streams']
-                  if a.name == u and a.service == s]:
-            if i in bot.memory['feat_streams']:
-                bot.say(u"That's already featured!")
-                return
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    with bot.memory['streamLock']:
+        if switch == 'feature':
+            for i in [a for a in bot.memory['streams']
+                      if a.name == u and a.service == s]:
+                if i in bot.memory['feat_streams']:
+                    msg = u"That's already featured!"
+                    if not quiet:
+                        bot.say(msg)
+                    else:
+                        bot.debug('streams:load_from_db', msg, 'warning')
+                    return
+                else:
+                    try:
+                        cur.execute('''SELECT COUNT(*) FROM feat_streams
+                                       WHERE channel = %s
+                                       AND service = %s''' % (_SUB * 2),
+                                    (u, s))
+                        if cur.fetchone()[0] == 0:
+                            cur.execute('''INSERT INTO feat_streams
+                                           (channel, service)
+                                           VALUES (%s, %s)''' % (_SUB * 2),
+                                        (u, s))
+                            dbcon.commit()
+                    finally:
+                        cur.close()
+                        dbcon.close()
+                    bot.memory['feat_streams'].append(i)
+                    msg = u'Stream featured.'
+                    if not quiet:
+                        bot.say(msg)
+                    else:
+                        bot.debug('streams:load_from_db', msg, 'warning')
+                    return
+            msg = u"Not a channel or that channel hasn't been added yet!"
+            if not quiet:
+                bot.say(msg)
             else:
-                bot.memory['feat_streams'].append(i)
-                bot.say(u'Done!')
-                return
-        bot.say(u"Not a channel or that channel hasn't been added yet!")
-        return
-    elif switch == 'unfeature':
-        for i in [a for a in bot.memory['feat_streams']
-                  if a.name == u and a.service == s]:
-            bot.memory['feat_streams'].remove(i)
-            bot.say(u'Stream unfeatured.')
+                bot.debug('streams:load_from_db', msg, 'warning')
             return
-        bot.say(u"Not a channel or that channel hasn't been added yet!")
-        return
-    else:
-        bot.reply(u"Oh shit, I don't know what just happened.")
+        elif switch == 'unfeature':
+            for i in [a for a in bot.memory['feat_streams']
+                      if a.name == u and a.service == s]:
+                try:
+                    cur.execute('''DELETE FROM feat_streams
+                                   WHERE channel = %s
+                                   AND service = %s''' % (_SUB * 2), (u, s))
+                    dbcon.commit()
+                finally:
+                    cur.close()
+                    dbcon.close()
+                bot.memory['feat_streams'].remove(i)
+                msg = u'Stream unfeatured.'
+                if not quiet:
+                    bot.say(msg)
+                else:
+                    bot.debug('streams:load_from_db', msg, 'warning')
+                return
+            msg = u"Not a channel or that channel hasn't been added yet!"
+            if not quiet:
+                bot.say(msg)
+            else:
+                bot.debug('streams:load_from_db', msg, 'warning')
+            return
+        else:
+            msg = u"Oh shit, I don't know what just happened."
+            if not quiet:
+                bot.reply(msg)
+            else:
+                bot.debug('streams:load_from_db', msg, 'warning')
 
 
 def info():
@@ -419,6 +545,7 @@ def url_watcher():
     # TODO Write function that watches for stream URLs in chat, and post info
     # about them. Don't forget to exclude these from the regular URL watcher
     return
+
 
 if __name__ == "__main__":
     print __doc__.strip()
