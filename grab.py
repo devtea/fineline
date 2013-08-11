@@ -26,7 +26,7 @@ def grab(bot, trigger):
     else:
         bot.memory['grablock'].acquire()
         try:
-            if target in bot.memory['grab']b:
+            if target in bot.memory['grab']:
                 bot.say(u'!addquote <%s> %s' % (target,
                                                 bot.memory['grab'][target]))
             else:
