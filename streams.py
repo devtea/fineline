@@ -14,7 +14,8 @@ from socket import timeout
 from datetime import datetime
 
 import willie.web as web
-from willie.module import commands
+from willie.module import commands, interval
+from willie.tools import Nick
 
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
@@ -49,6 +50,27 @@ class stream(object):
     def __repr__(self):
         return self.name()
 
+    def __lt__(self, other):
+        return ((self.name, self.service) < (other.name, other.service))
+
+    def __le__(self, other):
+        return ((self.name, self.service) <= (other.name, other.service))
+
+    def __gt__(self, other):
+        return ((self.name, self.service) > (other.name, other.service))
+
+    def __ge__(self, other):
+        return ((self.name, self.service) >= (other.name, other.service))
+
+    def __eq__(self, other):
+        return ((self.name, self.service) == (other.name, other.service))
+
+    def __ne__(self, other):
+        return ((self.name, self.service) != (other.name, other.service))
+
+    def __hash__(self):
+        return hash((self.name, self.service))
+
     @property
     def live(self):
         return self._live
@@ -69,6 +91,10 @@ class stream(object):
     def nsfw(self):
         return self._nsfw
 
+    @property
+    def updated(self):
+        return self._last_update
+
     def update(self):
         # Dummy function to be extended by children. Use to hit the appropriate
         # streaming site and update object variables.
@@ -87,7 +113,34 @@ class justintv(stream):
         self.update()
 
     def update(self):
-        # Update stream info
+        # Update stream info - first grab chan, then try to grab stream
+
+        # Update channel info
+        try:
+            # TODO move this url shit to a variable
+            self._results = web.get(u'%schannel/show/%s.json' % (
+                self._base_url, self._name))
+        except timeout:
+            raise
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            print "Bad Json loaded from justin.tv"
+            raise
+        except IndexError:
+            raise
+        except TypeError:
+            raise
+        print 'got json'
+        print json.dumps(self._form_j, indent=4)
+        try:
+            raise ValueError(self._form_j['error'])
+        except KeyError:
+            pass
+        for s in self._form_j:
+            self._settings[s] = self._form_j[s]
+
+        # Update stream info if available
         try:
             # TODO move this url shit to a variable
             self._results = web.get(u'%sstream/list.json?channel=%s' % (
@@ -122,33 +175,10 @@ class justintv(stream):
             for s in self._form_j[0]:
                 self._settings[s] = self._form_j[0][s]
         else:
-            # Update channel info only, no stream
-            try:
-                # TODO move this url shit to a variable
-                self._results = web.get(u'%schannel/show/%s.json' % (
-                    self._base_url, self._name))
-            except timeout:
-                raise
-            try:
-                self._form_j = json.loads(self._results)
-            except ValueError:
-                print "Bad Json loaded from justin.tv"
-                raise
-            except IndexError:
-                raise
-            except TypeError:
-                raise
+            # No results means stream's not live
             if self._live:
                 self._live = False
                 self._last_update = datetime.now()
-            print 'got json'
-            print json.dumps(self._form_j, indent=4)
-            try:
-                raise ValueError(self._form_j['error'])
-            except KeyError:
-                pass
-            for s in self._form_j:
-                self._settings[s] = self._form_j[s]
         self._url = self._settings['channel_url']
         # NSFW flag is one of ['true', 'false', None]
         if self._settings['mature'] == 'true':
@@ -193,6 +223,10 @@ class StreamFactory(object):
             return newlivestream(channel)
         elif service == 'livestream':
             return livestream(channel)
+        elif service == 'youtube':
+            return youtube(channel)
+        elif service == 'ustream.tv':
+            return youtube(channel)
         else:
             return None
 
@@ -208,6 +242,8 @@ def setup(bot):
         bot.memory['streamFac'] = StreamFactory()
     if 'streamLock' not in bot.memory:
         bot.memory['streamLock'] = threading.Lock()
+    if 'streamSubs' not in bot.memory:
+        bot.memory['streamSubs'] = {}
 
     # database stuff
     global _SUB
@@ -222,6 +258,8 @@ def setup(bot):
                            (channel text, service text)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS feat_streams
                            (channel text, service text)''')
+            cur.execute('''CREATE TABLE IF NOT EXISTS sub_streams
+                           (channel text, service text, nick text)''')
             dbcon.commit()
         finally:
             cur.close()
@@ -242,6 +280,8 @@ def load_from_db(bot, trigger=None):
             stream_rows = cur.fetchall()
             cur.execute('SELECT channel, service FROM feat_streams')
             feat_rows = cur.fetchall()
+            cur.execute('SELECT channel, service, nick FROM sub_streams')
+            sub_rows = cur.fetchall()
         finally:
             cur.close()
             dbcon.close()
@@ -250,8 +290,10 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(bot.memory['streamFac'].newStream(c,
                                                                            s))
     for c, s in feat_rows:
-        time.sleep(2)
         feature(bot, 'feature', (c, s), quiet=True)
+
+    for c, s, n in sub_rows:
+        subscribe(bot, 'subscribe', (c, s), Nick(n), quiet=True)
 
 
 @commands('test')
@@ -274,13 +316,16 @@ def sceencasting(bot, trigger):
             remove_stream(bot, arg2)
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            subscribe(bot, arg1, arg2)
+            subscribe(bot, arg1, arg2, Nick(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             feature(bot, arg1, arg2)
             return
-        elif arg1 == 'info' or arg1 == 'list':
-            list_streams(bot, arg2)
+        elif arg1 == 'list':
+            list_streams(bot, arg2, Nick(trigger.nick))
+            return
+        elif arg1 == 'info':
+            info(bot, arg2)
             return
     elif len(trigger.args[1].split()) == 4:  # E.G. "!stream add user service"
         arg1 = trigger.args[1].split()[1].lower()
@@ -293,13 +338,16 @@ def sceencasting(bot, trigger):
             remove_stream(bot, (arg2, arg3))
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            subscribe(bot, arg1, (arg2, arg3))
+            subscribe(bot, arg1, (arg2, arg3), Nick(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             feature(bot, arg1, (arg2, arg3))
             return
-        elif arg1 == 'info' or arg1 == 'list':
-            list_streams(bot, arg1, (arg2, arg3))
+        elif arg1 == 'list':
+            list_streams(bot, arg2, Nick(trigger.nick))
+            return
+        elif arg1 == 'info':
+            info(bot, (arg2, arg3))
             return
     # TODO Print help, we either got nothing, or too much
     bot.reply("I don't understand that, try '!help livestream' for info.")
@@ -324,6 +372,7 @@ def parse_service(service):
             return (_re_nls.findall(service)[0], 'new.livestream')
         elif _re_ls.search(service):
             return (_re_ls.findall(service)[0], 'livestream')
+        # TODO add ustream and youtube
         else:
             return None
 
@@ -347,8 +396,8 @@ def add_stream(bot, user):
         with bot.memory['streamLock']:
             try:
                 cur.execute('''SELECT COUNT(*) FROM streams
-                               WHERE channel=%s
-                               AND service=%s''' % (_SUB * 2), (u, s))
+                               WHERE channel = %s
+                               AND service = %s''' % (_SUB * 2), (u, s))
                 if cur.fetchone()[0] == 0:
                     print 'ADD: count was != 0'
                     cur.execute('''INSERT INTO streams (channel, service)
@@ -362,41 +411,47 @@ def add_stream(bot, user):
         bot.say('added stream')
 
 
-def list_streams(bot, arg=None):
+def list_streams(bot, arg=None, nick=None):
     # TODO add logic to /msg when list is too long (>4?)
+    # TODO First combine responses into longer messages, up to 200 char?
+    def format_stream(st):
+        nsfw = ''
+        if st.nsfw:
+            # TODO Add color
+            nsfw = '[NSFW] '
+        live = ''
+        if st.live:
+            # TODO Add color
+            live = '[LIVE] '
+        return '%s%s%s [ %s ]' % (nsfw, live, st, st.url)
+
     if arg == 'featured':
         if len(bot.memory['feat_streams']) == 0:
             bot.say("I've got nothing.")
             return
         for i in bot.memory['feat_streams']:
-            nsfw = ''
-            if i.nsfw:
-                # TODO Add color
-                nsfw = '[NSFW] '
-            live = ''
-            if i.live:
-                # TODO Add color
-                live = '[LIVE] '
-            bot.say('%s%s%s [ %s ]' % (nsfw, live, i, i.url))
+            bot.say(format_stream(i))
         return
     elif arg == 'subscribed' or arg == 'subscriptions':
-        # TODO
-        return
-    else:
+        assert isinstance(nick, Nick)
+        if len(bot.memory['streamSubs']) == 0:
+            bot.say("You aren't subscribed to anything.")
+            return
+        s = None
+        for s in [a for a in bot.memory['streamSubs']
+                  for n in bot.memory['streamSubs'][a] if n == nick]:
+            bot.say(format_stream(s))
+        if s:
+            return
+        bot.say("You aren't subscribed to anything.")
+    elif not arg:
         if len(bot.memory['streams']) == 0:
             bot.say("I've got nothing.")
             return
         for i in bot.memory['streams']:
-            nsfw = ''
-            if i.nsfw:
-                # TODO Add color
-                nsfw = '[NSFW] '
-            live = ''
-            if i.live:
-                # TODO Add color
-                live = '[LIVE] '
-            # TODO Add URL
-            bot.say('%s%s%s [ %s ]' % (nsfw, live, i, i.url))
+            bot.say(format_stream(i))
+    else:
+        bot.say(u"I don't understand what you want me to list!")
 
 
 def remove_stream(bot, user):
@@ -420,6 +475,9 @@ def remove_stream(bot, user):
                 cur.execute('''DELETE FROM streams
                                WHERE channel = %s
                                AND service = %s''' % (_SUB * 2), (u, s))
+                cur.execute('''DELETE FROM sub_streams
+                               WHERE channel = %s
+                               and service = %s''' % (_SUB * 2), (u, s))
                 dbcon.commit()
             finally:
                 cur.close()
@@ -428,6 +486,11 @@ def remove_stream(bot, user):
                 bot.memory['feat_streams'].remove(i)
             except ValueError:
                 # Stream is not in the featured list
+                pass
+            try:
+                del bot.memory['streamSubs'][i]
+            except ValueError:
+                # Stream is not in the subscription list
                 pass
             bot.memory['streams'].remove(i)
             bot.say(u'Stream removed.')
@@ -443,12 +506,6 @@ def update_streams(bot, trigger):
         i.update()
         time.sleep(10)
     bot.reply(u'Streams updated')
-
-
-def subscribe():
-    # Allows users to soft subscribe to a stream and get whispers on live
-    # status change
-    return
 
 
 def feature(bot, switch, channel, quiet=False):
@@ -536,7 +593,95 @@ def feature(bot, switch, channel, quiet=False):
                 bot.debug('streams:load_from_db', msg, 'warning')
 
 
+def subscribe(bot, switch, channel, nick, quiet=False):
+    assert isinstance(channel, basestring) or type(channel) is tuple
+    assert isinstance(switch, basestring)
+    assert isinstance(nick, Nick)
+    try:
+        u, s = parse_service(channel)
+    except TypeError:
+        # TODO say help message
+        msg = 'Bad Input'
+        if not quiet:
+            bot.say(msg)
+        else:
+            bot.debug('streams:subscribe', msg, 'warning')
+        return
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    with bot.memory['streamLock']:
+        for i in [a for a in bot.memory['streams']
+                  if a.name == u and a.service == s]:
+            if switch == 'subscribe':
+                if i not in bot.memory['streamSubs']:
+                    bot.memory['streamSubs'][i] = []
+                if nick not in bot.memory['streamSubs'][i]:
+                    try:
+                        cur.execute('''SELECT COUNT(*) FROM sub_streams
+                                    WHERE channel = %s
+                                    AND service = %s''' % (_SUB * 2),
+                                    (u, s))
+                        if cur.fetchone()[0] == 0:
+                            cur.execute('''INSERT INTO sub_streams
+                                        (channel, service, nick)
+                                        VALUES (%s, %s, %s)''' % (_SUB * 3),
+                                        (u, s, nick))
+                            dbcon.commit()
+                    finally:
+                        cur.close()
+                        dbcon.commit()
+                    bot.memory['streamSubs'][i].append(nick)
+                    msg = u'Subscription added.'
+                    if not quiet:
+                        bot.reply(msg)
+                    else:
+                        bot.debug('streams:subscribe', msg, 'warning')
+                    return
+                else:
+                    msg = u"You're already subscribed to that channel!"
+                    if not quiet:
+                        bot.reply(msg)
+                    else:
+                        bot.debug('streams:subscribe', msg, 'warning')
+            elif switch == 'unsubscribe':
+                if i in bot.memory['streamSubs']:
+                    if nick in bot.memory['streamSubs'][i]:
+                        try:
+                            cur.execute('''DELETE FROM sub_streams
+                                           WHERE channel = %s
+                                           AND service = %s
+                                           AND nick = %s''' % (_SUB * 3),
+                                        (u, s, nick))
+                            dbcon.commit()
+                        finally:
+                            cur.close()
+                            dbcon.close()
+                        bot.memory['streamSubs'][i].remove(nick)
+                        msg = u'Subscription removed.'
+                        if not quiet:
+                            bot.reply(msg)
+                        else:
+                            bot.debug('streams:subscribe', msg, 'warning')
+                        return
+                msg = u"You weren't subscribed to that or that doesn't exist."
+                if not quiet:
+                    bot.reply(msg)
+                else:
+                    bot.debug('streams:subscribe', msg, 'warning')
+            else:
+                msg = u"Oh shit, I don't know what just happened."
+                if not quiet:
+                    bot.reply(msg)
+                else:
+                    bot.debug('streams:subscribe', msg, 'warning')
+
+
 def info():
+    # TODO
+    return
+
+
+def jtv_updater():
     # TODO
     return
 
