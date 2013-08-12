@@ -1,5 +1,5 @@
 """
-streams.py - A simple willie module to track livestreams from popular services
+streams.py - A willie module to track livestreams from popular services
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -66,7 +66,7 @@ class stream(object):
         return u'%s on %s' % (self.name, self.service)
 
     def __repr__(self):
-        return self.name()
+        return self._name
 
     def __lt__(self, other):
         return ((self.name, self.service) < (other.name, other.service))
@@ -264,7 +264,7 @@ class livestream(stream):
         #print json.dumps(self._form_j, indent=4)
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
-        if not self._live and self._settings['isLive']:
+        if bool(self._live) ^ bool(self._settings['isLive']):
             self._live = self._settings['isLive']
             self._last_update = time.time()
 
@@ -284,6 +284,7 @@ class youtube(stream):
 
 class twitchtv(justintv):
     # https://github.com/justintv/twitch-api
+
     pass
 
 
@@ -516,7 +517,8 @@ def add_stream(bot, user):
                               u' again later.')
                     return
                 else:
-                    bot.reply('There was an unknown error, try again later')
+                    bot.reply(u'There was an unknown error, check your ' +
+                              u'spelling and try again later')
                     print txt
                     return
             try:
@@ -544,7 +546,7 @@ def list_streams(bot, arg=None, nick=None):
             live = '[%s] ' % colors.colorize('LIVE', ['green'], ['b'])
         return '%s%s%s [ %s ]' % (nsfw, live, st, colors.colorize(st.url,
                                                                   ['blue']))
-
+    # TODO add option to list only live streams
     if arg == 'featured':
         if len(bot.memory['feat_streams']) == 0:
             bot.say("I've got nothing.")
@@ -620,16 +622,9 @@ def remove_stream(bot, user):
                 pass
             try:
                 del bot.memory['streamSubs'][i]
-            except ValueError:
+            except KeyError:
                 # Stream is not in the subscription list
                 pass
-            except KeyError:
-                # TODO Figure out why this is throwing an 'unprintable
-                # KeyError object'
-                bot.say(u'Oops, there was an error! That will be removed on' +
-                        u' the next restart.')
-                bot.say(u'!tell tdreyer1 You need to restart me and fix that' +
-                        u' damn bug!!!')
             bot.memory['streams'].remove(i)
             bot.say(u'Stream removed.')
             return
