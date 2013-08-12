@@ -10,11 +10,28 @@ import json
 import re
 import time
 import threading
+import imp
+import sys
 from socket import timeout
 
 import willie.web as web
 from willie.module import commands, interval
 from willie.tools import Nick
+# Bot framework is stupid about importing, so we need to override so that
+# the colors module is always available for import.
+try:
+    import colors
+except:
+    try:
+        fp, pathname, description = imp.find_module('colors',
+                                                    ['./.willie/modules/']
+                                                    )
+        colors = imp.load_source('colors', pathname, fp)
+        sys.modules['colors'] = colors
+    finally:
+        if fp:
+            fp.close()
+
 
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
@@ -119,7 +136,6 @@ class justintv(stream):
 
         # Update channel info
         try:
-            # TODO move this url shit to a variable
             self._results = web.get(u'%schannel/show/%s.json' % (
                 self._base_url, self._name))
         except timeout:
@@ -144,7 +160,6 @@ class justintv(stream):
 
         # Update stream info if available
         try:
-            # TODO move this url shit to a variable
             self._results = web.get(u'%sstream/list.json?channel=%s' % (
                 self._base_url, self._name))
         except timeout:
@@ -288,13 +303,12 @@ class StreamFactory(object):
 
 
 def setup(bot):
-    # TODO remove these erasures when you load from database
-    # TODO consider making these unique sets
     bot.debug(
         u'streams.py',
         u'Starting stream setup, this may take a bit.',
         'always'
     )
+    # TODO consider making these unique sets
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
     if 'feat_streams' not in bot.memory:
@@ -311,7 +325,6 @@ def setup(bot):
     # database stuff
     global _SUB
     _SUB = (bot.db.substitution,)
-
     with bot.memory['streamLock']:
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
@@ -331,8 +344,7 @@ def setup(bot):
         load_from_db(bot)
 
 
-@commands('reload_streams')
-def load_from_db(bot, trigger=None):
+def load_from_db(bot):
     with bot.memory['streamLock']:
         bot.memory['streams'] = []
         bot.memory['feat_streams'] = []
@@ -354,17 +366,23 @@ def load_from_db(bot, trigger=None):
                                                                            s))
     for c, s in feat_rows:
         feature(bot, 'feature', (c, s), quiet=True)
-
     for c, s, n in sub_rows:
         subscribe(bot, 'subscribe', (c, s), Nick(n), quiet=True)
 
 
-@commands('test')
+@commands('live')
 def sceencasting(bot, trigger):
+    '''Manage various livestreams from multiple services.
+ Usage: !live [add/del/[un]subscribe/[un]feature/list] [options] |
+ ADD URL-adds a stream to the library |
+ DEL URL-removes a stream from the library |
+ LIST [<blank>/featured/subscriptions]-lists all/featured/subcribed streams |
+ [UN]SUBSCRIBE URL-[un]set private messages on going live |
+ [UN]FEATURE URL-[un]set public announcement on going live'''
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream url"
         arg1 = trigger.args[1].split()[1].lower()
         if arg1 == 'list':
-            list_streams(bot)
+            list_streams(bot, nick=Nick(trigger.nick))
             return
         else:
             add_stream(bot, arg1)
@@ -382,8 +400,12 @@ def sceencasting(bot, trigger):
             subscribe(bot, arg1, arg2, Nick(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
-            feature(bot, arg1, arg2)
-            return
+            if trigger.admin:
+                feature(bot, arg1, arg2)
+                return
+            else:
+                bot.reply(u"Sorry, that's an admin only command.")
+                return
         elif arg1 == 'list':
             list_streams(bot, arg2, Nick(trigger.nick))
             return
@@ -404,16 +426,20 @@ def sceencasting(bot, trigger):
             subscribe(bot, arg1, (arg2, arg3), Nick(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
-            feature(bot, arg1, (arg2, arg3))
-            return
+            if trigger.admin:
+                feature(bot, arg1, (arg2, arg3))
+                return
+            else:
+                bot.reply(u"Sorry, that's an admin only command.")
+                return
         elif arg1 == 'list':
             list_streams(bot, arg2, Nick(trigger.nick))
             return
         elif arg1 == 'info':
             info(bot, (arg2, arg3))
             return
-    # TODO Print help, we either got nothing, or too much
-    bot.reply("I don't understand that, try '!help livestream' for info.")
+    # We either got nothing, or too much
+    bot.reply("I don't understand that, try '!help live' for info.")
 
 
 def parse_service(service):
@@ -435,7 +461,10 @@ def parse_service(service):
             return (_re_nls.findall(service)[0], 'new.livestream')
         elif _re_ls.search(service):
             return (_re_ls.findall(service)[0], 'livestream')
-        # TODO add ustream and youtube
+        elif _re_yt.search(service):
+            return (_re_ls.findall(service)[0], 'youtube')
+        elif _re_us.search(service):
+            return (_re_ls.findall(service)[0], 'ustream.tv')
         else:
             return None
 
@@ -446,9 +475,8 @@ def add_stream(bot, user):
     try:
         u, s = parse_service(user)
     except TypeError:
-        bot.say('Bad Input')
+        bot.say('Bad url or channel/service pair. See !help services.')
         return
-        # TODO say help message
     if [a for a in bot.memory['streams'] if a.name == u and a.service == s]:
         bot.reply(u'I already have that one.')
         return
@@ -475,25 +503,23 @@ def add_stream(bot, user):
 
 
 def list_streams(bot, arg=None, nick=None):
-    # TODO add logic to /msg when list is too long (>4?)
-    # TODO First combine responses into longer messages, up to 200 char?
     def format_stream(st):
         nsfw = ''
         if st.nsfw:
-            # TODO Add color
-            nsfw = '[NSFW] '
+            nsfw = '[%s] ' % colors.colorize('NSFW', ['red'], ['b'])
         live = ''
         if st.live:
-            # TODO Add color
-            live = '[LIVE] '
-        return '%s%s%s [ %s ]' % (nsfw, live, st, st.url)
+            live = '[%s] ' % colors.colorize('LIVE', ['green'], ['b'])
+        return '%s%s%s [ %s ]' % (nsfw, live, st, colors.colorize(st.url,
+                                                                  ['blue']))
 
     if arg == 'featured':
         if len(bot.memory['feat_streams']) == 0:
             bot.say("I've got nothing.")
             return
+        bot.reply(u'Sending you the list in pm.')
         for i in bot.memory['feat_streams']:
-            bot.say(format_stream(i))
+            bot.msg(nick, format_stream(i))
         return
     elif arg == 'subscribed' or arg == 'subscriptions':
         assert isinstance(nick, Nick)
@@ -501,9 +527,10 @@ def list_streams(bot, arg=None, nick=None):
             bot.say("You aren't subscribed to anything.")
             return
         s = None
+        bot.reply(u'Sending you the list in pm.')
         for s in [a for a in bot.memory['streamSubs']
                   for n in bot.memory['streamSubs'][a] if n == nick]:
-            bot.say(format_stream(s))
+            bot.msg(nick, format_stream(s))
         if s:
             return
         bot.say("You aren't subscribed to anything.")
@@ -511,10 +538,20 @@ def list_streams(bot, arg=None, nick=None):
         if len(bot.memory['streams']) == 0:
             bot.say("I've got nothing.")
             return
+        bot.reply(u'Sending you the list in pm.')
         for i in bot.memory['streams']:
-            bot.say(format_stream(i))
+            bot.msg(nick, format_stream(i))
     else:
         bot.say(u"I don't understand what you want me to list!")
+
+
+@commands('services')
+def services(bot, trigger):
+    '''Propert input includes a URL by itself (e.g. http://justin.tv/tdreyer1)
+ or a channel name / service name pair (e.g. tdreyer1 justin.tv). Accepted
+ service names are justin.tv, livestream, twitch.tv, ustream.tv, and youtube'''
+    bot.say(__doc__.strip())
+    return
 
 
 def remove_stream(bot, user):
@@ -523,8 +560,7 @@ def remove_stream(bot, user):
     try:
         u, s = parse_service(user)
     except TypeError:
-        # TODO say help message
-        bot.say('Bad Input')
+        bot.say('Bad url or channel/service pair. See !help services.')
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -577,8 +613,7 @@ def feature(bot, switch, channel, quiet=False):
     try:
         u, s = parse_service(channel)
     except TypeError:
-        # TODO say help message
-        msg = 'Bad Input'
+        msg = u'Bad url or channel/service pair. See !help services.'
         if not quiet:
             bot.say(msg)
         else:
@@ -664,8 +699,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
     try:
         u, s = parse_service(channel)
     except TypeError:
-        # TODO say help message
-        msg = 'Bad Input'
+        msg = u'Bad url or channel/service pair. See !help services.'
         if not quiet:
             bot.say(msg)
         else:
@@ -756,7 +790,7 @@ def announcer(bot):
     _announce_interval = 10 * 60
     # Min time between messages to channel or user
     _msg_interval = 20 * 60
-    # TODO lock
+
     with bot.memory['streamLock']:
         for s in [a for a in bot.memory['streamSubs']
                   if a.live and a.updated > time.time() - _announce_interval]:
@@ -767,7 +801,6 @@ def announcer(bot):
                     # TODO may error if nick isn't on server
                     whisper(n, s)
                     bot.memory['streamMsg'][n][s] = time.time()
-                # TODO change next line to 20 minutes or so
                 elif bot.memory['streamMsg'][n][s] < \
                         time.time() - _msg_interval:
                     # TODO may error if nick isn't on server
@@ -785,7 +818,6 @@ def announcer(bot):
                 if s not in bot.memory['streamMsg'][n]:
                     announce(n, s)
                     bot.memory['streamMsg'][n][s] = time.time()
-                # TODO change next line to 20 minutes or so
                 elif bot.memory['streamMsg'][n][s] < \
                         time.time() - _msg_interval:
                     announce(n, s)
