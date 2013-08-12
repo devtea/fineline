@@ -225,11 +225,13 @@ class livestream(stream):
         except ValueError:
             if re.findall('400 Bad Request', self._results):
                 print 'Livestream Error: 400 Bad Request'
+                raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
                 print 'Livestream Error: 404 Not Found'
+                raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
-            raise
+                raise ValueError('500 Internal Server Error')
         #print 'got json'
         #print json.dumps(self._form_j, indent=4)
         for s in self._form_j['channel']:
@@ -251,11 +253,13 @@ class livestream(stream):
         except ValueError:
             if re.findall('400 Bad Request', self._results):
                 print 'Livestream Error: 400 Bad Request'
+                raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
                 print 'Livestream Error: 404 Not Found'
+                raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
-            raise
+                raise ValueError('500 Internal Server Error')
         #print 'got json'
         #print json.dumps(self._form_j, indent=4)
         for s in self._form_j['channel']:
@@ -293,7 +297,17 @@ class StreamFactory(object):
         elif service == 'new.livesteam':
             return newlivestream(channel)
         elif service == 'livestream':
-            return livestream(channel)
+            try:
+                return livestream(channel)
+            except ValueError as txt:
+                if txt == 'ValueError: 400 Bad Request':
+                    raise ValueError('400 Bad Request')
+                elif txt == 'ValueError: 404 Not Found':
+                    raise ValueError('404 Not Found')
+                elif txt == 'ValueError: 500 Internal Server Error':
+                    raise ValueError('500 Internal Server Error')
+                else:
+                    raise
         elif service == 'youtube':
             return youtube(channel)
         elif service == 'ustream.tv':
@@ -486,6 +500,26 @@ def add_stream(bot, user):
         cur = dbcon.cursor()
         with bot.memory['streamLock']:
             try:
+                bot.memory['streams'].append(
+                    bot.memory['streamFac'].newStream(u, s))
+            except ValueError as txt:
+                if txt == 'ValueError: 400 Bad Request':
+                    bot.reply(u'Oops, I did something bad, so that did not ' +
+                              u'work.')
+                    bot.say('!tell tdreyer1 FIX IT FIX IT FIX IT FIX IT!')
+                    return
+                elif txt == 'ValueError: 404 Not Found':
+                    bot.reply(u'Channel not found.')
+                    return
+                elif txt == 'ValueError: 500 Internal Server Error':
+                    bot.reply(u'Service returned internal server error, try' +
+                              u' again later.')
+                    return
+                else:
+                    bot.reply('There was an unknown error, try again later')
+                    print txt
+                    return
+            try:
                 cur.execute('''SELECT COUNT(*) FROM streams
                                WHERE channel = %s
                                AND service = %s''' % (_SUB * 2), (u, s))
@@ -497,8 +531,6 @@ def add_stream(bot, user):
             finally:
                 cur.close()
                 dbcon.close()
-            bot.memory['streams'].append(bot.memory['streamFac'].newStream(u,
-                                                                           s))
         bot.say('added stream')
 
 
