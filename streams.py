@@ -106,6 +106,7 @@ class justintv(stream):
     # http://www.justin.tv/p/api
     _base_url = 'http://api.justin.tv/api/'
     _service = 'justin.tv'
+    _last_update = time.time()
     #_header_info = ''
 
     def __init__(self, name, alias=None):
@@ -188,7 +189,69 @@ class justintv(stream):
             self._nsfw = False
 
 
-class youtube(stream):
+class livestream(stream):
+    # http://www.livestream.com/userguide/index.php?title=Channel_API_2.0
+    _base_url = '.api.channel.livestream.com/2.0/'
+    _service = 'livestream'
+    _last_update = time.time()
+    #_header_info = ''
+
+    def __init__(self, name, alias=None):
+        super(livestream, self).__init__(name, alias)
+        self._name = name
+        self._safename = re.sub('_', '-', name)
+        try:
+            self._results = web.get(u'x%sx%sinfo.json' % (
+                self._safename, self._base_url))
+        except timeout:
+            raise
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            if re.findall('400 Bad Request', self._results):
+                print 'Livestream Error: 400 Bad Request'
+            elif re.findall('404 Not Found', self._results):
+                print 'Livestream Error: 404 Not Found'
+            elif re.findall('500 Internal Server Error', self._results):
+                print 'Livestream Error: 500 Internal Server Error'
+            raise
+        #print 'got json'
+        #print json.dumps(self._form_j, indent=4)
+        for s in self._form_j['channel']:
+            self._settings[s] = self._form_j['channel'][s]
+        if not self._live and self._settings['isLive']:
+            self._live = self._settings['isLive']
+            self._last_update = time.time()
+        self._url = self._settings['link']
+        # No integrated NSFW flags to parse!
+
+    def update(self):
+        try:
+            self._results = web.get(u'x%sx%slivestatus.json' % (
+                self._safename, self._base_url))
+        except timeout:
+            raise
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            if re.findall('400 Bad Request', self._results):
+                print 'Livestream Error: 400 Bad Request'
+            elif re.findall('404 Not Found', self._results):
+                print 'Livestream Error: 404 Not Found'
+            elif re.findall('500 Internal Server Error', self._results):
+                print 'Livestream Error: 500 Internal Server Error'
+            raise
+        #print 'got json'
+        #print json.dumps(self._form_j, indent=4)
+        for s in self._form_j['channel']:
+            self._settings[s] = self._form_j['channel'][s]
+        if not self._live and self._settings['isLive']:
+            self._live = self._settings['isLive']
+            self._last_update = time.time()
+
+
+class newlivestream(stream):
+    # http://www.livestream.com/userguide/?title=Channel_API_2.0
     pass
 
 
@@ -196,15 +259,7 @@ class ustream(stream):
     pass
 
 
-class livestream(stream):
-   # http://www.livestream.com/userguide/?title=Guide_API
-    def __init__(self):
-        super(livestream, self).__init__()
-    pass
-
-
-class newlivestream(stream):
-    # http://www.livestream.com/userguide/?title=Channel_API_2.0
+class youtube(stream):
     pass
 
 
@@ -227,7 +282,7 @@ class StreamFactory(object):
         elif service == 'youtube':
             return youtube(channel)
         elif service == 'ustream.tv':
-            return youtube(channel)
+            return ustream(channel)
         else:
             return None
 
@@ -695,6 +750,7 @@ def announcer(bot):
             chan,
             'Hey everyone, %s has started streaming at %s' % (strm.name,
                                                               strm.url))
+    print 'Announcer waking up'
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
     _announce_interval = 10 * 60
@@ -738,9 +794,11 @@ def announcer(bot):
                     # Chan was msg'd about stream too recently. The stream may
                     # be experiencing trouble so we don't want to spam
                     pass
+    print 'Announcer sleeping'''
 
 
-@interval(60)
+# Justin.tv caches for at least 60 seconds. Updating faster is pointless.
+@interval(5 * 60)
 def jtv_updater(bot):
     print 'starting jtv updater'
     now = time.time()
@@ -748,6 +806,21 @@ def jtv_updater(bot):
         s.update()
         time.sleep(1)
     print 'jtv updater complete in %s seconds.' % (time.time() - now)
+
+
+# Livestream limits access to the following limits
+#    10 requests per second
+#    100 requests per minutes ( ~1 / 2sec )
+#    1000 requests per hour ( ~1 / 3sec )
+#    10000 requests per day ( ~1 / 9sec )
+@interval(5 * 60)
+def livestream_updater(bot):
+    print 'starting livestream updater'
+    now = time.time()
+    for s in [i for i in bot.memory['streams'] if i.service == 'livestream']:
+        s.update()
+        time.sleep(1)
+    print 'livestream updater complete in %s seconds.' % (time.time() - now)
 
 
 def info():
@@ -758,6 +831,12 @@ def info():
 def url_watcher():
     # TODO Write function that watches for stream URLs in chat, and post info
     # about them. Don't forget to exclude these from the regular URL watcher
+    return
+
+
+def stats():
+    # TODO Need a function that will report stats like number of streams,
+    # number of featured, number of subs, steams by service
     return
 
 
