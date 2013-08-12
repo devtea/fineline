@@ -591,6 +591,13 @@ def remove_stream(bot, user):
             except ValueError:
                 # Stream is not in the subscription list
                 pass
+            except KeyError:
+                # TODO Figure out why this is throwing an 'unprintable
+                # KeyError object'
+                bot.say(u'Oops, there was an error! That will be removed on' +
+                        u' the next restart.')
+                bot.say(u'!tell tdreyer1 You need to restart me and fix that' +
+                        u' damn bug!!!')
             bot.memory['streams'].remove(i)
             bot.say(u'Stream removed.')
             return
