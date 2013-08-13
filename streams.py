@@ -1121,6 +1121,8 @@ def stats():
 
 @commands('db_maint')
 def update_database_tables(bot, trigger):
+    if not trigger.admin:
+        return
     with bot.memory['streamLock']:
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
