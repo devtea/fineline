@@ -112,6 +112,32 @@ class stream(object):
         return self._nsfw
 
     @property
+    def m_nsfw(self):
+        return self._manual_nsfw
+
+    @m_nsfw.setter
+    def m_nsfw(self, value):
+        assert isinstance(value, bool)
+        self._manual_nsfw = value
+
+    @m_nsfw.deleter
+    def m_nsfw(self):
+        self._manual_nsfw = None
+
+    @property
+    def alias(self):
+        return self._alias
+
+    @alias.setter
+    def alias(self, value):
+        assert isinstance(value, basestring)
+        self._alias = value
+
+    @alias.deleter
+    def alias(self):
+        self._alias = None
+
+    @property
     def updated(self):
         return self._last_update
 
@@ -130,7 +156,6 @@ class justintv(stream):
 
     def __init__(self, name, alias=None):
         super(justintv, self).__init__(name, alias)
-        self._name = name
         self.update()
 
     def update(self):
@@ -215,8 +240,7 @@ class livestream(stream):
 
     def __init__(self, name, alias=None):
         super(livestream, self).__init__(name, alias)
-        self._name = name
-        self._safename = re.sub('_', '-', name)
+        self._safename = re.sub('_', '-', self._name)
         try:
             self._results = web.get(u'x%sx%sinfo.json' % (
                 self._safename, self._base_url))
@@ -291,17 +315,17 @@ class twitchtv(justintv):
 
 
 class StreamFactory(object):
-    def newStream(self, channel, service):
+    def newStream(self, channel, service, alias=None):
         # TODO catch exceptions from object instantiations
         if service == 'justin.tv':
-            return justintv(channel)
+            return justintv(channel, alias)
         elif service == 'twitch.tv':
-            return twitchtv(channel)
+            return twitchtv(channel, alias)
         elif service == 'new.livesteam':
-            return newlivestream(channel)
+            return newlivestream(channel, alias)
         elif service == 'livestream':
             try:
-                return livestream(channel)
+                return livestream(channel, alias)
             except ValueError as txt:
                 if txt == 'ValueError: 400 Bad Request':
                     raise ValueError('400 Bad Request')
@@ -312,9 +336,9 @@ class StreamFactory(object):
                 else:
                     raise
         elif service == 'youtube':
-            return youtube(channel)
+            return youtube(channel, alias)
         elif service == 'ustream.tv':
-            return ustream(channel)
+            return ustream(channel, alias)
         else:
             return None
 
@@ -348,7 +372,8 @@ def setup(bot):
         # If our tables don't exist, create them
         try:
             cur.execute('''CREATE TABLE IF NOT EXISTS streams
-                           (channel text, service text)''')
+                           (channel text, service text,
+                           m_nsfw int, alias text)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS feat_streams
                            (channel text, service text)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS sub_streams
@@ -366,25 +391,26 @@ def load_from_db(bot, trigger=None):
     bot.debug(u'streams.py:reload', u'Reloading from DB', 'verbose')
     if trigger and not trigger.admin:
         return
-    with bot.memory['streamLock']:
-        bot.memory['streams'] = []
-        bot.memory['feat_streams'] = []
-        dbcon = bot.db.connect()  # sqlite3 connection
-        cur = dbcon.cursor()
-        try:
-            cur.execute('SELECT channel, service FROM streams')
-            stream_rows = cur.fetchall()
-            cur.execute('SELECT channel, service FROM feat_streams')
-            feat_rows = cur.fetchall()
-            cur.execute('SELECT channel, service, nick FROM sub_streams')
-            sub_rows = cur.fetchall()
-        finally:
-            cur.close()
-            dbcon.close()
-        for c, s in stream_rows:
-            time.sleep(2)
-            bot.memory['streams'].append(bot.memory['streamFac'].newStream(c,
-                                                                           s))
+    bot.memory['streams'] = []
+    bot.memory['feat_streams'] = []
+    dbcon = bot.db.connect()  # sqlite3 connection
+    cur = dbcon.cursor()
+    try:
+        cur.execute('SELECT channel, service, m_nsfw, alias  FROM streams')
+        stream_rows = cur.fetchall()
+        cur.execute('SELECT channel, service FROM feat_streams')
+        feat_rows = cur.fetchall()
+        cur.execute('SELECT channel, service, nick FROM sub_streams')
+        sub_rows = cur.fetchall()
+    finally:
+        cur.close()
+        dbcon.close()
+    for c, s, n, a in stream_rows:
+        time.sleep(2)
+        bot.memory['streams'].append(
+            bot.memory['streamFac'].newStream(c, s, a))
+        if n:
+            nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
@@ -392,15 +418,169 @@ def load_from_db(bot, trigger=None):
     bot.debug(u'streams.py:reload', u'Done.', 'verbose')
 
 
-@commands('live')
-def sceencasting(bot, trigger):
-    '''Manage various livestreams from multiple services.
- Usage: !live [add/del/[un]subscribe/[un]feature/list] [options] |
- ADD URL-adds a stream to the library |
+def help(bot, trigger):
+    ''' ADD URL-adds a stream to the library |
  DEL URL-removes a stream from the library |
  LIST [<blank>/featured/subscriptions]-lists all/featured/subcribed streams |
  [UN]SUBSCRIBE URL-[un]set private messages on going live |
  [UN]FEATURE URL-[un]set public announcement on going live'''
+    bot.say(u'Nothin here yet, hold tight!')
+
+
+def alias(bot, switch, channel, value=None):
+    assert isinstance(channel, basestring) or type(channel) is tuple
+    try:
+        c, s = parse_service(channel)
+    except TypeError:
+        bot.say('Bad url or channel/service pair. See !help services.')
+        return
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    with bot.memory['streamLock']:
+        if switch == 'alias':
+            i = None
+            for i in [a for a in bot.memory['streams']
+                      if a.name == c and a.service == s]:
+                i.alias = value
+                try:
+                    cur.execute('''UPDATE streams
+                                    SET alias = %s
+                                    WHERE channel = %s
+                                    AND service = %s
+                                    ''' % (_SUB * 3), (value, c, s))
+                    dbcon.commit()
+                finally:
+                    cur.close()
+                    dbcon.close()
+                bot.say(u'Set alias for %s to %s.' % (c, value))
+                return
+            else:
+                bot.say(u"I don't have that stream.")
+        elif switch == 'unalias':
+            i = None
+            for i in [a for a in bot.memory['streams']
+                      if a.name == c and a.service == s]:
+                if i.alias:
+                    del i.alias
+                    try:
+                        cur.execute('''UPDATE streams
+                                        SET alias = NULL
+                                        WHERE channel = %s
+                                        AND service = %s
+                                        ''' % (_SUB * 2), (c, s))
+                        dbcon.commit()
+                    finally:
+                        cur.close()
+                        dbcon.close()
+                    bot.say(u'Removed alias for %s.' % c)
+                    return
+                else:
+                    bot.say(u"That doesn't have an alias.")
+                    return
+            else:
+                bot.say(u"I don't have that stream.")
+        else:
+            bot.say(u"Uh, that wasn't supposed to happen.")
+            bot.say(u"!tell tdreyer1 HEEEEEEEEEEELLLLLLP!")
+
+
+def nsfw(bot, switch, channel, quiet=None):
+    assert isinstance(channel, basestring) or type(channel) is tuple
+    try:
+        c, s = parse_service(channel)
+    except TypeError:
+        msg = u'Bad url or channel/service pair. See !help services.'
+        if not quiet:
+            bot.say(msg)
+        else:
+            bot.debug('streams:load_from_db', msg, 'warning')
+        return
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    with bot.memory['streamLock']:
+        if switch == 'nsfw':
+            i = None
+            for i in [a for a in bot.memory['streams']
+                      if a.name == c and a.service == s]:
+                i.m_nsfw = True
+                try:
+                    cur.execute('''UPDATE streams
+                                    SET m_nsfw = 1
+                                    WHERE channel = %s
+                                    AND service = %s
+                                    ''' % (_SUB * 2), (c, s))
+                    dbcon.commit()
+                finally:
+                    cur.close()
+                    dbcon.close()
+                msg = u'Set NSFW tag for %s.' % c
+                if not quiet:
+                    bot.say(msg)
+                else:
+                    bot.debug('streams:load_from_db', msg, 'warning')
+                return
+
+            else:
+                msg = u"I don't have that stream."
+                if not quiet:
+                    bot.say(msg)
+                else:
+                    bot.debug('streams:load_from_db', msg, 'warning')
+        elif switch == 'unnsfw':
+            i = None
+            for i in [a for a in bot.memory['streams']
+                      if a.name == c and a.service == s]:
+                if i.m_nsfw:
+                    del i.m_nsfw
+                    try:
+                        cur.execute('''SELECT COUNT(*) FROM streams
+                                    WHERE channel = %s
+                                    AND service = %s
+                                    AND m_nsfw = 1
+                                    ''' % (_SUB * 2), (c, s))
+                        if cur.fetchone():
+                            cur.execute('''UPDATE streams
+                                        SET m_nsfw = 0
+                                        WHERE channel = %s
+                                        AND service = %s
+                                        ''' % (_SUB * 2), (c, s))
+                        dbcon.commit()
+                    finally:
+                        cur.close()
+                        dbcon.close()
+                    msg = u'Removed NSFW tag for %s.' % c
+                    if not quiet:
+                        bot.say(msg)
+                    else:
+                        bot.debug('streams:load_from_db', msg, 'warning')
+                    return
+                else:
+                    msg = u"That doesn't have a NSFW tag."
+                    if not quiet:
+                        bot.say(msg)
+                    else:
+                        bot.debug('streams:load_from_db', msg, 'warning')
+                    return
+            else:
+                msg = u"I don't have that stream."
+                if not quiet:
+                    bot.say(msg)
+                else:
+                    bot.debug('streams:load_from_db', msg, 'warning')
+        else:
+            msg = u"Uh oh, that wasn't supposed to happen."
+            if not quiet:
+                bot.say(msg)
+                bot.say(u"!tell tdreyer1 FIIIIIXX MEEEEEEEE!")
+            else:
+                bot.debug('streams:load_from_db', msg, 'warning')
+
+
+@commands('live')
+def sceencasting(bot, trigger):
+    '''Manage various livestreams from multiple services.
+ Usage: !live [list/add/del/[un]alias/[un]nsfw/[un]subscribe/[un]feature]
+ [options] | See '!list help' for detailed usage.'''
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream url"
         arg1 = trigger.args[1].split()[1].lower()
         if arg1 == 'list':
@@ -434,6 +614,12 @@ def sceencasting(bot, trigger):
         elif arg1 == 'info':
             info(bot, arg2)
             return
+        elif arg1 == 'unalias':
+            alias(bot, arg1, arg2)
+            return
+        elif arg1 == 'nsfw' or arg1 == 'unnsfw':
+            nsfw(bot, arg1, arg2)
+            return
     elif len(trigger.args[1].split()) == 4:  # E.G. "!stream add user service"
         arg1 = trigger.args[1].split()[1].lower()
         arg2 = trigger.args[1].split()[2].lower()
@@ -460,6 +646,21 @@ def sceencasting(bot, trigger):
         elif arg1 == 'info':
             info(bot, (arg2, arg3))
             return
+        elif arg1 == 'alias' or arg1 == 'unalias':
+            alias(bot, arg1, arg2, arg3)
+            return
+        elif arg1 == 'nsfw' or arg1 == 'unnsfw':
+            nsfw(bot, arg1, (arg2, arg3))
+            return
+    elif len(trigger.args[1].split()) == 5:  # E.G. "!stream add user service"
+        arg1 = trigger.args[1].split()[1].lower()
+        arg2 = trigger.args[1].split()[2].lower()
+        arg3 = trigger.args[1].split()[3].lower()
+        arg4 = trigger.args[1].split()[4].lower()
+        if arg1 == 'alias' or arg1 == 'unalias':
+            alias(bot, arg1, (arg2, arg3), arg4)
+            return
+
     # We either got nothing, or too much
     bot.reply("I don't understand that, try '!help live' for info.")
 
@@ -545,14 +746,19 @@ def add_stream(bot, user):
 
 def list_streams(bot, arg=None, nick=None):
     def format_stream(st):
+        print st.alias
+        if st.alias:
+            name = '%s on %s' % (st.alias, st.service)
+        else:
+            name = st
         nsfw = ''
-        if st.nsfw:
+        if st.nsfw or st.m_nsfw:
             nsfw = '[%s] ' % colors.colorize('NSFW', ['red'], ['b'])
         live = ''
         if st.live:
             live = '[%s] ' % colors.colorize('LIVE', ['green'], ['b'])
-        return '%s%s%s [ %s ]' % (nsfw, live, st, colors.colorize(st.url,
-                                                                  ['blue']))
+        return '%s%s%s [ %s ]' % (nsfw, live, name, colors.colorize(st.url,
+                                                                    ['blue']))
     # TODO add option to list only live streams
     if arg == 'featured':
         if len(bot.memory['feat_streams']) == 0:
@@ -911,6 +1117,19 @@ def stats():
     # TODO Need a function that will report stats like number of streams,
     # number of featured, number of subs, steams by service
     return
+
+
+@commands('db_maint')
+def update_database_tables(bot, trigger):
+    with bot.memory['streamLock']:
+        dbcon = bot.db.connect()  # sqlite3 connection
+        cur = dbcon.cursor()
+        try:
+            cur.execute('ALTER TABLE streams ADD COLUMN m_nsfw int')
+            cur.execute('ALTER TABLE streams ADD COLUMN alias text')
+        finally:
+            cur.close()
+            dbcon.close()
 
 
 if __name__ == "__main__":
