@@ -46,10 +46,12 @@ _SUB = ('?',)  # This will be replaced in setup()
 
 class stream(object):
     '''General stream object. To be extended for each individual API.'''
+    _alias = None
     _url = None
     _settings = {}
     _live = False
     _nsfw = False
+    _manual_nsfw = False
     _last_update = None
     _service = None
 
@@ -359,7 +361,11 @@ def setup(bot):
         load_from_db(bot)
 
 
-def load_from_db(bot):
+@commands('live_reload')
+def load_from_db(bot, trigger=None):
+    bot.debug(u'streams.py:reload', u'Reloading from DB', 'verbose')
+    if trigger and not trigger.admin:
+        return
     with bot.memory['streamLock']:
         bot.memory['streams'] = []
         bot.memory['feat_streams'] = []
@@ -383,6 +389,7 @@ def load_from_db(bot):
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
         subscribe(bot, 'subscribe', (c, s), Nick(n), quiet=True)
+    bot.debug(u'streams.py:reload', u'Done.', 'verbose')
 
 
 @commands('live')
