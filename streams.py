@@ -784,6 +784,13 @@ def list_streams(bot, arg=None, nick=None):
         if s:
             return
         bot.say("You aren't subscribed to anything.")
+    elif arg == 'live' or arg == 'streaming':
+        s = None
+        for s in [a for a in bot.memory['streamSubs'] if a.live]:
+            bot.say(format_stream(s))
+        if s:
+            return
+        bot.say("No one is streaming right now.")
     elif not arg:
         if len(bot.memory['streams']) == 0:
             bot.say("I've got nothing.")
