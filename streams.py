@@ -586,6 +586,9 @@ def sceencasting(bot, trigger):
         if arg1 == 'list':
             list_streams(bot, nick=Nick(trigger.nick))
             return
+        if arg1 == 'stats':
+            stats(bot)
+            return
         else:
             add_stream(bot, arg1)
             return
@@ -1113,10 +1116,26 @@ def url_watcher():
     return
 
 
-def stats():
+def stats(bot):
     # TODO Need a function that will report stats like number of streams,
     # number of featured, number of subs, steams by service
-    return
+    bot.say('I am tracking %s streams, %s of which are featured.' %
+            (len(bot.memory['streams']), len(bot.memory['feat_streams'])))
+    bot.say(('There are %s from livestream, %s from justin.tv, ' +
+             '%s from twitch.tv, %s from youtube, and %s from ustream.tv.') % (
+            len([i for i in bot.memory['streams']
+                if i.service == 'livestream']),
+            len([i for i in bot.memory['streams']
+                if i.service == 'justin.tv']),
+            len([i for i in bot.memory['streams']
+                if i.service == 'twitch.tv']),
+            len([i for i in bot.memory['streams']
+                if i.service == 'youtube']),
+            len([i for i in bot.memory['streams']
+                if i.service == 'ustream.tv'])
+            ))
+    bot.say(u'There are %s individual subscriptions.' %
+            len(bot.memory['streamSubs']))
 
 
 @commands('db_maint')
