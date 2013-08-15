@@ -578,27 +578,7 @@ def nsfw(bot, switch, channel, quiet=None):
 
 
 def more_help(bot, trigger):
-    bot.reply(u'Sending you the (long) help in pm.')
-    bot.msg(trigger.nick, u'''%s - Use no options to list all the streams that
- have been added. Use "featured" to list featured streams. Use "subscribed" to
- see your own subscribed streams. Use "live" to list all streams that are
- currently live.''' % colors.colorize(
-        u'!live list [(none)/featured/subscribed/live', [], ['b']))
-    bot.msg(trigger.nick, u'''%s - Adds or removes a stream from the master
- list. Please be considerate when removing items.
-            ''' % colors.colorize(u'!live [add/del] URL', [], ['b']))
-    bot.msg(trigger.nick, u'''%s - Adds or removes a personal stream
- subscription. When you subscribe to a stream, %s will private message you
- when the stream goes live.
-            ''' % (colors.colorize(u'!live [un]subscribe URL', [], ['b']),
-                   bot.nick))
-    bot.msg(trigger.nick, u'''%s - Adds or removes a custom alias from any
-    stream. Useful when, a user's name is not the same as their channel name.
-            ''' % colors.colorize(u'!live [un]alias URL [alias]', [], ['b']))
-    bot.msg(trigger.nick, u'''%s - Adds or removes a NSFW warning for any
- stream. Useful for services (like livestream) who do not report the NSFW
- status of streams or for channels that are marked incorrectly.
-            ''' % colors.colorize(u'!live [un]NSFW URL', [], ['b']))
+    bot.reply('https://dl.dropboxusercontent.com/u/523523/help.html')
 
 
 @commands('live')
