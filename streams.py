@@ -1119,7 +1119,7 @@ def announcer(bot):
 
 
 # Justin.tv caches for at least 60 seconds. Updating faster is pointless.
-@interval(5 * 60)
+@interval(5 * 60 + 7)
 def jtv_updater(bot):
     print 'starting jtv updater'
     now = time.time()
@@ -1134,7 +1134,7 @@ def jtv_updater(bot):
 #    100 requests per minutes ( ~1 / 2sec )
 #    1000 requests per hour ( ~1 / 3sec )
 #    10000 requests per day ( ~1 / 9sec )
-@interval(5 * 60)
+@interval(5 * 60 + 11)
 def livestream_updater(bot):
     print 'starting livestream updater'
     now = time.time()
