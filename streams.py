@@ -32,13 +32,19 @@ except:
         if fp:
             fp.close()
 
-
+_exc_regex = []
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
+_exc_regex.append(re.compile('justin\.tv/'))
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
+_exc_regex.append(re.compile('twitch\.tv/'))
 _re_nls = re.compile('(?<=new\.livestream\.com/)[^/(){}[\]]+')
+_exc_regex.append(re.compile('livestream\.com/'))
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
+##
 _re_us = re.compile('(?<=ustream\.tv/)[^/(){}[\]]+')
+_exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
+_exc_regex.append(re.compile('youtube\.com/'))
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream']
 _SUB = ('?',)  # This will be replaced in setup()
@@ -350,6 +356,10 @@ def setup(bot):
         'always'
     )
     # TODO consider making these unique sets
+    if 'url_exclude' not in bot.memory:
+        bot.memory['url_exclude'] = []
+    for i in _exc_regex:
+        bot.memory['url_exclude'].append(i)
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
     if 'feat_streams' not in bot.memory:
@@ -818,6 +828,10 @@ def list_streams(bot, arg=None, nick=None):
             bot.msg(nick, format_stream(i))
     else:
         bot.say(u"I don't understand what you want me to list!")
+
+
+def publish_lists(bot):
+    return
 
 
 @commands('services')
