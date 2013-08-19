@@ -917,16 +917,19 @@ def publish_lists(bot, trigger=None):
         with open(bot.memory['streamSet']['list_main_dest_path'], 'r') as f:
             previous_full_list = ''.join(f.readlines())
     except IOError:
+        previous_full_list = ''
         bot.debug(
             u'streams.py',
             u'IO error grabbing "list_main_dest_path" file contents. ' +
             u'File may not exist yet',
             u'warning'
         )
+
     try:
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'r') as f:
             previous_feat_list = ''.join(f.readlines())
     except IOError:
+        previous_feat_list = ''
         bot.debug(
             u'streams.py',
             u'IO error grabbing "list_feat_dest_path" file contents. ' +
