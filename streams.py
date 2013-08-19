@@ -168,7 +168,6 @@ class justintv(stream):
 
     def update(self):
         # Update stream info - first grab chan, then try to grab stream
-
         # Update channel info
         try:
             self._results = web.get(u'%schannel/show/%s.json' % (
@@ -192,6 +191,7 @@ class justintv(stream):
             pass
         for s in self._form_j:
             self._settings[s] = self._form_j[s]
+        self._form_j = None  # cleanup
 
         # Update stream info if available
         try:
@@ -227,10 +227,10 @@ class justintv(stream):
             for s in self._form_j[0]:
                 self._settings[s] = self._form_j[0][s]
         else:
-            # No results means stream's not live
-            if self._live:
+            # No results means stream's not live if self._live:
                 self._live = False
                 self._last_update = time.time()
+        self._form_j = None  # cleanup
         self._url = self._settings['channel_url']
         # NSFW flag is one of ['true', 'false', None]
         if self._settings['mature'] == 'true':
@@ -316,10 +316,81 @@ class youtube(stream):
     pass
 
 
-class twitchtv(justintv):
+class twitchtv(stream):
     # https://github.com/justintv/twitch-api
+    _base_url = 'https://api.twitch.tv/kraken/'
+    _service = 'twitch.tv'
+    _header_info = {'Accept': 'application/vnd.twitchtv.v2+json'}
+    _last_update = time.time()
 
-    pass
+    def __init__(self, name, alias=None):
+        super(twitchtv, self).__init__(name, alias)
+        # Update channel info
+        print "grabbing channel"
+        try:
+            self._results = web.get(u'%schannels/%s' % (
+                self._base_url, self._name), headers=self._header_info)
+        except timeout:
+            raise
+        print 'parsing json'
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            print "Bad Json loaded from twitch.tv"
+            raise
+        except IndexError:
+            raise
+        except TypeError:
+            raise
+        if 'error' in self._form_j:
+            raise ValueError('%s %s %s' % (
+                self._form_j['error'],
+                self._form_j['status'],
+                self._form_j['message']))
+        print 'got json'
+        print json.dumps(self._form_j, indent=4)
+        try:
+            raise ValueError(self._form_j['error'])
+        except KeyError:
+            pass
+        for s in self._form_j:
+            self._settings[s] = self._form_j[s]
+        self._form_j = None  # cleanup
+        self._url = self._settings['url']
+        # NSFW flag is one of ['true', 'false', None]
+        if self._settings['mature'] == 'true':
+            self._nsfw = True
+        else:
+            self._nsfw = False
+        self.update()
+
+    def update(self):
+        try:
+            self._results = web.get(u'%sstreams/%s' % (
+                self._base_url, self._name), headers=self._header_info)
+        except timeout:
+            raise
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            print "Bad Json loaded from justin.tv"
+            raise
+        except IndexError:
+            raise
+        except TypeError:
+            raise
+        if 'error' in self._form_j:
+            raise ValueError('%s %s %s' % (
+                self._form_j['error'],
+                self._form_j['status'],
+                self._form_j['message']))
+        for s in self._form_j:
+            self._settings[s] = self._form_j[s]
+        self._form_j = None  # cleanup
+        # If stream is populated with data, then stream is live
+        if bool(self._live) ^ bool(self._settings['stream']):
+            self._live = bool(self._settings['stream'])
+            self._last_update = time.time()
 
 
 class StreamFactory(object):
@@ -1303,6 +1374,16 @@ def livestream_updater(bot):
         s.update()
         time.sleep(0.25)
     print 'livestream updater complete in %s seconds.' % (time.time() - now)
+
+
+@interval(227)
+def twitchtv_updater(bot):
+    print 'starting twitch.tv updater'
+    now = time.time()
+    for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
+        s.update()
+        time.sleep(0.25)
+    print 'twitch.tv updater complete in %s seconds.' % (time.time() - now)
 
 
 def info():
