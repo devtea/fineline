@@ -11,8 +11,10 @@ import re
 import time
 import threading
 import imp
+import shutil
 import sys
 from socket import timeout
+from string import Template
 
 import willie.web as web
 from willie.module import commands, interval
@@ -349,7 +351,85 @@ class StreamFactory(object):
             return None
 
 
+def configure(config):
+    '''
+    | [streams] | example | purpose |
+    | --------- | ------- | ------- |
+    | stream_help_file_path | /home/willie/.modules/help.html | Absolute path to HTML file to be displayed for help. |
+    | stream_help_file_url | http://your.domain.com/help.html | URL pointing to the hosted help page. |
+    | stream_list_template_path | /home/willie/.modules/list.html.template | Absolute path to the HTML template to be used for listing streams. |
+    | stream_list_main_dest_path | /home/user/dropbox/main.html | Absolute path to where the bot should write the formatted main list HTML file. |
+    | stream_list_feat_dest_path | /home/user/dropbox/featured.html | Absolute path to where the bot should write the formatted featured list HTML file. |
+    | stream_list_main_url | http://your.domain.com/main.html | URL pointing to the hosted main list page. |
+    | stream_list_feat_url | http://your.domain.com/feat.html | URL pointing to the hosted featured list page. |
+    '''
+    if config.option('Configure stream files and urls', False):
+        config.interactive_add(
+            'streams',
+            'stream_help_file_path',
+            'Absolute path to HTML file to be displayed for help.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_help_file_url',
+            'URL pointing to the hosted help page.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_list_template_path',
+            'Absolute path to the HTML template to be used for listing streams.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_list_main_dest_path',
+            'Absolute path to where the bot should write the formatted main list HTML file.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_list_feat_dest_path',
+            'Absolute path to where the bot should write the formatted featured list HTML file.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_list_main_url',
+            'URL pointing to the hosted main list page.'
+        )
+        config.interactive_add(
+            'streams',
+            'stream_list_feat_url',
+            'URL pointing to the hosted featured list page.'
+        )
+
+
 def setup(bot):
+    bot.memory['streamSet'] = {}
+    bot.memory['streamSet']['help_file_source'] = bot.config.streams.stream_help_file_source
+    bot.memory['streamSet']['help_file_dest'] = bot.config.streams.stream_help_file_dest
+    bot.memory['streamSet']['help_file_url'] = bot.config.streams.stream_help_file_url
+    bot.memory['streamSet']['list_template_path'] = bot.config.streams.stream_list_template_path
+    bot.memory['streamSet']['list_main_dest_path'] = bot.config.streams.stream_list_main_dest_path
+    bot.memory['streamSet']['list_feat_dest_path'] = bot.config.streams.stream_list_feat_dest_path
+    bot.memory['streamSet']['list_main_url'] = bot.config.streams.stream_list_main_url
+    bot.memory['streamSet']['list_feat_url'] = bot.config.streams.stream_list_feat_url
+    try:
+        shutil.copyfile(
+                bot.memory['streamSet']['help_file_source'],
+                bot.memory['streamSet']['help_file_dest']
+        )
+    except:
+        bot.debug(u'streams.py',
+                  u'Unable to copy help file. Check configuration.',
+                  u'always')
+        raise
+    with open(bot.memory['streamSet']['list_template_path']) as f:
+        try:
+            bot.memory['streamListT'] = Template(''.join(f.readlines()))
+        except:
+            bot.debug(u'streams.py',
+                      u'Unable to load list template.',
+                      u'always')
+            raise
+
     bot.debug(
         u'streams.py',
         u'Starting stream setup, this may take a bit.',
@@ -578,7 +658,8 @@ def nsfw(bot, switch, channel, quiet=None):
 
 
 def more_help(bot, trigger):
-    bot.reply('https://dl.dropboxusercontent.com/u/523523/help.html')
+    bot.reply(u'For detailed help, see %s' %
+              bot.memory['streamSet']['help_file_url'])
 
 
 @commands('live')
@@ -757,7 +838,6 @@ def add_stream(bot, user):
 
 def list_streams(bot, arg=None, nick=None):
     def format_stream(st):
-        print st.alias
         if st.alias:
             name = '%s on %s' % (st.alias, st.service)
         else:
@@ -770,16 +850,10 @@ def list_streams(bot, arg=None, nick=None):
             live = '[%s] ' % colors.colorize('LIVE', ['green'], ['b'])
         return '%s%s%s [ %s ]' % (nsfw, live, name, colors.colorize(st.url,
                                                                     ['blue']))
+
     # TODO add option to list only live streams
-    if arg == 'featured':
-        if len(bot.memory['feat_streams']) == 0:
-            bot.say("I've got nothing.")
-            return
-        bot.reply(u'Sending you the list in pm.')
-        for i in bot.memory['feat_streams']:
-            bot.msg(nick, format_stream(i))
-        return
-    elif arg == 'subscribed' or arg == 'subscriptions':
+    if arg == 'subscribed' or arg == 'subscriptions':
+        #Private subscriptions should be PM'd, even if many
         assert isinstance(nick, Nick)
         if len(bot.memory['streamSubs']) == 0:
             bot.say("You aren't subscribed to anything.")
@@ -793,24 +867,127 @@ def list_streams(bot, arg=None, nick=None):
             return
         bot.say("You aren't subscribed to anything.")
     elif arg == 'live' or arg == 'streaming':
+        #Should be few enough streaming at any one time, just say in chat
         s = None
-        for s in [a for a in bot.memory['streamSubs'] if a.live]:
+        for s in [a for a in bot.memory['streams'] if a.live]:
             bot.say(format_stream(s))
         if s:
             return
         bot.say("No one is streaming right now.")
     elif not arg:
+        #Too many to say in chat, link to HTML list
         if len(bot.memory['streams']) == 0:
             bot.say("I've got nothing.")
-            return
-        bot.reply(u'Sending you the list in pm.')
-        for i in bot.memory['streams']:
+        else:
+            bot.say("The current list is up at %s" %
+                    bot.memory['streamSet']['list_main_url'])
+        return
+    elif arg == 'featured':
+        if len(bot.memory['feat_streams']) == 0:
+            bot.say("I've got nothing.")
+        else:
+            bot.say("The current list is up at %s" %
+                    bot.memory['streamSet']['list_feat_url'])
+        return
+        for i in bot.memory['feat_streams']:
             bot.msg(nick, format_stream(i))
+        return
     else:
         bot.say(u"I don't understand what you want me to list!")
 
 
-def publish_lists(bot):
+def publish_lists(bot, trigger=None):
+    def format_html(st):
+        def wrap_link(link):
+            return u'<a href = "%s">%s</a>' % (link, link)
+
+        if st.alias:
+            name = '%s on %s' % (st.alias, st.service)
+        else:
+            name = st
+        nsfw = ''
+        if st.nsfw or st.m_nsfw:
+            nsfw = "<span id='nsfw'>[NSFW]</span> "
+        live = ''
+        if st.live:
+            live = "<span id='live'>[LIVE]</span> "
+        return '%s%s%s \n[ %s ]<br />' % (nsfw, live, name, wrap_link(st.url))
+
+    try:
+        with open(bot.memory['streamSet']['list_main_dest_path'], 'r') as f:
+            previous_full_list = ''.join(f.readlines())
+    except IOError:
+        bot.debug(
+            u'streams.py',
+            u'IO error grabbing "list_main_dest_path" file contents. ' +
+            u'File may not exist yet',
+            u'warning'
+        )
+    try:
+        with open(bot.memory['streamSet']['list_feat_dest_path'], 'r') as f:
+            previous_feat_list = ''.join(f.readlines())
+    except IOError:
+        bot.debug(
+            u'streams.py',
+            u'IO error grabbing "list_feat_dest_path" file contents. ' +
+            u'File may not exist yet',
+            u'warning'
+        )
+
+    #Generate full list HTML
+    live_list = []
+    dead_list = []
+    for i in [a for a in bot.memory['streams'] if a.live]:
+        live_list.append(format_html(i))
+    for i in [a for a in bot.memory['streams'] if not a.live]:
+        dead_list.append(format_html(i))
+    if not live_list:
+        live_list = ["No currently streaming channels found.<br />"]
+    if not dead_list:
+        dead_list = ["No other channels found.<br />"]
+    live_list.sort()
+    dead_list.sort()
+    contents = bot.memory['streamListT'].substitute(
+        title='Full Stream List',
+        live='\n'.join(live_list),
+        dead='\n'.join(dead_list))
+    # Don't clobber the HDD
+    if previous_full_list != contents:
+        with open(bot.memory['streamSet']['list_main_dest_path'], 'w') as f:
+            f.write(contents)
+    else:
+        bot.debug(
+            u'streams.py',
+            u'No chage in full list html file, skipping.',
+            u'verbose'
+        )
+    #Generate featured list HTML
+    live_list = []
+    dead_list = []
+    for i in [a for a in bot.memory['feat_streams'] if a.live]:
+        live_list.append(format_html(i))
+    for i in [a for a in bot.memory['feat_streams'] if not a.live]:
+        dead_list.append(format_html(i))
+    if not live_list:
+        live_list = ["No currently streaming channels found.<br />"]
+    if not dead_list:
+        dead_list = ["No other channels found.<br />"]
+    live_list.sort()
+    dead_list.sort()
+    contents = bot.memory['streamListT'].substitute(
+        title='Featured Stream List',
+        live='\n'.join(live_list),
+        dead='\n'.join(dead_list))
+    # Don't clobber the HDD
+    if previous_feat_list != contents:
+        with open(bot.memory['streamSet']['list_feat_dest_path'], 'w') as f:
+            f.write(contents)
+    else:
+        bot.debug(
+            u'streams.py',
+            u'No chage in featured list html file, skipping.',
+            u'verbose'
+        )
     return
 
 
@@ -1043,7 +1220,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     bot.debug('streams:subscribe', msg, 'warning')
 
 
-@interval(60)
+@interval(19)
 def announcer(bot):
     def whisper(nick, strm):
         bot.msg(nick, '%s has started streaming at %s' % (strm.name, strm.url))
@@ -1054,6 +1231,7 @@ def announcer(bot):
             'Hey everyone, %s has started streaming at %s' % (strm.name,
                                                               strm.url))
     print 'Announcer waking up'
+    publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
     _announce_interval = 10 * 60
