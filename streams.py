@@ -496,7 +496,7 @@ def load_from_db(bot, trigger=None):
         cur.close()
         dbcon.close()
     for c, s, n, a in stream_rows:
-        time.sleep(2)
+        time.sleep(0.25)
         bot.memory['streams'].append(
             bot.memory['streamFac'].newStream(c, s, a))
         if n:
@@ -1050,7 +1050,7 @@ def update_streams(bot, trigger):
         bot.reply(u'updating streams')
         for i in bot.memory['streams']:
             i.update()
-            time.sleep(10)
+            time.sleep(0.25)
         bot.reply(u'Streams updated')
 
 
@@ -1277,13 +1277,13 @@ def announcer(bot):
 
 
 # Justin.tv caches for at least 60 seconds. Updating faster is pointless.
-@interval(5 * 60 + 7)
+@interval(211)
 def jtv_updater(bot):
     print 'starting jtv updater'
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
         s.update()
-        time.sleep(1)
+        time.sleep(0.25)
     print 'jtv updater complete in %s seconds.' % (time.time() - now)
 
 
@@ -1292,13 +1292,13 @@ def jtv_updater(bot):
 #    100 requests per minutes ( ~1 / 2sec )
 #    1000 requests per hour ( ~1 / 3sec )
 #    10000 requests per day ( ~1 / 9sec )
-@interval(5 * 60 + 11)
+@interval(223)
 def livestream_updater(bot):
     print 'starting livestream updater'
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream']:
         s.update()
-        time.sleep(1)
+        time.sleep(0.25)
     print 'livestream updater complete in %s seconds.' % (time.time() - now)
 
 
