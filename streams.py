@@ -525,8 +525,6 @@ def setup(bot):
         cur = dbcon.cursor()
         # If our tables don't exist, create them
         try:
-            cur.execute('''update streams set service = 'livestream.com'
-                        where service = 'livestream' ''')
             cur.execute('''CREATE TABLE IF NOT EXISTS streams
                            (channel text, service text,
                            m_nsfw int, alias text)''')
