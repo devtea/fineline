@@ -1367,7 +1367,6 @@ def jtv_updater(bot):
         s.update()
         time.sleep(0.25)
     bot.debug(u'streams.py',
-              u'Starting justin.tv updater.',
               u'jtv updater complete in %s seconds.' % (time.time() - now),
               u'verbose')
 
@@ -1387,7 +1386,6 @@ def livestream_updater(bot):
     print 'livestream updater complete in %s seconds.' % (time.time() - now)
     bot.debug(
         u'streams.py',
-        u'Starting justin.tv updater.',
         u'livestream.com updater complete in %s seconds.' % (time.time() - now),
         u'verbose'
     )
@@ -1402,7 +1400,6 @@ def twitchtv_updater(bot):
         time.sleep(0.25)
     bot.debug(
         u'streams.py',
-        u'Starting justin.tv updater.',
         u'twitch.tv updater complete in %s seconds.' % (time.time() - now),
         u'verbose'
     )
