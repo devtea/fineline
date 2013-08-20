@@ -48,7 +48,7 @@ _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('youtube\.com/'))
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
-_services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream']
+_services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream.com']
 _SUB = ('?',)  # This will be replaced in setup()
 
 
