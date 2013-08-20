@@ -343,9 +343,9 @@ class twitchtv(stream):
         except TypeError:
             raise
         if 'error' in self._form_j:
-            raise ValueError('%s %s %s' % (
-                self._form_j['error'],
+            raise ValueError('%s %s: %s' % (
                 self._form_j['status'],
+                self._form_j['error'],
                 self._form_j['message']))
         print 'got json'
         print json.dumps(self._form_j, indent=4)
@@ -484,8 +484,8 @@ def setup(bot):
     bot.memory['streamSet']['list_feat_url'] = bot.config.streams.stream_list_feat_url
     try:
         shutil.copyfile(
-                bot.memory['streamSet']['help_file_source'],
-                bot.memory['streamSet']['help_file_dest']
+            bot.memory['streamSet']['help_file_source'],
+            bot.memory['streamSet']['help_file_dest']
         )
     except:
         bot.debug(u'streams.py',
@@ -887,10 +887,18 @@ def add_stream(bot, user):
                     bot.reply(u'Service returned internal server error, try' +
                               u' again later.')
                     return
+                # Twitch.tv - user is a justin.tv user
+                elif str(txt).startswith('422 Unprocessable Entity: Channel'):
+                    bot.reply(u'That is actually a justin.tv user.')
+                    return
+                # Twitch.tv - user does not exist
+                elif str(txt).startswith('404 Not Found: Channel'):
+                    bot.reply(u'Channel not found.')
+                    return
                 else:
                     bot.reply(u'There was an unknown error, check your ' +
                               u'spelling and try again later')
-                    print txt
+                    bot.debug(u'streams.py', txt, 'warnings')
                     return
             try:
                 cur.execute('''SELECT COUNT(*) FROM streams
@@ -1304,7 +1312,7 @@ def announcer(bot):
             chan,
             'Hey everyone, %s has started streaming at %s' % (strm.name,
                                                               strm.url))
-    print 'Announcer waking up'
+    bot.debug(u'streams.py', u'Announcer waking up', u'verbose')
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
@@ -1347,18 +1355,21 @@ def announcer(bot):
                     # Chan was msg'd about stream too recently. The stream may
                     # be experiencing trouble so we don't want to spam
                     pass
-    print 'Announcer sleeping'''
+    bot.debug(u'streams.py', u'Announcer sleeping', u'verbose')
 
 
 # Justin.tv caches for at least 60 seconds. Updating faster is pointless.
 @interval(211)
 def jtv_updater(bot):
-    print 'starting jtv updater'
+    bot.debug(u'streams.py', u'Starting justin.tv updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
         s.update()
         time.sleep(0.25)
-    print 'jtv updater complete in %s seconds.' % (time.time() - now)
+    bot.debug(u'streams.py',
+              u'Starting justin.tv updater.',
+              u'jtv updater complete in %s seconds.' % (time.time() - now),
+              u'verbose')
 
 
 # Livestream limits access to the following limits
@@ -1368,22 +1379,33 @@ def jtv_updater(bot):
 #    10000 requests per day ( ~1 / 9sec )
 @interval(223)
 def livestream_updater(bot):
-    print 'starting livestream updater'
+    bot.debug(u'streams.py', u'Starting livestream.com updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream']:
         s.update()
         time.sleep(0.25)
     print 'livestream updater complete in %s seconds.' % (time.time() - now)
+    bot.debug(
+        u'streams.py',
+        u'Starting justin.tv updater.',
+        u'livestream.com updater complete in %s seconds.' % (time.time() - now),
+        u'verbose'
+    )
 
 
 @interval(227)
 def twitchtv_updater(bot):
-    print 'starting twitch.tv updater'
+    bot.debug(u'streams.py', u'Starting twitch.tv updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
         s.update()
         time.sleep(0.25)
-    print 'twitch.tv updater complete in %s seconds.' % (time.time() - now)
+    bot.debug(
+        u'streams.py',
+        u'Starting justin.tv updater.',
+        u'twitch.tv updater complete in %s seconds.' % (time.time() - now),
+        u'verbose'
+    )
 
 
 def info():
