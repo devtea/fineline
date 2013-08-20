@@ -242,7 +242,7 @@ class justintv(stream):
 class livestream(stream):
     # http://www.livestream.com/userguide/index.php?title=Channel_API_2.0
     _base_url = '.api.channel.livestream.com/2.0/'
-    _service = 'livestream'
+    _service = 'livestream.com'
     _last_update = time.time()
     #_header_info = ''
 
@@ -301,11 +301,6 @@ class livestream(stream):
         if bool(self._live) ^ bool(self._settings['isLive']):
             self._live = self._settings['isLive']
             self._last_update = time.time()
-
-
-class newlivestream(stream):
-    # http://www.livestream.com/userguide/?title=Channel_API_2.0
-    pass
 
 
 class ustream(stream):
@@ -400,9 +395,7 @@ class StreamFactory(object):
             return justintv(channel, alias)
         elif service == 'twitch.tv':
             return twitchtv(channel, alias)
-        elif service == 'new.livesteam':
-            return newlivestream(channel, alias)
-        elif service == 'livestream':
+        elif service == 'livestream.com':
             try:
                 return livestream(channel, alias)
             except ValueError as txt:
@@ -414,7 +407,7 @@ class StreamFactory(object):
                     raise ValueError('500 Internal Server Error')
                 else:
                     raise
-        elif service == 'youtube':
+        elif service == 'youtube.com':
             return youtube(channel, alias)
         elif service == 'ustream.tv':
             return ustream(channel, alias)
@@ -843,12 +836,10 @@ def parse_service(service):
             return (_re_jtv.findall(service)[0], 'justin.tv')
         elif _re_ttv.search(service):
             return (_re_ttv.findall(service)[0], 'twitch.tv')
-        elif _re_nls.search(service):
-            return (_re_nls.findall(service)[0], 'new.livestream')
         elif _re_ls.search(service):
-            return (_re_ls.findall(service)[0], 'livestream')
+            return (_re_ls.findall(service)[0], 'livestream.com')
         elif _re_yt.search(service):
-            return (_re_ls.findall(service)[0], 'youtube')
+            return (_re_ls.findall(service)[0], 'youtube.com')
         elif _re_us.search(service):
             return (_re_ls.findall(service)[0], 'ustream.tv')
         else:
@@ -1077,7 +1068,8 @@ def publish_lists(bot, trigger=None):
 def services(bot, trigger):
     '''Propert input includes a URL by itself (e.g. http://justin.tv/tdreyer1)
  or a channel name / service name pair (e.g. tdreyer1 justin.tv). Accepted
- service names are justin.tv, livestream, twitch.tv, ustream.tv, and youtube'''
+ service names are justin.tv, livestream.com, twitch.tv, ustream.tv, and
+ youtube.com'''
     bot.say(__doc__.strip())
     return
 
@@ -1380,10 +1372,9 @@ def jtv_updater(bot):
 def livestream_updater(bot):
     bot.debug(u'streams.py', u'Starting livestream.com updater.', u'verbose')
     now = time.time()
-    for s in [i for i in bot.memory['streams'] if i.service == 'livestream']:
+    for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         s.update()
         time.sleep(0.25)
-    print 'livestream updater complete in %s seconds.' % (time.time() - now)
     bot.debug(
         u'streams.py',
         u'livestream.com updater complete in %s seconds.' % (time.time() - now),
@@ -1421,16 +1412,17 @@ def stats(bot):
     # number of featured, number of subs, steams by service
     bot.say('I am tracking %s streams, %s of which are featured.' %
             (len(bot.memory['streams']), len(bot.memory['feat_streams'])))
-    bot.say(('There are %s from livestream, %s from justin.tv, ' +
-             '%s from twitch.tv, %s from youtube, and %s from ustream.tv.') % (
+    bot.say((u'There are %s from livestream.com, %s from justin.tv, ' +
+             u'%s from twitch.tv, %s from youtube.com, and %s ' +
+             u'from ustream.tv.') % (
             len([i for i in bot.memory['streams']
-                if i.service == 'livestream']),
+                if i.service == 'livestream.com']),
             len([i for i in bot.memory['streams']
                 if i.service == 'justin.tv']),
             len([i for i in bot.memory['streams']
                 if i.service == 'twitch.tv']),
             len([i for i in bot.memory['streams']
-                if i.service == 'youtube']),
+                if i.service == 'youtube.com']),
             len([i for i in bot.memory['streams']
                 if i.service == 'ustream.tv'])
             ))
@@ -1446,8 +1438,8 @@ def update_database_tables(bot, trigger):
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
         try:
-            cur.execute('ALTER TABLE streams ADD COLUMN m_nsfw int')
-            cur.execute('ALTER TABLE streams ADD COLUMN alias text')
+            cur.execute('''update streams set service = 'livestream.com'
+                        where service = 'livestream' ''')
         finally:
             cur.close()
             dbcon.close()
