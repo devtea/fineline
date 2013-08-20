@@ -48,7 +48,8 @@ _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('youtube\.com/'))
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
-_services = ['justin.tv', 'twitch.tv', 'new.livestream', 'livestream.com']
+_services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
+             'ustream.tv']
 _SUB = ('?',)  # This will be replaced in setup()
 
 
@@ -525,6 +526,11 @@ def setup(bot):
         cur = dbcon.cursor()
         # If our tables don't exist, create them
         try:
+            #temp fix for database data that doesn't fit anymore
+            cur.execute('''update feat_streams set service = 'livestream.com'
+                        where service = 'livestream' ''')
+            cur.execute('''update sub_streams set service = 'livestream.com'
+                        where service = 'livestream' ''')
             cur.execute('''CREATE TABLE IF NOT EXISTS streams
                            (channel text, service text,
                            m_nsfw int, alias text)''')
