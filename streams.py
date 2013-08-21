@@ -35,14 +35,13 @@ except:
             fp.close()
 
 _exc_regex = []
+_twitch_client_id = None
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('justin\.tv/'))
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('twitch\.tv/'))
-_re_nls = re.compile('(?<=new\.livestream\.com/)[^/(){}[\]]+')
-_exc_regex.append(re.compile('livestream\.com/'))
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
-##
+_exc_regex.append(re.compile('livestream\.com/'))
 _re_us = re.compile('(?<=ustream\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
@@ -204,6 +203,8 @@ class justintv(stream):
             self._form_j = json.loads(self._results)
         except ValueError:
             print "Bad Json loaded from justin.tv"
+            print "Raw data is:"
+            print self._results
             raise
         except IndexError:
             raise
@@ -214,8 +215,6 @@ class justintv(stream):
             if not self._live:
                 self._last_update = time.time()
                 self._live = True
-            #print 'got json'
-            #print json.dumps(self._form_j, indent=4)
             try:
                 raise ValueError(self._form_j['error'])
             except KeyError:
@@ -267,8 +266,11 @@ class livestream(stream):
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
                 raise ValueError('500 Internal Server Error')
-        #print 'got json'
-        #print json.dumps(self._form_j, indent=4)
+            else:
+                print "Bad Json loaded from livestream.com"
+                print "Raw data is:"
+                print self._results
+                raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
         if not self._live and self._settings['isLive']:
@@ -295,8 +297,11 @@ class livestream(stream):
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
                 raise ValueError('500 Internal Server Error')
-        #print 'got json'
-        #print json.dumps(self._form_j, indent=4)
+            else:
+                print "Bad Json loaded from livestream.com"
+                print "Raw data is:"
+                print self._results
+                raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
         if bool(self._live) ^ bool(self._settings['isLive']):
@@ -317,34 +322,32 @@ class twitchtv(stream):
     _base_url = 'https://api.twitch.tv/kraken/'
     _service = 'twitch.tv'
     _header_info = {'Accept': 'application/vnd.twitchtv.v2+json'}
+    if _twitch_client_id:
+        _header_info['Client-ID'] = _twitch_client_id
     _last_update = time.time()
 
     def __init__(self, name, alias=None):
         super(twitchtv, self).__init__(name, alias)
         # Update channel info
-        print "grabbing channel"
         try:
             self._results = web.get(u'%schannels/%s' % (
                 self._base_url, self._name), headers=self._header_info)
         except timeout:
             raise
-        print 'parsing json'
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
             print "Bad Json loaded from twitch.tv"
-            raise
-        except IndexError:
-            raise
-        except TypeError:
+            print "Raw data is:"
+            print self._results
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s: %s' % (
                 self._form_j['status'],
                 self._form_j['error'],
                 self._form_j['message']))
-        print 'got json'
-        print json.dumps(self._form_j, indent=4)
+        #print 'got json'
+        #print json.dumps(self._form_j, indent=4)
         try:
             raise ValueError(self._form_j['error'])
         except KeyError:
@@ -369,11 +372,9 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print "Bad Json loaded from justin.tv"
-            raise
-        except IndexError:
-            raise
-        except TypeError:
+            print "Bad Json loaded from twitch.tv"
+            print "Raw data is:"
+            print self._results
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s %s' % (
@@ -397,17 +398,7 @@ class StreamFactory(object):
         elif service == 'twitch.tv':
             return twitchtv(channel, alias)
         elif service == 'livestream.com':
-            try:
-                return livestream(channel, alias)
-            except ValueError as txt:
-                if txt == 'ValueError: 400 Bad Request':
-                    raise ValueError('400 Bad Request')
-                elif txt == 'ValueError: 404 Not Found':
-                    raise ValueError('404 Not Found')
-                elif txt == 'ValueError: 500 Internal Server Error':
-                    raise ValueError('500 Internal Server Error')
-                else:
-                    raise
+            return livestream(channel, alias)
         elif service == 'youtube.com':
             return youtube(channel, alias)
         elif service == 'ustream.tv':
@@ -467,6 +458,8 @@ def configure(config):
 
 
 def setup(bot):
+    global _twitch_client_id
+    _twitch_client_id = bot.config.streams.twitch_client_id
     bot.memory['streamSet'] = {}
     bot.memory['streamSet']['help_file_source'] = bot.config.streams.stream_help_file_source
     bot.memory['streamSet']['help_file_dest'] = bot.config.streams.stream_help_file_dest
@@ -867,15 +860,15 @@ def add_stream(bot, user):
                 bot.memory['streams'].append(
                     bot.memory['streamFac'].newStream(u, s))
             except ValueError as txt:
-                if txt == 'ValueError: 400 Bad Request':
-                    bot.reply(u'Oops, I did something bad, so that did not ' +
+                if str(txt) == '400 Bad Request':
+                    bot.reply(u'Oops, I did something bad so that did not ' +
                               u'work.')
                     bot.say('!tell tdreyer1 FIX IT FIX IT FIX IT FIX IT!')
                     return
-                elif txt == 'ValueError: 404 Not Found':
+                elif str(txt) == '404 Not Found':
                     bot.reply(u'Channel not found.')
                     return
-                elif txt == 'ValueError: 500 Internal Server Error':
+                elif str(txt) == '500 Internal Server Error':
                     bot.reply(u'Service returned internal server error, try' +
                               u' again later.')
                     return
@@ -897,7 +890,9 @@ def add_stream(bot, user):
                                WHERE channel = %s
                                AND service = %s''' % (_SUB * 2), (u, s))
                 if cur.fetchone()[0] == 0:
-                    print 'ADD: count was != 0'
+                    bot.debug(u'streams.py',
+                              u'ADD: count was != 0',
+                              u'verbose')
                     cur.execute('''INSERT INTO streams (channel, service)
                                    VALUES (%s, %s)''' % (_SUB * 2), (u, s))
                     dbcon.commit()
