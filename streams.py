@@ -35,7 +35,8 @@ except:
             fp.close()
 
 _exc_regex = []
-_twitch_client_id = None
+_twitch_client_id = None  # Overwritten in setup()
+_youtube_api_key = None  # Overwritten in setup()
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('justin\.tv/'))
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
@@ -44,7 +45,7 @@ _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('livestream\.com/'))
 _re_us = re.compile('(?<=ustream\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('ustream\.tv/'))
-_re_yt = re.compile('(?<=youtube\.com/)[^/(){}[\]]+')
+_re_yt = re.compile('((youtube\.com/user/)|(youtube\.com/))([^\?/(){}[\]\s]+)')
 _exc_regex.append(re.compile('youtube\.com/'))
 #_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
@@ -314,7 +315,60 @@ class ustream(stream):
 
 
 class youtube(stream):
-    pass
+    _base_url = 'https://gdata.youtube.com/feeds/api/'
+    _user_url = 'users/%s?alt=json'
+    _live_url = 'users/%s/live/events?alt=json&status=active'
+    _event_url = None
+    _service = 'youtube.com'
+    _header = {'GData-Version': 2}
+    _re_yturl = re.compile('[^/]+$')
+
+    if _youtube_api_key:
+        _header['X-GData-Key'] = 'key=%s' % _youtube_api_key
+    _last_update = time.time()
+
+    def __init__(self, name, alias=None):
+        super(youtube, self).__init__(name, alias)
+        self._results = web.get(self._base_url + self._user_url % self._name,
+                                headers=self._header)
+        try:
+            self._form_j = json.loads(self._results)
+        except ValueError:
+            # TODO May not need to handle this here, but in calling code
+            raise
+        #self._name = self._form_j['entry']['author'][0]['name']['$t']
+        self._url_list = self._form_j['entry']['link']
+        #for d in [a for a in self._url_list if a['rel'] == 'alternate']:
+        #    # TODO make sure this url is the live url, probably not
+        #    self._url = d['href']
+        self._url = 'http://youtube.com/%s' % self._form_j['entry']['yt$username']['$t']
+        self.update()
+
+    @property
+    def url(self):
+        if self._event_url:
+            return self._event_url
+        else:
+            return self._url
+
+    def update(self):
+        self._results = web.get(self._base_url + self._live_url % self._name,
+                                headers=self._header)
+        self._form_j = json.loads(self._results)
+        if bool('entry' in self._form_j['feed']) ^ bool(self._live):
+            if 'entry' in self._form_j['feed']:
+                self._live = True
+            else:
+                self._live = False
+            self._last_update = time.time()
+            if self._live:
+                # When going online, we should grab the live stream URL
+                print self._form_j['feed']['entry'][0]['content']['src']
+                self._event_url = 'http://youtube.com/watch?v=%s' % \
+                    self._re_yturl.findall(self._form_j['feed']['entry'][0]['content']['src'])[0]
+            else:
+                #when going offline, we should reset the URL
+                self._event_url = None
 
 
 class twitchtv(stream):
@@ -460,6 +514,8 @@ def configure(config):
 def setup(bot):
     global _twitch_client_id
     _twitch_client_id = bot.config.streams.twitch_client_id
+    global _youtube_api_key
+    _youtube_api_key = bot.config.streams.youtube_api_key
     bot.memory['streamSet'] = {}
     bot.memory['streamSet']['help_file_source'] = bot.config.streams.stream_help_file_source
     bot.memory['streamSet']['help_file_dest'] = bot.config.streams.stream_help_file_dest
@@ -833,9 +889,9 @@ def parse_service(service):
         elif _re_ls.search(service):
             return (_re_ls.findall(service)[0], 'livestream.com')
         elif _re_yt.search(service):
-            return (_re_ls.findall(service)[0], 'youtube.com')
+            return (_re_yt.findall(service)[0][-1], 'youtube.com')
         elif _re_us.search(service):
-            return (_re_ls.findall(service)[0], 'ustream.tv')
+            return (_re_us.findall(service)[0], 'ustream.tv')
         else:
             return None
 
@@ -885,6 +941,13 @@ def add_stream(bot, user):
                               u'spelling and try again later')
                     bot.debug(u'streams.py', txt, 'warnings')
                     return
+            except timeout as txt:
+                bot.debug(u'streams.py',
+                          txt,
+                          u'warnings')
+                bot.reply(u'Oops, the request to the service timed out! ' +
+                          u'Try again later.')
+                return
             try:
                 cur.execute('''SELECT COUNT(*) FROM streams
                                WHERE channel = %s
@@ -1388,6 +1451,20 @@ def twitchtv_updater(bot):
     bot.debug(
         u'streams.py',
         u'twitch.tv updater complete in %s seconds.' % (time.time() - now),
+        u'verbose'
+    )
+
+
+@interval(229)
+def youtube_updater(bot):
+    bot.debug(u'streams.py', u'Starting youtube.com updater.', u'verbose')
+    now = time.time()
+    for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
+        s.update()
+        time.sleep(0.25)
+    bot.debug(
+        u'streams.py',
+        u'youtube.com updater complete in %s seconds.' % (time.time() - now),
         u'verbose'
     )
 
