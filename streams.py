@@ -969,6 +969,8 @@ def add_stream(bot, user):
 
 
 def list_streams(bot, arg=None, nick=None):
+    _tmp_list = []
+
     def format_stream(st):
         if st.alias:
             name = '%s on %s' % (st.alias, st.service)
@@ -983,7 +985,6 @@ def list_streams(bot, arg=None, nick=None):
         return '%s%s%s [ %s ]' % (nsfw, live, name, colors.colorize(st.url,
                                                                     ['blue']))
 
-    # TODO add option to list only live streams
     if arg == 'subscribed' or arg == 'subscriptions':
         #Private subscriptions should be PM'd, even if many
         assert isinstance(nick, Nick)
@@ -994,16 +995,20 @@ def list_streams(bot, arg=None, nick=None):
         bot.reply(u'Sending you the list in pm.')
         for s in [a for a in bot.memory['streamSubs']
                   for n in bot.memory['streamSubs'][a] if n == nick]:
-            bot.msg(nick, format_stream(s))
-        if s:
+            _tmp_list.append(format_stream(s))
+        if _tmp_list:
+            for i in _tmp_list:
+                bot.msg(nick, i)
             return
         bot.say("You aren't subscribed to anything.")
     elif arg == 'live' or arg == 'streaming':
         #Should be few enough streaming at any one time, just say in chat
         s = None
         for s in [a for a in bot.memory['streams'] if a.live]:
-            bot.say(format_stream(s))
-        if s:
+            _tmp_list.append(format_stream(s))
+        if _tmp_list:
+            for i in _tmp_list:
+                bot.say(i)
             return
         bot.say("No one is streaming right now.")
     elif not arg:
