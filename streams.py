@@ -855,8 +855,11 @@ def sceencasting(bot, trigger):
         elif arg1 == 'info':
             info(bot, (arg2, arg3))
             return
-        elif arg1 == 'alias' or arg1 == 'unalias':
+        elif arg1 == 'alias':
             alias(bot, arg1, arg2, arg3)
+            return
+        elif arg1 == 'unalias':
+            alias(bot, arg1, (arg2, arg3))
             return
         elif arg1 == 'nsfw' or arg1 == 'unnsfw':
             nsfw(bot, arg1, (arg2, arg3))
@@ -866,7 +869,7 @@ def sceencasting(bot, trigger):
         arg2 = trigger.args[1].split()[2].lower()
         arg3 = trigger.args[1].split()[3].lower()
         arg4 = trigger.args[1].split()[4].lower()
-        if arg1 == 'alias' or arg1 == 'unalias':
+        if arg1 == 'alias':
             alias(bot, arg1, (arg2, arg3), arg4)
             return
 
