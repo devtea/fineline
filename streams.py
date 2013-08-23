@@ -781,6 +781,9 @@ def sceencasting(bot, trigger):
     '''Manage various livestreams from multiple services.
  Usage: !live [list/add/del/[un]alias/[un]nsfw/[un]subscribe/]
  [options] | See '!live help' for detailed usage.'''
+    if len(trigger.args[1].split()) == 1:  # E.G. "!live"
+        list_streams(bot, 'live')
+        return
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream url"
         arg1 = trigger.args[1].split()[1].lower()
         if arg1 == 'list':
