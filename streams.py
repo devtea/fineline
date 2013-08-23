@@ -997,6 +997,7 @@ def list_streams(bot, arg=None, nick=None):
                   for n in bot.memory['streamSubs'][a] if n == nick]:
             _tmp_list.append(format_stream(s))
         if _tmp_list:
+            _tmp_list.sort()
             for i in _tmp_list:
                 bot.msg(nick, i)
             return
@@ -1007,6 +1008,7 @@ def list_streams(bot, arg=None, nick=None):
         for s in [a for a in bot.memory['streams'] if a.live]:
             _tmp_list.append(format_stream(s))
         if _tmp_list:
+            _tmp_list.sort()
             for i in _tmp_list:
                 bot.say(i)
             return
