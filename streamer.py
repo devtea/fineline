@@ -101,22 +101,6 @@ def stream(bot, trigger):
             arg_ep = os.path.splitext(bot.memory['streaming']['ep_list'
                                                               ][index])[0]
             enqueue(bot, arg_ep)
-        # Next check for regexable strings
-        elif len(arg_ep) == 6:
-            arg_ep = scrub(arg_ep)
-            if len(arg_ep) < 6:
-                bot.reply(u"Sorry, I don't seem to have that.")
-                return
-            a, b = (arg_ep[0:3], arg_ep[3:6])
-            re_eps = re.compile(u'%s(?:...)?%s(?:...)?' % (a, b))
-            results = [m.group(0) for e in bot.memory['streaming']['ep_list']
-                       for m in [re_eps.search(os.path.splitext(e)[0])] if m]
-            if results:
-                arg_ep = results[0]
-                enqueue(bot, arg_ep)
-            else:
-                bot.reply(u"Sorry, I don't seem to have that.")
-                return  # TODO is this really necessary?
         else:
             bot.reply(u"Sorry, I don't seem to have that.")
             return  # TODO is this really necessary?
