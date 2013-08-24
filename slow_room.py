@@ -15,9 +15,10 @@ import threading
 from willie.module import interval, rule, commands
 
 # Wait time in seconds before the bot will pipe up
-_WAIT_TIME = (random.uniform(27, 52) * 60)
+_WAIT_TIME = (random.uniform(23, 42) * 60)
 _IGNORE = [u'#fineline_testing']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
+# TODO move this to config file
 _da_faves = u'http://backend.deviantart.com/rss.xml' + \
             u'?q=favby%3Atdreyer1%2F50127477&type=deviation'
 
