@@ -118,8 +118,8 @@ def badbot(Willie, trigger):
     elif Nick(trigger.nick) == Nick('DarkFlame'):
         Willie.say(random.choice([
             u'[](/ppnowhy "Why are you so mean to me?!")',
-            u'[](/ppnowhy "Why do you hate me?!")'
-            u'[](/ppnowhy "Why is nothing I do ever good enough for you?!")'
+            u'[](/ppnowhy "Why do you hate me?!")',
+            u'[](/ppnowhy "Why is nothing I do ever good enough for you?!")',
             u'[](/ppnowhy "?!")'
         ]))
     elif random.uniform(0, 1) < 0.1:
