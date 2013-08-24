@@ -45,7 +45,7 @@ def slow_room(willie):
         for key in willie.memory["slow_timer"]:
             if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
                and key in willie.channels:
-                function = random.randint(0, 8)
+                function = random.randint(0, 13)
                 if function == 0:
                     poke(willie, key)
                 elif function == 1:
@@ -59,6 +59,8 @@ def slow_room(willie):
                 # This is a bad way to do probablity and you should feel bad
                 elif function in range(5, 8):  # It's easy though, so fuck off
                     cute(willie, key)
+                elif function in range(9, 13):  # No really, go away
+                    features(willie, key)
                 willie.memory["slow_timer"][key] = time.time()
             else:
                 if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
@@ -119,7 +121,8 @@ def fzoo(willie, channel):
 def quote(willie, channel):
     willie.msg(channel, ur"!quote")
     time.sleep(random.uniform(3, 5))
-    willie.msg(channel, ur"[](/ppfear)")
+    if random.uniform(0, 1) < 0.3:
+        willie.msg(channel, ur"[](/ppfear)")
 
 
 def arttip(willie, channel):
@@ -178,7 +181,7 @@ def cute(willie, channel, is_timer=True):
         random.choice([u"Pone!", u"Pony!", u"Poni!"]),
         u"Pony should pony pony pony",
         u"[](/ppwatching-r-90)",
-        u"\001ACTION yawns blearily and a URL squirts out!\001"
+        u"\001ACTION yawns blearily and a URL pops out!\001"
     ]
     feed = fetch_rss(willie, _da_faves)
     if feed:
@@ -191,6 +194,14 @@ def cute(willie, channel, is_timer=True):
     else:
         willie.msg(channel, u"[](/derpyshock) Oh no, I was going to " +
                             u"post from DA, but something went wrong!")
+
+
+def features(bot, channel):
+    bot.msg(channel, random.choice([
+        u'Remember, you can subscribe to streams with the new !live command!',
+        u"Looking for something to do? I'd be happy to !stream an episode or five.",
+        u'Want to know when a stream goes live? !live subscribe!'
+    ]))
 
 
 @rule(u'.*')
