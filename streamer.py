@@ -148,7 +148,6 @@ def enqueue(bot, ep):
 
 def dequeue(bot, video):
     '''Removes a video from the queue.'''
-    for i in bot.memory['streaming']['deque']:
     try:
         bot.memory['streaming']['deque'].remove(video)
     except ValueError:
