@@ -179,13 +179,13 @@ class justintv(stream):
             self._form_j = json.loads(self._results)
         except ValueError:
             print "Bad Json loaded from justin.tv"
+            print "Raw data is:"
+            print self._results
             raise
         except IndexError:
             raise
         except TypeError:
             raise
-        #print 'got json'
-        #print json.dumps(self._form_j, indent=4)
         try:
             raise ValueError(self._form_j['error'])
         except KeyError:
@@ -267,6 +267,9 @@ class livestream(stream):
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
                 raise ValueError('500 Internal Server Error')
+            elif re.findall('503 Service Unavailable', self._results):
+                print 'Livestream Error: 503 Service Unavailable'
+                raise ValueError('503 Service Unavailable')
             else:
                 print "Bad Json loaded from livestream.com"
                 print "Raw data is:"
@@ -298,6 +301,9 @@ class livestream(stream):
             elif re.findall('500 Internal Server Error', self._results):
                 print 'Livestream Error: 500 Internal Server Error'
                 raise ValueError('500 Internal Server Error')
+            elif re.findall('503 Service Unavailable', self._results):
+                print 'Livestream Error: 503 Service Unavailable'
+                raise ValueError('503 Service Unavailable')
             else:
                 print "Bad Json loaded from livestream.com"
                 print "Raw data is:"
@@ -1445,7 +1451,10 @@ def livestream_updater(bot):
     bot.debug(u'streams.py', u'Starting livestream.com updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
-        s.update()
+        try:
+            s.update()
+        except ValueError:
+            pass
         time.sleep(0.25)
     bot.debug(
         u'streams.py',
