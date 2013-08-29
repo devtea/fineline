@@ -52,7 +52,7 @@ def start_stream(bot, ep):
             continue
         bot.msg(
             channel,
-            u'Starting stream of %s at %s.' % (
+            u'Starting stream of %s at %s' % (
                 ep,
                 bot.memory['streaming']['loc']
             )
@@ -89,7 +89,7 @@ def stream(bot, trigger):
         return re.sub(u'[\\\.\?|^$*+([{]', u'', i)
 
     def process(name):
-        '''Processes provided video name.'''
+        '''returns a normalized video name.'''
         arg_ep = name
         # First check for simple matches.
         if arg_ep in [os.path.splitext(i)[0].upper() for i
@@ -100,10 +100,9 @@ def stream(bot, trigger):
                      for i in bot.memory['streaming']['ep_list']].index(arg_ep)
             arg_ep = os.path.splitext(bot.memory['streaming']['ep_list'
                                                               ][index])[0]
-            enqueue(bot, arg_ep)
+            return arg_ep
         else:
-            bot.reply(u"Sorry, I don't seem to have that.")
-            return  # TODO is this really necessary?
+            return None
 
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream s01e01"
         arg_1 = trigger.args[1].split()[1].upper()
@@ -112,14 +111,14 @@ def stream(bot, trigger):
         elif arg_1 == u'LIST':
             list_media(bot, trigger)
         else:
-            process(arg_1)
+            enqueue(bot, process(arg_1))
     elif len(trigger.args[1].split()) == 3:  # E.G. "!stream add s01e01"
         arg_1 = trigger.args[1].split()[1].upper()
         arg_2 = trigger.args[1].split()[2].upper()
         if arg_1 == u'ADD':
-            process(arg_2)
+            enqueue(bot, process(arg_2))
         elif arg_1 == u'DEL':
-            dequeue(bot, arg_2)
+            dequeue(bot, process(arg_2))
         else:
             bot.debug(u"episodes.py:episode", u"insane args", u"verbose")
             bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
@@ -137,7 +136,10 @@ def stream(bot, trigger):
 
 def enqueue(bot, ep):
     '''Adds a video to the queue.'''
-    if len(bot.memory['streaming']['deque']) <= 3:
+    if not ep:
+        bot.reply(u"Sorry, I don't seem to have that.")
+        return
+    if len(bot.memory['streaming']['deque']) <= 4:
         bot.memory['streaming']['deque'].append(ep)
         bot.say(u'Added %s to the queue.' % ep)
     else:
@@ -146,6 +148,7 @@ def enqueue(bot, ep):
 
 def dequeue(bot, video):
     '''Removes a video from the queue.'''
+    for i in bot.memory['streaming']['deque']:
     try:
         bot.memory['streaming']['deque'].remove(video)
     except ValueError:
@@ -181,7 +184,7 @@ def list_media(bot, trigger):
             u'Available videos: %s' % ', '.join(
                 [os.path.splitext(i)[0]
                     for i in bot.memory['streaming']['ep_list']]),
-            200):
+            390):
         bot.msg(trigger.nick, line)
 
 
