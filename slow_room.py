@@ -46,7 +46,7 @@ def slow_room(willie):
         for key in willie.memory["slow_timer"]:
             if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
                and key in willie.channels:
-                function = random.randint(0, 13)
+                function = random.randint(0, 11)
                 if function == 0:
                     poke(willie, key)
                 elif function == 1:
@@ -60,7 +60,7 @@ def slow_room(willie):
                 # This is a bad way to do probablity and you should feel bad
                 elif function in range(5, 8):  # It's easy though, so fuck off
                     cute(willie, key)
-                elif function in range(9, 13):  # No really, go away
+                elif function in range(9, 11):  # No really, go away
                     features(willie, key)
                 willie.memory["slow_timer"][key] = time.time()
             else:
