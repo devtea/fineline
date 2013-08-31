@@ -6,6 +6,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 import os
+import random
 import re
 import subprocess
 import textwrap
@@ -27,6 +28,7 @@ def setup(bot):
     bot.memory['streaming']['jtv_key'] = bot.config.streaming.jtv_key
     bot.memory['streaming']['source_dir'] = bot.config.streaming.source_dir
     bot.memory['streaming']['loc'] = bot.config.streaming.stream_loc
+    bot.memory['streaming']['custom_regex'] = re.compile(bot.config.streaming.custom_regex)
     bot.memory['streaming']['template'] = bot.config.streaming.list_template
     bot.memory['streaming']['dest'] = bot.config.streaming.list_dest
     bot.memory['streaming']['url'] = bot.config.streaming.list_url
@@ -147,10 +149,8 @@ def stream(bot, trigger):
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                   u"stream'")
     else:
-        bot.reply(u'Stream what?! See the help for details.')
+        bot.reply(u'Stream what?! Try !help stream for details.')
         bot.debug(u"episodes.py:episode", u"Not enough args", u"verbose")
-        bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                  u"stream'")
 
 
 def enqueue(bot, ep):
@@ -255,6 +255,13 @@ def publish_list(bot):
             u'verbose'
         )
     return
+
+
+@commands('bob')
+def random_video(bot, trigger):
+    match_list = [os.path.splitext(i)[0] for i in bot.memory['streaming']['ep_list']
+                  if bot.memory['streaming']['custom_regex'].match(i)]
+    enqueue(bot, random.choice(match_list))
 
 
 if __name__ == "__main__":
