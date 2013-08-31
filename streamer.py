@@ -12,10 +12,13 @@ import textwrap
 import time
 from datetime import datetime
 from collections import deque
+from string import Template
 
 from willie.module import commands, example, interval
 
 _CHAN_EXC = []
+
+#TODO Config section to set up config options
 
 
 def setup(bot):
@@ -24,6 +27,13 @@ def setup(bot):
     bot.memory['streaming']['jtv_key'] = bot.config.streaming.jtv_key
     bot.memory['streaming']['source_dir'] = bot.config.streaming.source_dir
     bot.memory['streaming']['loc'] = bot.config.streaming.stream_loc
+    bot.memory['streaming']['template'] = bot.config.streaming.list_template
+    bot.memory['streaming']['dest'] = bot.config.streaming.list_dest
+    bot.memory['streaming']['url'] = bot.config.streaming.list_url
+    bot.memory['streaming']['use_html'] = False
+    if bot.config.has_option('streaming', 'use_html'):
+        if bot.config.streaming.use_html == 'True':
+            bot.memory['streaming']['use_html'] = True
     if 'live' not in bot.memory['streaming']:
         bot.memory['streaming']['live'] = False
     if 'deque' not in bot.memory['streaming']:
@@ -36,6 +46,15 @@ def setup(bot):
     else:
         file_list.sort()
         bot.memory['streaming']['ep_list'] = file_list
+    with open(bot.memory['streaming']['template']) as f:
+        try:
+            bot.memory['streaming']['listTemplate'] = Template(f.read())
+        except:
+            bot.debug(u'streamer.py',
+                      u'Unable to load template.',
+                      u'always')
+            raise
+    publish_list(bot)
 
 
 @interval(2)
@@ -178,13 +197,18 @@ def get_queue(bot):
 
 
 def list_media(bot, trigger):
-    bot.reply(u'Sending you the list in PM.')
-    for line in textwrap.wrap(
-            u'Available videos: %s' % ', '.join(
-                [os.path.splitext(i)[0]
-                    for i in bot.memory['streaming']['ep_list']]),
-            390):
-        bot.msg(trigger.nick, line)
+    print bot.memory['streaming']['use_html']
+    if bot.memory['streaming']['use_html']:
+        bot.reply(u'The list of available videos is up at %s' %
+                  bot.memory['streaming']['url'])
+    else:
+        bot.reply(u'Sending you the list in PM.')
+        for line in textwrap.wrap(
+                u'Available videos: %s' % ', '.join(
+                    [os.path.splitext(i)[0]
+                        for i in bot.memory['streaming']['ep_list']]),
+                390):
+            bot.msg(trigger.nick, line)
 
 
 @commands('streaming', 'now_playing', 'np', 'now_streaming', 'ns')
@@ -197,6 +221,40 @@ def streaming(bot, trigger):
         ))
     else:
         bot.reply(u'Nothing streaming right now.')
+
+
+def publish_list(bot):
+    if not bot.memory['streaming']['use_html']:
+        return
+    print bot.memory['streaming']['dest']
+    try:
+        with open(bot.memory['streaming']['dest'], 'r') as f:
+            previous_full_list = ''.join(f.readlines())
+    except IOError:
+        previous_full_list = ''
+        bot.debug(
+            u'streams.py',
+            u'IO error grabbing "list_main_dest_path" file contents. ' +
+            u'File may not exist yet',
+            u'warning'
+        )
+
+    #Generate full list HTML
+    contents = bot.memory['streaming']['listTemplate'].substitute(
+        ulist='\n'.join(
+            ['<li>%s</li>' % os.path.splitext(i)[0] for i in bot.memory['streaming']['ep_list']]
+        ))
+    # Don't clobber the HDD
+    if previous_full_list != contents:
+        with open(bot.memory['streaming']['dest'], 'w') as f:
+            f.write(contents)
+    else:
+        bot.debug(
+            u'streamer.py',
+            u'No chage in list html file, skipping.',
+            u'verbose'
+        )
+    return
 
 
 if __name__ == "__main__":

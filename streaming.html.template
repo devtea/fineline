@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video List</title>
+    <style type='text/css'>
+    body {margin:0}
+    #main, #main code, #main pre, #main tt, #main kbd, #main samp {
+        font-family:consolas,monospace;
+        font-size:16px;
+        line-height:1.3;
+        color:#343331;
+        background:#fff; }
+    #main { max-width:89ex; text-align:justify; margin:0 25px 25px 25px }
+    #main h1, #main h2, #main h3 { color:#232221;clear:left }
+    #main h1 { font-size:28px; margin:15px 0 30px 0; text-align:center }
+    #main h2 { font-size:18px; margin-bottom:0; margin-top:10px; line-height:1.3; }
+    #main h3 { font-size:16px; margin:0 0 0 4ex; }
+    #main p, #main ul, #main ol, #main dl, #main pre { margin:0 0 18px 0; }
+    #main pre {
+        color:#333231;
+        background:#edeceb;
+        padding:5px 7px;
+        margin:0px 0 20px 0;
+        border-left:2ex solid #ddd}
+    #main pre + h2, #main pre + h3 {
+        margin-top:22px;
+    }
+    #main h2 + pre, #main h3 + pre {
+        margin-top:5px;
+    }
+    #main > p, #main > ul, #main > ol, #main > dl, #main > pre { margin-left:8ex; }
+    #main dt { margin:0; clear:left }
+    #main dt.flush { float:left; width:8ex }
+    #main dd { margin:0 0 0 9ex }
+    #main code, #main strong, #main b { font-weight:bold; color:#131211; }
+    #main pre code { font-weight:normal; color:#232221; background:inherit }
+    #main em, var, u {
+        font-style:normal; color:#333231; border-bottom:1px solid #999; }
+    #main h1.main-title { display:none; }
+    #main ol.main, #main ol.main li { margin:2px 0 10px 0; padding:0;
+        float:left; width:33%; list-style-type:none;
+        text-transform:uppercase; font-size:18px; color:#999;
+        letter-spacing:1px;}
+    #main ol.main { width:100%; }
+    #main ol.main li.tl { text-align:left }
+    #main ol.main li.tc { text-align:center;letter-spacing:4px }
+    #main ol.main li.tr { text-align:right }
+    #main ol.main a { color:#999 }
+    #main ol.main a:hover { color:#333231 }
+    #nsfw { color:#CC0000;font-weight:bold; }
+    #live { color:#006633;font-weight:bold; }
+    #main ul {width:625px; padding:20px 0 20px 20px; overflow:hidden;
+        color:#333231; background:#edeceb; border-left:2ex solid #ddd}
+    #main ul li {line-height: 1.5em; float: left; display: inline; }
+    #flow li { width: auto; margin: 0 20px 10px 0; background: #f3f3f3;
+        border-top: 1px; border-bottom: 1px; border-left: 0px; border-right: 0px;
+        border-style: solid; border-color: #ccc}
+    </style>
+</head>
+<body>
+<div id='main'>
+<h1>Available Videos</h1>
+<ul id='flow'>
+$ulist
+</ul>
+</div>
+</body>
+</html>
