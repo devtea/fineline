@@ -9,6 +9,9 @@ from willie.module import commands, rule, example
 from willie.tools import Nick
 import threading
 
+# Nicks to exclude
+_excludes = ['hushmachine', 'hushmachine_']
+
 
 def setup(bot):
     bot.memory['grab'] = {}
@@ -26,7 +29,13 @@ def grab(bot, trigger):
     else:
         bot.memory['grablock'].acquire()
         try:
-            if target in bot.memory['grab']:
+            if target == trigger.nick:
+                bot.say(u"Eww, don't grab yourself in public!")
+            elif target == bot.nick:
+                bot.say(u"Hey, don't grab me!")
+            elif target in _excludes:
+                bot.say(u"I'm not grabbing that.")
+            elif target in bot.memory['grab']:
                 bot.say(u'!addquote <%s> %s' % (target,
                                                 bot.memory['grab'][target]))
             else:
@@ -39,7 +48,10 @@ def grab(bot, trigger):
 def recent_watcher(bot, trigger):
     bot.memory['grablock'].acquire()
     try:
-        bot.memory['grab'][Nick(trigger.nick)] = trigger.bytes
+        if trigger.bytes.startswith('\001ACTION'):
+            bot.memory['grab'][Nick(trigger.nick)] = '%s%s' % (trigger.nick, trigger.bytes[7:])
+        else:
+            bot.memory['grab'][Nick(trigger.nick)] = trigger.bytes
     finally:
         bot.memory['grablock'].release()
 
