@@ -7,6 +7,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 
 """
+import datetime
 import feedparser
 import random
 import time
@@ -62,6 +63,8 @@ def slow_room(willie):
                     cute(willie, key)
                 elif function in range(9, 11):  # No really, go away
                     features(willie, key)
+                elif function in range(12, 18):
+                    cd(willie, key)
                 willie.memory["slow_timer"][key] = time.time()
             else:
                 if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
@@ -182,8 +185,7 @@ def cute(willie, channel, is_timer=True):
         random.choice([u"Pone!", u"Pony!", u"Poni!"]),
         u"Pony should pony pony pony",
         u"[](/ppwatching-r-90)",
-        u"\001ACTION yawns blearily and a URL pops out!\001"
-    ]
+        u"\001ACTION yawns blearily and a URL pops out!\001" ]
     feed = fetch_rss(willie, _da_faves)
     if feed:
         for item in feed.entries:
@@ -199,9 +201,10 @@ def cute(willie, channel, is_timer=True):
 
 def features(bot, channel):
     bot.msg(channel, random.choice([
-        u'Remember, you can subscribe to streams with the new !live command!',
         u"Looking for something to do? I'd be happy to !stream an episode or five.",
-        u'Want to know when a stream goes live? !live subscribe!'
+        u'Want to know when a stream goes live? !live subscribe!',
+        u'Need a Bob Ross fix? !bob',
+        u"Don't forget that I'm a smart pony and can do lots of neat stuff like !stream, !timer, !prompt, !queue, and more!"
     ]))
 
 
@@ -231,6 +234,36 @@ def pony(willie, trigger):
     willie.debug(u'pony.py', u'Triggered', u'verbose')
     willie.debug(u'pony.py', trigger.sender, u'verbose')
     cute(willie, trigger.sender, is_timer=False)
+
+
+s4 = datetime.datetime(2013, 11, 23, 9)
+
+
+def cd(bot, channel, is_timer=True):
+    diff = s4 - datetime.datetime.now()
+    days = diff.days
+    hrs, rem = divmod(diff.seconds, 3600)
+    min, rem = divmod(rem, 60)
+    parsed = ''
+    if days > 0:
+        parsed = '%i days' % days
+    if hrs > 0:
+        parsed = '%s, %i hours' % (parsed, hrs)
+    if min > 0:
+        parsed = '%s, %i minutes' % (parsed, min)
+    if diff.total_seconds() < 60 and diff.total_seconds() > 0:
+        parsed = 'Less than a minute'
+    parsed = '%s til the season 4 premier.' % parsed
+    if diff.total_seconds() <= 0:
+        parsed = 'SEASON 4 IS HERE!'
+
+    bot.msg(channel, parsed)
+
+
+@commands(u'countdown', u'cd')
+def countdown(bot, trigger):
+    '''Shows a countdown to a set date and time.'''
+    cd(bot, trigger.sender, is_timer=False)
 
 
 if __name__ == "__main__":
