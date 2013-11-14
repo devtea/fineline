@@ -48,10 +48,11 @@ def grab(bot, trigger):
 def recent_watcher(bot, trigger):
     bot.memory['grablock'].acquire()
     try:
-        if trigger.bytes.startswith('\001ACTION'):
-            bot.memory['grab'][Nick(trigger.nick)] = '%s%s' % (trigger.nick, trigger.bytes[7:])
-        else:
-            bot.memory['grab'][Nick(trigger.nick)] = trigger.bytes
+        if trigger.sender.startswith('#'):
+            if trigger.bytes.startswith('\001ACTION'):
+                bot.memory['grab'][Nick(trigger.nick)] = '%s%s' % (trigger.nick, trigger.bytes[7:])
+            else:
+                bot.memory['grab'][Nick(trigger.nick)] = trigger.bytes
     finally:
         bot.memory['grablock'].release()
 
