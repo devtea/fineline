@@ -279,27 +279,31 @@ def flirt(bot, trigger):
         return
     time.sleep(random.uniform(2, 5))
     if re.search("you come here often", trigger.bytes):
-        random.choice([
-            bot.say('Oh, every now and then.'),
-            bot.say("I don't think I've seen you around."),
-            bot.action('backs away slowly.'),
-            bot.say("[](/pplie 'eenope!'"),
-            bot.say("What's a nice boy like you doing in a place like this?"),
-            bot.action('blushes and mumbles something')
+        response = random.choice([
+            (False, 'Oh, every now and then.'),
+            (False, "I don't think I've seen you around."),
+            (True, 'backs away slowly.'),
+            (False, "[](/pplie 'eenope!')"),
+            (False, "What's a nice boy like you doing in a place like this?"),
+            (True, 'blushes and mumbles something')
         ])
     elif re.search("see my collection", trigger.bytes):
-        random.choice([
-            bot.say('[](/sbstare)'),
-            bot.action('grabs the degausser and cackles maniacally.'),
-            bot.action('follows hushmachine to the back room'),
-            bot.say('um.....sure?'),
-            bot.say('01000010011000010110001001111001001000000110010001101111011011100010011101110100001000000110100001110101011100100111010000100000011011010110010100101110'),
-            bot.say('Hmmm.... Why not?'),
-            bot.say('...'),
-            bot.say('Ones and zeros, huh? I prefer trinary, thanks.'),
-            bot.say('You show me yours, I\'ll show you mine... [](/ww20)'),
-            bot.say('Is that a RAID6 in your pocket, or are you happy to see me?')
+        response = random.choice([
+            (False, '[](/sbstare)'),
+            (True, 'grabs the degausser and cackles maniacally.'),
+            (True, 'follows hushmachine to the back room'),
+            (False, 'um.....sure?'),
+            (False, '01000010011000010110001001111001001000000110010001101111011011100010011101110100001000000110100001110101011100100111010000100000011011010110010100101110'),
+            (False, 'Hmmm.... Why not?'),
+            (False, '...'),
+            (False, 'Ones and zeros, huh? I prefer trinary, thanks.'),
+            (False, 'You show me yours, I\'ll show you mine... [](/ww20)'),
+            (False, 'Is that a RAID6 in your pocket, or are you happy to see me?')
         ])
+    if response[0]:
+        bot.action(response[1])
+    else:
+        bot.say(response[1])
 
 if __name__ == "__main__":
     print __doc__.strip()
