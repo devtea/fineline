@@ -37,13 +37,14 @@ except:
 _exc_regex = []
 _twitch_client_id = None  # Overwritten in setup()
 _youtube_api_key = None  # Overwritten in setup()
+_ustream_dev_key = None  # Overwritten in setup()
 _re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('justin\.tv/'))
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('twitch\.tv/'))
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('livestream\.com/'))
-_re_us = re.compile('(?<=ustream\.tv/)[^/(){}[\]]+')
+_re_us = re.compile('((?<=ustream\.tv/channel/)|(?<=ustream\.tv/))([^/(){}[\]]+)')
 _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('((youtube\.com/user/)|(youtube\.com/))([^\?/(){}[\]\s]+)')
 _exc_regex.append(re.compile('youtube\.com/'))
@@ -103,6 +104,11 @@ class stream(object):
     @property
     def live(self):
         return self._live
+
+    @live.setter
+    def live(self, value):
+        assert isinstance(value, bool)
+        self.live = value
 
     @property
     def name(self):
@@ -317,7 +323,35 @@ class livestream(stream):
 
 
 class ustream(stream):
-    pass
+    # bot.memory['streamSet']['ustream_dev_key'] = bot.config.streams.ustream_dev_key
+    # http://developer.ustream.tv/data_api/docs
+    _base_url = 'http://api.ustream.tv/json'
+    _service = 'ustream.tv'
+    _last_update = time.time()
+    #_header_info = ''
+
+    def __init__(self, name, alias=None):
+        super(ustream, self).__init__(name, alias)
+        self._results = web.get(u'%s/channel/%s/getInfo?key=%s' % (
+            self._base_url, self._name, _ustream_dev_key))
+        self._form_j = json.loads(self._results)
+        if self._form_j['error']:
+            raise ValueError(self._form_j['error'])
+        if self._form_j['results']['status'] == 'online':
+            self._live = True
+            self._last_update = time.time()
+        self._url = self._form_j['results']['url']
+        # No integrated NSFW flags to parse
+
+    def update(self):
+        self._results = web.get(u'%s/channel/%s/getValueOf/status?key=%s' % (
+            self._base_url, self._name, _ustream_dev_key))
+        self._form_j = json.loads(self._results)
+        if self._form_j['error']:
+            raise ValueError(self._form_j['error'])
+        if self._live ^ bool(self._form_j['results'] == 'live'):
+            self._live = bool(self._form_j['results'] == 'live')
+            self._last_update = time.time()
 
 
 class youtube(stream):
@@ -522,6 +556,8 @@ def setup(bot):
     _twitch_client_id = bot.config.streams.twitch_client_id
     global _youtube_api_key
     _youtube_api_key = bot.config.streams.youtube_api_key
+    global _ustream_dev_key
+    _ustream_dev_key = bot.config.streams.ustream_dev_key
     bot.memory['streamSet'] = {}
     bot.memory['streamSet']['help_file_source'] = bot.config.streams.stream_help_file_source
     bot.memory['streamSet']['help_file_dest'] = bot.config.streams.stream_help_file_dest
@@ -598,9 +634,9 @@ def setup(bot):
 
 @commands('live_reload')
 def load_from_db(bot, trigger=None):
-    bot.debug(u'streams.py:reload', u'Reloading from DB', 'verbose')
     if trigger and not trigger.admin:
         return
+    bot.debug(u'streams.py:reload', u'Reloading from DB', 'verbose')
     bot.memory['streams'] = []
     bot.memory['feat_streams'] = []
     dbcon = bot.db.connect()  # sqlite3 connection
@@ -617,8 +653,13 @@ def load_from_db(bot, trigger=None):
         dbcon.close()
     for c, s, n, a in stream_rows:
         time.sleep(0.25)
-        bot.memory['streams'].append(
-            bot.memory['streamFac'].newStream(c, s, a))
+        try:
+            bot.memory['streams'].append(
+                bot.memory['streamFac'].newStream(c, s, a))
+        except:
+            bot.debug(u'streams.py:reload',
+                      u'Failed to initialize livestream: %s, %s, %s' % (c, s, a),
+                      u'warning')
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
@@ -782,6 +823,11 @@ def more_help(bot, trigger):
               bot.memory['streamSet']['help_file_url'])
 
 
+@commands('streams')
+def streams_alias(bot, trigger):
+    list_streams(bot, 'live')
+
+
 @commands('live')
 def sceencasting(bot, trigger):
     '''Manage various livestreams from multiple services.
@@ -903,7 +949,7 @@ def parse_service(service):
         elif _re_yt.search(service):
             return (_re_yt.findall(service)[0][-1], 'youtube.com')
         elif _re_us.search(service):
-            return (_re_us.findall(service)[0], 'ustream.tv')
+            return (_re_us.findall(service)[-1][-1], 'ustream.tv')
         else:
             return None
 
@@ -951,7 +997,7 @@ def add_stream(bot, user):
                 else:
                     bot.reply(u'There was an unknown error, check your ' +
                               u'spelling and try again later')
-                    bot.debug(u'streams.py', txt, 'warnings')
+                    bot.debug(u'streams.py', txt, 'warning')
                     return
             except timeout as txt:
                 bot.debug(u'streams.py',
@@ -1434,6 +1480,7 @@ def jtv_updater(bot):
     bot.debug(u'streams.py', u'Starting justin.tv updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
+        # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(u'streams.py',
@@ -1452,6 +1499,7 @@ def livestream_updater(bot):
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         try:
+            # TODO handle timeout, misc exceptions
             s.update()
         except ValueError:
             pass
@@ -1468,6 +1516,7 @@ def twitchtv_updater(bot):
     bot.debug(u'streams.py', u'Starting twitch.tv updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
+        # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(
@@ -1482,11 +1531,41 @@ def youtube_updater(bot):
     bot.debug(u'streams.py', u'Starting youtube.com updater.', u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
+        # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(
         u'streams.py',
         u'youtube.com updater complete in %s seconds.' % (time.time() - now),
+        u'verbose'
+    )
+
+
+@interval(239)
+def ustream_updater(bot):
+    bot.debug(u'streams.py', u'Starting ustream.tv updater.', u'verbose')
+    now = time.time()
+    #channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
+    #if len(channel_list) == 0:
+    #    return
+    # Range will be length mod 10
+    #for i in channel_list:
+    for s in [i for i in bot.memory['streams'] if i.service == 'ustream.tv']:
+        s.update()
+        time.sleep(0.25)
+        '''
+    for i in range(len(channel_list) / 10 + 1):
+        # TODO handle timeout, misc exceptions
+        update ';'.join stuff
+
+    for s in [i for i in bot.memory['streams'] if i.service == 'ustream.tv']:
+        # TODO handle timeout, misc exceptions
+        s.update()
+        time.sleep(0.25)
+        '''
+    bot.debug(
+        u'streams.py',
+        u'ustream.tv updater complete in %s seconds.' % (time.time() - now),
         u'verbose'
     )
 
