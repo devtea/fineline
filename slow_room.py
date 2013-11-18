@@ -47,7 +47,7 @@ def slow_room(willie):
         for key in willie.memory["slow_timer"]:
             if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
                and key in willie.channels:
-                function = random.randint(0, 11)
+                function = random.randint(0, 25)
                 if function == 0:
                     poke(willie, key)
                 elif function == 1:
@@ -63,7 +63,7 @@ def slow_room(willie):
                     cute(willie, key)
                 elif function in range(9, 11):  # No really, go away
                     features(willie, key)
-                elif function in range(12, 18):
+                elif function in range(12, 25):
                     cd(willie, key)
                 willie.memory["slow_timer"][key] = time.time()
             else:
