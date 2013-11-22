@@ -248,9 +248,15 @@ def cd(bot, channel, is_timer=True):
     if days > 0:
         parsed = '%i days' % days
     if hrs > 0:
-        parsed = '%s, %i hours' % (parsed, hrs)
+        if days > 0:
+            parsed = '%s, %i hours' % (parsed, hrs)
+        else:
+            parsed = '%i hours' % hrs
     if min > 0:
-        parsed = '%s, %i minutes' % (parsed, min)
+        if days > 0 or hrs > 0:
+            parsed = '%s, %i minutes' % (parsed, min)
+        else:
+            parsed = '%i minutes' % min
     if diff.total_seconds() < 60 and diff.total_seconds() > 0:
         parsed = 'Less than a minute'
     parsed = '%s til the season 4 premier.' % parsed
