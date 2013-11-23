@@ -47,7 +47,7 @@ def slow_room(willie):
         for key in willie.memory["slow_timer"]:
             if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
                and key in willie.channels:
-                function = random.randint(0, 25)
+                function = random.randint(0, 11)
                 if function == 0:
                     poke(willie, key)
                 elif function == 1:
@@ -63,8 +63,6 @@ def slow_room(willie):
                     cute(willie, key)
                 elif function in range(9, 11):  # No really, go away
                     features(willie, key)
-                elif function in range(12, 25):
-                    cd(willie, key)
                 willie.memory["slow_timer"][key] = time.time()
             else:
                 if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
@@ -238,7 +236,7 @@ def pony(willie, trigger):
 
 s4 = datetime.datetime(2013, 11, 23, 9)
 
-
+"""
 def cd(bot, channel, is_timer=True):
     diff = s4 - datetime.datetime.now()
     days = diff.days
@@ -248,7 +246,9 @@ def cd(bot, channel, is_timer=True):
     if days > 0:
         parsed = '%i days' % days
     if hrs > 0:
-        if days > 0:
+        if days == 1:
+            parsed = '%s, %i hour' % (parsed, hrs)
+        elif days > 1:
             parsed = '%s, %i hours' % (parsed, hrs)
         else:
             parsed = '%i hours' % hrs
@@ -270,7 +270,7 @@ def cd(bot, channel, is_timer=True):
 def countdown(bot, trigger):
     '''Shows a countdown to a set date and time.'''
     cd(bot, trigger.sender, is_timer=False)
-
+"""
 
 if __name__ == "__main__":
     print __doc__.strip()
