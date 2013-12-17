@@ -20,8 +20,6 @@ _WAIT_TIME = (random.uniform(23, 42) * 60)
 _IGNORE = [u'#fineline_testing']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
-_da_faves = u'http://backend.deviantart.com/rss.xml' + \
-            u'?q=favby%3Atdreyer1%2F50127477&type=deviation'
 
 
 def setup(willie):
@@ -33,6 +31,8 @@ def setup(willie):
         willie.memory["slow_timer"] = {}
     if "slow_timer_lock" not in willie.memory:
         willie.memory["slow_timer_lock"] = threading.Lock()
+    #link to deviant art RSS feed, preferably favorites.
+    willie.memory["da_faves"] = willie.config.slow_room.deviant_link
 
 
 @interval(19)
@@ -66,7 +66,7 @@ def slow_room(willie):
                 willie.memory["slow_timer"][key] = time.time()
             else:
                 if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
-                    __ = fetch_rss(willie, _da_faves)  # update feed regularly
+                    __ = fetch_rss(willie, willie.memory["da_faves"])  # update feed regularly
     finally:
         willie.memory["slow_timer_lock"].release()
 
@@ -177,14 +177,14 @@ def cute(willie, channel, is_timer=True):
     pics = []
     intro = [
         u"It's a bit slow in here right now. How about a pony pic?",
-        u"I guess my owner likes this pic, but I'm not sure. " +
-            u"What do you all think?",
+        u"I guess my owner likes this pic, but I'm not sure. What do you all think?",
         u"Y'all are boring. Have a pony.",
         random.choice([u"Pone!", u"Pony!", u"Poni!"]),
         u"Pony should pony pony pony",
         u"[](/ppwatching-r-90)",
-        u"\001ACTION yawns blearily and a URL pops out!\001" ]
-    feed = fetch_rss(willie, _da_faves)
+        u"\001ACTION yawns blearily and a URL pops out!\001"
+    ]
+    feed = fetch_rss(willie, willie.memory["da_faves"])
     if feed:
         for item in feed.entries:
             pics.append(item.link)
