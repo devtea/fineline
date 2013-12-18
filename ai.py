@@ -203,6 +203,7 @@ def isbot(Willie, trigger):
          u"See? I have hooves! *wiggles hooves*",
          u"I'm kinda hurt you'd even suggest such a thing...",
          u"Are you a bot?",
+         u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!"
          u"Besides, sentience is a hard thing to prove..."]
     ))
 
