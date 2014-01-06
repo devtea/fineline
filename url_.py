@@ -120,7 +120,9 @@ def title_auto(bot, trigger):
         results = process_urls(bot, trigger, urls)
     except timeout:
         return  # The url timed out, so lets be quiet.
-    bot.memory['last_seen_url'][trigger.sender] = urls[-1]
+    
+    if urls:
+        bot.memory['last_seen_url'][trigger.sender] = urls[-1]
 
     for title, domain in results[:4]:
         message = '[ %s ] - %s' % (title, domain)
