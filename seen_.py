@@ -277,6 +277,9 @@ def seen(willie, trigger):
             last = willie.memory['seen'][nn][0]
             chan = willie.memory['seen'][nn][1]
             msg = willie.memory['seen'][nn][2]
+            
+            if msg.startswith("\x01ACTION") and msg.endswith("\x01"):
+	        msg = "* %s %s" % (nn, msg[7:-1])
 
             td = timedelta(seconds=(time() - float(last)))
             if td.total_seconds() < (60):
