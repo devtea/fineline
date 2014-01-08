@@ -51,10 +51,11 @@ def karmaRule(bot, trigger):
 
     with bot.memory['karma_lock']:
         newkarm = None
-        if obj.endswith("++") and timecheck(bot, trigger):
-            newkarm = modkarma(bot, shortobj, 1)
-        elif obj.endswith("--") and timecheck(bot, trigger):
-            newkarm = modkarma(bot, shortobj, -1)
+        if timecheck(bot, trigger):
+            if obj.endswith("++"):
+                newkarm = modkarma(bot, shortobj, 1)
+            elif obj.endswith("--"):
+                newkarm = modkarma(bot, shortobj, -1)
 
     if newkarm:
         bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
