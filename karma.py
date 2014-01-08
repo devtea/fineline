@@ -40,7 +40,7 @@ def setup(bot):
 
 
 @priority(u'low')
-@rule(u'.*(\+\+)|(--)$')
+@rule(u'.*(\+\+|--)$')
 def karmaRule(bot, trigger):
     if trigger.sender[0] != '#':
         return
