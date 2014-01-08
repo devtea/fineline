@@ -40,7 +40,7 @@ def setup(bot):
 
 
 @priority(u'low')
-@rule(u'.*')
+@rule(u'.*(\+\+)|(--)$')
 def karmaRule(bot, trigger):
     if trigger.sender[0] != '#':
         return
@@ -49,6 +49,10 @@ def karmaRule(bot, trigger):
         return
     shortobj = obj[:-2].lower().strip()
 
+    #don't let users karma themselves
+    if shortobj.lower() == trigger.nick.lower().strip('_`'):
+        return
+
     with bot.memory['karma_lock']:
         newkarm = None
         if timecheck(bot, trigger):
@@ -56,6 +60,8 @@ def karmaRule(bot, trigger):
                 newkarm = modkarma(bot, shortobj, 1)
             elif obj.endswith("--"):
                 newkarm = modkarma(bot, shortobj, -1)
+        else:
+            bot.reply(u"You just used karma! You can't use it again for a bit.")
 
     if newkarm:
         bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
@@ -66,7 +72,6 @@ def timecheck(bot, trigger):
         return True
     if Nick(trigger.nick) in bot.memory['karma_time'] \
             and time.time() < bot.memory['karma_time'][Nick(trigger.nick)] + 60:
-        bot.reply(u"You just used karma! You can't use it again for a bit.")
         return False
     bot.memory['karma_time'][Nick(trigger.nick)] = time.time()
     return True
