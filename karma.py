@@ -10,6 +10,7 @@ import threading
 import time
 
 from willie.module import commands, example, rule, priority
+from willie.tools import Nick
 
 
 def setup(bot):
@@ -17,14 +18,7 @@ def setup(bot):
         bot.memory['karma_lock'] = threading.Lock()
     if 'karma_time' not in bot.memory:
         bot.memory['karma_time'] = {}
-    if 'karma' in bot.memory:
-        for i in bot.memory['karma']:
-            print '%s: %i' % (i, bot.memory['karma'][i])
-    print 'klearing karma'
     bot.memory['karma'] = {}
-    if 'karma' in bot.memory:
-        for i in bot.memory['karma']:
-            print '%s: %i' % (i, bot.memory['karma'][i])
 
     with bot.memory['karma_lock']:
         dbcon = bot.db.connect()  # sqlite3 connection
@@ -69,10 +63,11 @@ def karmaRule(bot, trigger):
 def timecheck(bot, trigger):
     if trigger.admin:
         return True
-    if trigger.sender in bot.memory['karma_time'] and time.time() < bot.memory['karma_time'][trigger.sender] + 60:
+    if Nick(trigger.nick) in bot.memory['karma_time'] \
+            and time.time() < bot.memory['karma_time'][Nick(trigger.nick)] + 60:
         bot.reply(u"You just used karma! You can't use it again for a bit.")
         return False
-    bot.memory['karma_time'][trigger.sender] = time.time()
+    bot.memory['karma_time'][Nick(trigger.nick)] = time.time()
     return True
 
 
