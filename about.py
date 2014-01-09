@@ -23,7 +23,7 @@ def about(bot, trigger):
             u"http://mlpdrawingschool.deviantart.com/gallery/37232754")
     time.sleep(random.uniform(3, 5))
     bot.say(u"Well, that's not exactly right. I'm speaking to you " +
-            u"through an implementation of the bot bot hosted by " +
+            u"through an implementation of the Willie bot hosted by " +
             u"%s." % owner)
     time.sleep(random.uniform(3, 5))
     bot.say(u"I'm also open source! You can see my source at " +
