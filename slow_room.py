@@ -17,7 +17,7 @@ from willie.module import interval, rule, commands
 
 # Wait time in seconds before the bot will pipe up
 _WAIT_TIME = (random.uniform(23, 42) * 60)
-_IGNORE = [u'#fineline_testing']
+_INCLUDE = [u'#reddit-mlpds']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
@@ -210,7 +210,7 @@ def features(bot, channel):
 def last_activity(willie, trigger):
     """Keeps track of the last activity for a room"""
     if trigger.sender.startswith("#") and \
-            trigger.sender not in _IGNORE:
+            trigger.sender in _INCLUDE:
         willie.debug(u"timers:last_activity", trigger.sender, u"verbose")
         if 'slow_timer_lock' not in willie.memory:
             willie.debug(
