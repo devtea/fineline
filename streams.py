@@ -1421,13 +1421,16 @@ def subscribe(bot, switch, channel, nick, quiet=False):
 @interval(19)
 def announcer(bot):
     def whisper(nick, strm):
-        bot.msg(nick, '%s has started streaming at %s' % (strm.name, strm.url))
+        if strm.alias:
+            bot.msg(nick, '%s has started streaming at %s' % (strm.alias, strm.url))
+        else:
+            bot.msg(nick, '%s has started streaming at %s' % (strm.name, strm.url))
 
     def announce(chan, strm):
-        bot.msg(
-            chan,
-            'Hey everyone, %s has started streaming at %s' % (strm.name,
-                                                              strm.url))
+        if strm.alias:
+            bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.alias, strm.url))
+        else:
+            bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.name, strm.url))
     bot.debug(u'streams.py', u'Announcer waking up', u'verbose')
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
