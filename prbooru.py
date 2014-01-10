@@ -8,6 +8,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from HTMLParser import HTMLParseError
 from random import choice
+from socket import timeout
 import re
 
 from bs4 import BeautifulSoup, SoupStrainer
@@ -35,7 +36,7 @@ def prbooru_search(willie, tags=None, rand=True):
         page = ''
         try:
             page = web.get(url)
-        except TimoutError:
+        except timeout:
             willie.debug(u'prbooru.py', u'Site timed out.', u'warning')
             return None
         if page:
@@ -56,7 +57,7 @@ def prbooru_search(willie, tags=None, rand=True):
         page = ''
         try:
             page = web.get(url)
-        except TimoutError:
+        except timeout:
             willie.debug(u'prbooru.py', u'TIMEOUT', u'verbose')
             return None
         if page:
