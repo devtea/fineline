@@ -34,6 +34,7 @@ _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
+_INCLUDE = ['#reddit-mlpds']
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -309,6 +310,8 @@ def reddit_post(Willie, trigger):
 @rate(120)
 def mlpds_check(Willie, trigger):
     '''Checks for posts within the last 48h with fewer than 2 comments'''
+    if trigger.sender not in _INCLUDE:
+        return
     try:
         mlpds = rc.get_subreddit(u'MLPDrawingSchool')
     except InvalidSubreddit:
