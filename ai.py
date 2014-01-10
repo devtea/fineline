@@ -13,16 +13,17 @@ from willie.tools import Nick
 
 from willie.module import rule, rate, priority
 
-basic_thanks = u"ty|thanks|gracias|thank\s?you|thank\s?ya|ta"
-basic_woo = u"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)"
-basic_badbot = (u"bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|don'?t|wtf|" +
+basic_thanks = r"\bty|thanks|gracias|thank\s?you|thank\s?ya|\bta"
+basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
+basic_badbot = (u"bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +
                 u"(fuck[s]?\s?(sake|off)?)")
 n_text = u"[A-Za-z0-9,.'!\s]"
 basic_slap = u"slap[p]?[s]?|hit[s]?|smack[s]?\b"
 random.seed()
 
 
-@rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
+#@rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
+@rule(r'^.*?\bderp\b')
 def derp(Willie, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
     if trigger.owner:
