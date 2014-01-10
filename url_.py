@@ -16,6 +16,7 @@ from socket import timeout
 url_finder = None
 r_entity = re.compile(r'&[A-Za-z0-9#]+;')
 exclusion_char = '!'
+_EXCLUDE = ['[ imgur: the simple image sharer ] - imgur.com']
 _ignore = re.compile(r'hushmachine.*')
 # These are used to clean up the title tag before actually parsing it. Not the
 # world's best way to do this, but it'll do for now.
@@ -120,12 +121,16 @@ def title_auto(bot, trigger):
         results = process_urls(bot, trigger, urls)
     except timeout:
         return  # The url timed out, so lets be quiet.
-    
+
     if urls:
         bot.memory['last_seen_url'][trigger.sender] = urls[-1]
 
     for title, domain in results[:4]:
         message = '[ %s ] - %s' % (title, domain)
+        #Filter for dumb titles
+        if message in _EXCLUDE:
+            return
+
         # Guard against responding to other instances of this bot.
         if message != trigger:
             bot.say(message)
