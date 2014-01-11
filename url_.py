@@ -72,7 +72,7 @@ def setup(bot=None):
     else:
         exclude = bot.memory['url_exclude']
         if regexes:
-            exclude.append(regexes)
+            exclude.extend(regexes)
         bot.memory['url_exclude'] = exclude
 
     # Ensure that url_callbacks and last_seen_url are in memory
@@ -202,8 +202,7 @@ def check_callbacks(bot, trigger, url, run=True):
     ``True`` if the url matched anything in the callbacks list.
     """
     # Check if it matches the exclusion list first
-    if bot.memory['url_exclude']:
-        matched = any(regex.search(url) for regex in bot.memory['url_exclude'])
+    matched = any(regex.search(url) for regex in bot.memory['url_exclude'])
     # Then, check if there's anything in the callback list
     for regex, function in bot.memory['url_callbacks'].iteritems():
         match = regex.search(url)
