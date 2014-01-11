@@ -85,7 +85,7 @@ def seen_reload(willie):
             )
             nn = Nick(nick)
             data = json.loads(unescape(json_data))
-            tm = float(data['tm'])
+            tm = float(data['time'])
             assert type(tm) is FloatType, u'%r is not float' % tm
             chan = data['channel']
             msg = data['message']
@@ -107,7 +107,7 @@ def seen_insert(willie, nick, data):
     assert isinstance(data[2], basestring)
     nn = Nick(nick)
     dict = {}
-    dict['tm'] = str(data[0])
+    dict['time'] = str(data[0])
     dict['channel'] = data[1]  # data[1] should be unicode
     dict['message'] = data[2]
 
