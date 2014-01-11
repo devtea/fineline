@@ -594,8 +594,7 @@ def setup(bot):
     # TODO consider making these unique sets
     if 'url_exclude' not in bot.memory:
         bot.memory['url_exclude'] = []
-    for i in _exc_regex:
-        bot.memory['url_exclude'].extend(i)
+    bot.memory['url_exclude'].extend(_exc_regex)
     if 'streams' not in bot.memory:
         bot.memory['streams'] = []
     if 'feat_streams' not in bot.memory:
