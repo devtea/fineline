@@ -1,5 +1,8 @@
 """
 url.py - Willie URL title module
+Copyright 2010-2011, Michael Yanovich, yanovich.net, Kenneth Sham
+Copyright 2012-2013 Edward Powell
+Copyright 2013      Lior Ramati (firerogue517@gmail.com)
 Copyright 2013 Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -70,7 +73,7 @@ def setup(bot=None):
         exclude = bot.memory['url_exclude']
         if regexes:
             exclude.append(regexes)
-        bot.memory['url_exclude'] = regexes
+        bot.memory['url_exclude'] = exclude
 
     # Ensure that url_callbacks and last_seen_url are in memory
     if not bot.memory.contains('url_callbacks'):
