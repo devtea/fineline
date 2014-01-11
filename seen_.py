@@ -24,7 +24,8 @@ log_dir = u''
 log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
 line_regex = re.compile(u'^\[(\d\d:\d\d:\d\d)\] <([^>]+)> (.*)$')
 chan_regex = re.compile(u'^(.*?)_\d{8}$')
-cen = timezone(u"US/Central")  #log timezone
+cen = timezone(u"US/Central")  # log timezone
+_EXCLUDE = ['#reddit-mlpds-spoilers']
 
 
 def escape(ucode):
@@ -55,6 +56,7 @@ except:
         if fp:
             fp.close()
 
+
 def setup(willie):
     global log_dir
     if willie.config.has_option('seen', 'log_dir'):
@@ -83,11 +85,11 @@ def seen_reload(willie):
             )
             nn = Nick(nick)
             data = json.loads(unescape(json_data))
-            time = float(data['time'])
-            assert type(time) is FloatType, u'%r is not float' % time
+            tm = float(data['tm'])
+            assert type(tm) is FloatType, u'%r is not float' % tm
             chan = data['channel']
             msg = data['message']
-            r_tup = (time, chan, msg)
+            r_tup = (tm, chan, msg)
             willie.memory['seen'][nn.lower()] = r_tup
     finally:
         willie.memory['seen_lock'].release()
@@ -105,7 +107,7 @@ def seen_insert(willie, nick, data):
     assert isinstance(data[2], basestring)
     nn = Nick(nick)
     dict = {}
-    dict['time'] = str(data[0])
+    dict['tm'] = str(data[0])
     dict['channel'] = data[1]  # data[1] should be unicode
     dict['message'] = data[2]
 
@@ -240,8 +242,8 @@ def seen_nuke(willie, trigger):
 @priority(u'low')
 @rule(u'.*')
 def seen_recorder(willie, trigger):
-    if not trigger.args[0].startswith(u'#'):
-        return  # ignore priv msg
+    if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
+        return  # ignore priv msg and excepted rooms
     nn = Nick(trigger.nick)
     now = time()
     msg = trigger.args[1].strip().encode('utf-8', 'replace')
@@ -277,9 +279,9 @@ def seen(willie, trigger):
             last = willie.memory['seen'][nn][0]
             chan = willie.memory['seen'][nn][1]
             msg = willie.memory['seen'][nn][2]
-            
+
             if msg.startswith("\x01ACTION") and msg.endswith("\x01"):
-	        msg = "* %s %s" % (nn, msg[7:-1])
+                msg = "* %s %s" % (nn, msg[7:-1])
 
             td = timedelta(seconds=(time() - float(last)))
             if td.total_seconds() < (60):
