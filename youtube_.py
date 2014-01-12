@@ -181,6 +181,9 @@ def ytinfo(bot, trigger, found_match=None):
 @commands('ytlast', 'ytnew', 'ytlatest')
 @example('.ytlast vlogbrothers')
 def ytlast(bot, trigger):
+    '''
+    Get latest video of a specified user.
+    '''
     if not trigger.group(2):
         return
     uri = 'https://gdata.youtube.com/feeds/api/users/' + trigger.group(2).encode('utf-8') + '/uploads?max-results=1&alt=json&v=2'
