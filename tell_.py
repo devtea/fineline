@@ -84,9 +84,10 @@ def get_user_time(bot, nick):
 
 @commands('tell', 'ask')
 @nickname_commands('tell', 'ask')
-@example('Willie, tell Embolalia he broke something again.')
 def f_remind(bot, trigger):
     """Give someone a message the next time they're seen"""
+    if not trigger.sender.startswith('#'):
+        return
     teller = trigger.nick
 
     verb = trigger.group(1)
