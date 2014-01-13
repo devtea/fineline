@@ -21,7 +21,6 @@ _reply_list = [u'%s x %s',
                u'%s and %s sail the seven seas.',
                u'%s and %s are caught redhoofed.',
                u'%s and %s will deny it, but everypony knows...',
-               u'%s really likes %s\'s mane!',
                u'%s writes a self-insert fanfic about themselves and %s.',
                u'%s and %s take the midnight train going anywhere.',
                u'%s and %s "accidentally" find themselves together in a hotel room... Alone...'
