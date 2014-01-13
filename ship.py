@@ -13,14 +13,18 @@ import threading
 from willie.module import commands
 
 _reply_list = [u'%s x %s',
-               u'%s and %s didn\' choose the huglife, the huglife chose them.',
+               u'%s and %s didn\'t choose the huglife, the huglife chose them.',
                u'%s and %s can\'t keep their hooves off each other',
                u'%s and %s are suddenly and inexplicably attracted to each other...',
                u'%s gets unceremoniously stuffed into a shipping container with %s.',
-               u'%s and %s set sail',
+               u'%s and %s set sail.',
                u'%s and %s sail the seven seas.',
                u'%s and %s are caught redhoofed.',
-               u'%s and %s will deny it, but everypony knows...'
+               u'%s and %s will deny it, but everypony knows...',
+               u'%s really likes %s\'s mane!',
+               u'%s writes a self-insert fanfic about themselves and %s.',
+               u'%s and %s take the midnight train going anywhere.',
+               u'%s and %s "accidentally" find themselves together in a hotel room... Alone...'
                ]
 
 
