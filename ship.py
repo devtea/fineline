@@ -16,7 +16,12 @@ _reply_list = [u'%s x %s',
                u'%s and %s didn\' choose the huglife, the huglife chose them.',
                u'%s and %s can\'t keep their hooves off each other',
                u'%s and %s are suddenly and inexplicably attracted to eachother...',
-               u'%s gets unceremoniously stuffed into a shipping container with %s.']
+               u'%s gets unceremoniously stuffed into a shipping container with %s.',
+               u'%s and %s set sail',
+               u'%s and %s sail the seven seas.',
+               u'%s and %s are caught redhoofed.',
+               u'%s and %s will deny it, but everypony knows...'
+               ]
 
 
 def setup(bot):
@@ -24,7 +29,6 @@ def setup(bot):
         bot.memory['pony_list_lock'] = threading.Lock()
     with bot.memory['pony_list_lock']:
         if 'pony_list' not in bot.memory or not bot.memory['pony_list']:
-            print 'loading ponies from db'
             bot.memory['pony_list'] = []
 
             dbcon = bot.db.connect()
@@ -39,8 +43,6 @@ def setup(bot):
             if pony_rows:
                 for name, weight in pony_rows:
                     bot.memory['pony_list'].append((name, weight))
-    for name, weight in bot.memory['pony_list']:
-        print '%s: %s' % (name, weight)
 
 
 def weighted_choice(weighted):
