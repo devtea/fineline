@@ -63,8 +63,7 @@ def karmaRule(bot, trigger):
         else:
             bot.reply(u"You just used karma! You can't use it again for a bit.")
 
-    if newkarm:
-        bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
+    bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
 
 
 def timecheck(bot, trigger):
@@ -82,8 +81,7 @@ def timecheck(bot, trigger):
 def karma(bot, trigger):
     obj = trigger.bytes[7:].lower().strip()
     karm = modkarma(bot, obj, 0)
-    if karm:
-        bot.reply("Karma for %s is at %i" % (obj, karm))
+    bot.reply("Karma for %s is at %i" % (obj, karm))
 
 
 def modkarma(bot, obj, amount):
