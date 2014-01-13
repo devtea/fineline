@@ -15,7 +15,7 @@ from willie.module import commands
 _reply_list = [u'%s x %s',
                u'%s and %s didn\' choose the huglife, the huglife chose them.',
                u'%s and %s can\'t keep their hooves off each other',
-               u'%s and %s are suddenly and inexplicably attracted to eachother...',
+               u'%s and %s are suddenly and inexplicably attracted to each other...',
                u'%s gets unceremoniously stuffed into a shipping container with %s.',
                u'%s and %s set sail',
                u'%s and %s sail the seven seas.',
