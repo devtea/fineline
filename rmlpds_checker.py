@@ -170,22 +170,17 @@ def rmlpds(willie):
                 td = datetime.utcnow() - c_date
                 hr = td.total_seconds() / 60 / 60
                 t = u'%i hours ago' % hr
-                num = u'is at least 1 post'
+                msg = u'Hey Everyone, there is at least 1 post that might ' + \
+                      u'need critique!'
                 if len(uncommented) > 1:
-                    num = u'are at least %i posts' % len(uncommented)
+                    msg = u'Hey Everyone, there is at least %i' % len(uncommented) + \
+                          u'posts that might need critique!'
                 for chan in _channels:
                     if chan in willie.channels:
-                        willie.msg(
-                            chan,
-                            (u"Hey everyone, there %s that might need " +
-                                u"critique! Here's a random one: ") % num
-                        )
                         nsfw = u''
                         if post.over_18:
-                            nsfw = u'[%s] ' % colors.colorize(u'NSFW',
-                                                              ['red'],
-                                                              ['b']
-                                                              )
+                            nsfw = u'[%s] ' % colors.colorize(u'NSFW', ['red'], ['b'])
+                        willie.msg(chan, msg)
                         willie.msg(
                             chan,
                             u'%s%s posted %s – "%s" [ %s ] ' % (
