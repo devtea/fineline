@@ -170,10 +170,10 @@ def rmlpds(willie):
                 td = datetime.utcnow() - c_date
                 hr = td.total_seconds() / 60 / 60
                 t = u'%i hours ago' % hr
-                msg = u'Hey Everyone, there is at least 1 post that might ' + \
+                msg = u'Hey everyone, there is at least 1 post that might ' + \
                       u'need critique!'
                 if len(uncommented) > 1:
-                    msg = u'Hey Everyone, there is at least %i' % len(uncommented) + \
+                    msg = u'Hey everyone, there is at least %i' % len(uncommented) + \
                           u'posts that might need critique!'
                 for chan in _channels:
                     if chan in willie.channels:
