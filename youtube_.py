@@ -17,6 +17,8 @@ import json
 import re
 from HTMLParser import HTMLParser
 
+_EXCLUDE=['#reddit-mlpds']
+
 
 def setup(bot):
     regex = re.compile('(youtube.com/watch\S*v=|youtu.be/)([\w-]+)')
@@ -151,6 +153,8 @@ def ytinfo(bot, trigger, found_match=None):
     """
     Get information about the latest video uploaded by the channel provided.
     """
+    if trigger.sender in _EXCLUDE:
+        return
     match = found_match or trigger
     #Grab info from YT API
     uri = 'http://gdata.youtube.com/feeds/api/videos/' + match.group(2) + '?v=2&alt=json'
