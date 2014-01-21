@@ -12,6 +12,24 @@ import threading
 import re
 
 
+class NickPlus(Nick):
+    _hostname = None
+
+    def __new__(cls, nick, host):
+        s = super(NickPlus, cls).__new__(cls, nick)
+        s.hostname = host
+        return s
+
+    def hostname(self):
+        return self._hostname
+
+    def __eq__(self, other):
+        if isinstance(other, NickPlus):
+            return self._lowered == other._lowered or self.hostname == other.hostname
+        return self._lowered == Nick._lower(other)
+
+
+@commands(u'test')
 def setup(bot):
     # bot.memory['chan_nicks']['#channel_name'] = [list, of, nicks]
     #               ^ dict          ^dict
@@ -50,6 +68,7 @@ def names(bot, trigger):
     # see https://github.com/embolalia/willie/blob/master/willie/coretasks.py
     try:
         unprocessed_nicks = re.split(' ', trigger)
+        #TODO I have a feeling this needs to be nickplus with hostname
         nicks = [Nick(i) for i in unprocessed_nicks]
         channel = re.findall('#\S*', bot.raw)[0]  # bot.raw is undocumented but seems to be the raw line received
         bot.memory['chan_nicks'][channel] = nicks
@@ -68,7 +87,7 @@ def names(bot, trigger):
 def join(bot, trigger):
     list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught JOIN by %s' % trigger.nick, u'verbose')
-    name = Nick(trigger.nick)
+    name = NickPlus(trigger.nick, trigger.host)
     if not trigger.sender.startswith('#'):
         return
     with bot.memory['nick_lock']:
@@ -91,7 +110,7 @@ def join(bot, trigger):
 def quit(bot, trigger):
     list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught QUIT by %s' % trigger.nick, u'verbose')
-    name = Nick(trigger.nick)
+    name = NickPlus(trigger.nick, trigger.host)
     if not trigger.sender.startswith('#'):
         return
     with bot.memory['nick_lock']:
@@ -113,7 +132,7 @@ def quit(bot, trigger):
 def kick(bot, trigger):
     list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught KICK by %s' % trigger.nick, u'verbose')
-    name = Nick(trigger.nick)
+    name = NickPlus(trigger.nick, trigger.host)
     if not trigger.sender.startswith('#'):
         return
     with bot.memory['nick_lock']:
@@ -135,7 +154,7 @@ def kick(bot, trigger):
 def part(bot, trigger):
     list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught PART by %s' % trigger.nick, u'verbose')
-    name = Nick(trigger.nick)
+    name = NickPlus(trigger.nick, trigger.host)
     if not trigger.sender.startswith('#'):
         return
     with bot.memory['nick_lock']:
@@ -158,8 +177,8 @@ def nick(bot, trigger):
     list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught NICK by %s' % trigger.nick, u'verbose')
     # Trigger doesn't come from channel. Any replies will be sent to user
-    name = Nick(trigger.nick)
-    new_name = Nick(trigger)
+    name = NickPlus(trigger.nick, trigger.host)
+    new_name = Nick(trigger, trigger.host)
     with bot.memory['nick_lock']:
         for chan in bot.memory['chan_nicks']:
             try:
