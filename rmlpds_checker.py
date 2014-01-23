@@ -173,8 +173,8 @@ def rmlpds(willie):
                 msg = u'Hey everyone, there is at least 1 post that might ' + \
                       u'need critique!'
                 if len(uncommented) > 1:
-                    msg = u'Hey everyone, there is at least %i' % len(uncommented) + \
-                          u'posts that might need critique!'
+                    msg = u'Hey everyone, there are at least %i ' % len(uncommented) + \
+                          u'posts that might need critique! Here is a random one:'
                 for chan in _channels:
                     if chan in willie.channels:
                         nsfw = u''
