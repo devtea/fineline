@@ -92,8 +92,6 @@ def whois_catcher(bot, trigger):
             # query, but only if the existing doesn't have a hostname. This is
             # to prevent the possibility of someone NICKing before the whois
             # gets processed and getting the new nick overwritten with the old.
-            print '### trying to replace %s for %s' % (who, chan)
-            print who.hostname
             bot.memory['chan_nicks'][chan] = \
                 [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['chan_nicks'][chan]]
 
@@ -142,7 +140,7 @@ def names(bot, trigger):
 @thread(False)
 @priority('high')
 def join(bot, trigger):
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught JOIN by %s' % trigger.nick, u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
@@ -153,7 +151,7 @@ def join(bot, trigger):
             # care of everyone else
             if name != bot.nick:
                 bot.memory['chan_nicks'][trigger.sender].append(name)
-        list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     except:
         bot.debug(u'nicks.py:JOIN', u'ERROR: bot nick list is unsynced from server', u'always')
         refresh_nicks(bot)
@@ -165,16 +163,16 @@ def join(bot, trigger):
 @thread(False)
 @priority('high')
 def nick(bot, trigger):
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught NICK by %s >> %s' % (trigger.nick, trigger), u'verbose')
     # Trigger doesn't come from channel. Any replies will be sent to user.
     # Old nick is in trigger.nick while new nick is in trigger and
     # trigger.sender
-    print 'trigger: %s' % trigger
-    print 'trigger.bytes: %s' % trigger.bytes
-    print 'trigger.sender: %s' % trigger.sender
-    print 'trigger.nick: %s' % trigger.nick
-    print 'bot.raw: %s' % bot.raw
+    # print 'trigger: %s' % trigger
+    # print 'trigger.bytes: %s' % trigger.bytes
+    # print 'trigger.sender: %s' % trigger.sender
+    # print 'trigger.nick: %s' % trigger.nick
+    # print 'bot.raw: %s' % bot.raw
     try:
         old_nick = NickPlus(trigger.nick, trigger.host)
         new_nick = NickPlus(trigger, trigger.host)
@@ -185,7 +183,7 @@ def nick(bot, trigger):
     except:
         bot.debug(u'nicks.py:NICK', u'ERROR: bot nick list is unsynced from server', u'always')
         refresh_nicks(bot)
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -194,7 +192,7 @@ def nick(bot, trigger):
 @thread(False)
 @priority('high')
 def quit(bot, trigger):
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught QUIT by %s' % trigger.nick, u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
@@ -209,7 +207,7 @@ def quit(bot, trigger):
     except:
         bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
         refresh_nicks(bot)
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -218,7 +216,7 @@ def quit(bot, trigger):
 @thread(False)
 @priority('high')
 def kick(bot, trigger):
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught KICK by %s' % trigger.nick, u'verbose')
     try:
         name = Nick(trigger)  # Trigger comes in as trigger==kicked, trigger.nick==kicker
@@ -233,7 +231,7 @@ def kick(bot, trigger):
     except:
         bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
         refresh_nicks(bot)
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -242,7 +240,7 @@ def kick(bot, trigger):
 @thread(False)
 @priority('high')
 def part(bot, trigger):
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
     bot.debug(u'nicks.py', u'Caught PART by %s' % trigger.nick, u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
@@ -257,7 +255,7 @@ def part(bot, trigger):
     except:
         bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
         refresh_nicks(bot)
-    list_nicks(bot, trigger)
+    #list_nicks(bot, trigger)
 
 
 if __name__ == "__main__":
