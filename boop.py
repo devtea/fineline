@@ -5,14 +5,24 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+#TODO user aliases
 
 #import time
 from willie.module import commands
 from willie.tools import Nick
+import random
 
 
 _excludes = []
 _lists = {}
+_front = ['any', 'some']
+_back = ['one', 'body', 'pony', 'poni', 'pone']
+_anyone = [a + b for a in _front for b in _back]
+_boop = [u'boops %s',
+         u'sneaks up and boops %s',
+         u'licks her hoof and boops %s'
+         ]
+_self = [u'spins around in circles trying to boop herself']
 
 
 def setup(bot):
@@ -31,9 +41,15 @@ def boop(bot, trigger):
         bot.action(u'boops %s' % trigger.nick)
     else:
         if target == trigger.nick:
-            bot.action(u'boops %s' % trigger.nick)
+            bot.action(random.choice(_boop) % trigger.nick)
         elif target == bot.nick:
-            bot.action(u'spins around til she falls over trying to boop herself...')
+            bot.action(random.choice(_self))
+        elif target in _anyone:
+            target = bot.nick
+            nick_list = bot.memory['nick_func'](trigger.sender)
+            while target == bot.nick:
+                target = random.choice(nick_list)
+            bot.action(random.choice(_boop) % target)
         elif target in _excludes:
             bot.say(u"I'm not doing that.")
         elif target in _lists:
@@ -41,7 +57,7 @@ def boop(bot, trigger):
             pass
         elif bot.memory['nick_func'](trigger.sender, target):
             #TODO get proper nick from memory
-            bot.action(u'boops %s' % target)
+            bot.action(random.choice(_boop) % target)
         else:
             bot.reply(u'Sorry, I don\'t see %s around here.' % target)
 
