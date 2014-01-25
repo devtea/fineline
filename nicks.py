@@ -47,6 +47,10 @@ def setup(bot):
         bot.memory['nick_lock'] = threading.Lock()
     if 'whois_lock' not in bot.memory:
         bot.memory['whois_lock'] = threading.Lock()
+    # Our custom class and nick function may be useful to other
+    # modules
+    if 'NickPlus' not in bot.memory:
+        bot.memory['NickPlus'] = NickPlus
     if 'nick_func' not in bot.memory:
         def shared_nicks(channel, nick=None):
             if not nick and channel in bot.memory['chan_nicks']:
