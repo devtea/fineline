@@ -67,9 +67,8 @@ _all = [u'yells "BOOP" and giggles to herself',
 def setup(bot):
     if 'boop_lock' not in bot.memory:
         bot.memory['boop_lock'] = threading.Lock()
-    bot.memory['boop_lists'] = {}
-
     with bot.memory['boop_lock']:
+        bot.memory['boop_lists'] = {}
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
         dbnames = None
@@ -122,7 +121,7 @@ def boop(bot, trigger):
             bot.action(random.choice(_boop) % target)
         elif target in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target]) > 0:
             try:
-                message = trigger.args[1].split(' ', 1)[2].strip()
+                message = trigger.args[1].split(' ', 1)[1].strip()
             except IndexError:
                 message = None
             msg = 'boops'
