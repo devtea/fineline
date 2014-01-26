@@ -120,10 +120,7 @@ def boop(bot, trigger):
             #TODO small chance to boop random person
             bot.action(random.choice(_boop) % target)
         elif target in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target]) > 0:
-            try:
-                message = trigger.args[1].split(' ', 1)[1].strip()
-            except IndexError:
-                message = None
+            message = u' '.join(trigger.args[1].split()[2:])
             msg = 'boops'
             nick_list = []
             nick_list.extend(bot.memory['nick_func'](trigger.sender))
