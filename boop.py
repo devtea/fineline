@@ -107,7 +107,7 @@ def boop(bot, trigger):
         elif target in _anyone:
             target = bot.nick
             nick_list = []
-            nick_list.extend(bot.memory['nick_func'](trigger.sender)
+            nick_list.extend(bot.memory['nick_func'](trigger.sender))
             while target == bot.nick:
                 target = random.choice(nick_list)
             bot.action(random.choice(_boop) % target)
