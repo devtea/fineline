@@ -24,7 +24,7 @@ class NickPlus(Nick):
     _hostname = None
 
     def __new__(cls, nick, host=None):
-        s = super(NickPlus, cls).__new__(cls, nick)
+        s = Nick.__new__(cls, nick)
         s.hostname = host
         return s
 
@@ -41,16 +41,15 @@ class NickPlus(Nick):
 def setup(bot):
     # bot.memory['chan_nicks']['#channel_name'] = [list, of, nicks]
     #               ^ dict          ^dict
-    if 'chan_nicks' not in bot.memory:
-        bot.memory['chan_nicks'] = {}
+    bot.memory['chan_nicks'] = {}
     if 'nick_lock' not in bot.memory:
         bot.memory['nick_lock'] = threading.Lock()
     if 'whois_lock' not in bot.memory:
         bot.memory['whois_lock'] = threading.Lock()
+    # trying real quick for debugging
     # Our custom class and nick function may be useful to other
     # modules
-    if 'NickPlus' not in bot.memory:
-        bot.memory['NickPlus'] = NickPlus
+    bot.memory['NickPlus'] = NickPlus
     if 'nick_func' not in bot.memory:
         def shared_nicks(channel, nick=None):
             if not nick and channel in bot.memory['chan_nicks']:
@@ -86,6 +85,7 @@ def list_nicks(bot, trigger):
 @event('311')
 @unblockable
 @priority('high')
+@thread(False)  # Don't remove this or you'll break the bot.raw call
 def whois_catcher(bot, trigger):
     bot.debug(u'nicks.py', u'Caught WHOIS response', u'verbose')
     n, h = re_hostname.search(bot.raw).groups()
@@ -105,11 +105,11 @@ def whois(bot, trigger):
     bot.write(['WHOIS', 'FineLine'])
 
 
-#@rule(u'.*353.*=.#.*:(.*)')
 @rule('.*')
 @event('353')
 @unblockable
 @priority('high')
+@thread(False)  # Don't remove this or you'll break the bot.raw call
 def names(bot, trigger):
     buf = bot.raw.strip()  # bot.raw is undocumented but seems to be the raw line received
     bot.debug(u'nicks.py', u'Caught NAMES response', u'verbose')
@@ -125,12 +125,12 @@ def names(bot, trigger):
         bot.debug(u'nicks.py', u'Refeshing hosts for %s' % channel, 'verbose')
         for n in nicks:
             with bot.memory['whois_lock']:
-                time.sleep(1)  # This keeps our aggregate whois rate reasonable
                 # Prevent whoising the same nick multiple times across threads (for a short time)
                 if n not in bot.memory['whois_time'] or bot.memory['whois_time'][n] < time.time() - 600:
                     bot.memory['whois_time'][n] = time.time()
                     bot.write(['WHOIS', n.lower()])
-            time.sleep(3)  # Wait a bit for other threads to spam whoissses too
+                    time.sleep(1)  # This keeps our aggregate whois rate reasonable
+            #time.sleep(3)  # Wait a bit for other threads to spam whoissses too
         bot.debug(u'nicks.py', u'Done refeshing hosts for %s' % channel, 'verbose')
     except:
         bot.debug(u'nicks.py:NAMES',
@@ -173,11 +173,6 @@ def nick(bot, trigger):
     # Trigger doesn't come from channel. Any replies will be sent to user.
     # Old nick is in trigger.nick while new nick is in trigger and
     # trigger.sender
-    # print 'trigger: %s' % trigger
-    # print 'trigger.bytes: %s' % trigger.bytes
-    # print 'trigger.sender: %s' % trigger.sender
-    # print 'trigger.nick: %s' % trigger.nick
-    # print 'bot.raw: %s' % bot.raw
     try:
         old_nick = NickPlus(trigger.nick, trigger.host)
         new_nick = NickPlus(trigger, trigger.host)

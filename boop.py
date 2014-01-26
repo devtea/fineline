@@ -67,8 +67,7 @@ _all = [u'yells "BOOP" and giggles to herself',
 def setup(bot):
     if 'boop_lock' not in bot.memory:
         bot.memory['boop_lock'] = threading.Lock()
-    if 'boop_list' not in bot.memory:
-        bot.memory['boop_lists'] = {}
+    bot.memory['boop_lists'] = {}
 
     with bot.memory['boop_lock']:
         dbcon = bot.db.connect()
@@ -107,7 +106,8 @@ def boop(bot, trigger):
             bot.action(random.choice(_all))
         elif target in _anyone:
             target = bot.nick
-            nick_list = bot.memory['nick_func'](trigger.sender)
+            nick_list = []
+            nick_list.extend(bot.memory['nick_func'](trigger.sender)
             while target == bot.nick:
                 target = random.choice(nick_list)
             bot.action(random.choice(_boop) % target)
