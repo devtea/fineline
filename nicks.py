@@ -111,13 +111,14 @@ def whois(bot, trigger):
 @unblockable
 @priority('high')
 def names(bot, trigger):
+    buf = bot.raw.strip()  # bot.raw is undocumented but seems to be the raw line received
     bot.debug(u'nicks.py', u'Caught NAMES response', u'verbose')
     try:
         with bot.memory['nick_lock']:
             unprocessed_nicks = re.split(' ', trigger)
             stripped_nicks = [i.lstrip('+%@&~') for i in unprocessed_nicks]
             nicks = [NickPlus(i, None) for i in stripped_nicks]
-            channel = re.findall('#\S*', bot.raw)[0]  # bot.raw is undocumented but seems to be the raw line received
+            channel = re.findall('#\S*', buf)[0]
             if not channel:
                 return
             bot.memory['chan_nicks'][channel] = nicks
@@ -133,7 +134,7 @@ def names(bot, trigger):
         bot.debug(u'nicks.py', u'Done refeshing hosts for %s' % channel, 'verbose')
     except:
         bot.debug(u'nicks.py:NAMES',
-                  u'ERROR: Unprocessable NAMES response: %s' % bot.raw,
+                  u'ERROR: Unprocessable NAMES response: %s' % buf,
                   u'always'
                   )
 
