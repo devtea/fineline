@@ -9,7 +9,6 @@ http://bitbucket.org/tdreyer/fineline
 Depends on PRAW: https://github.com/praw-dev/praw
 """
 import re
-import time
 from datetime import datetime
 #from urllib2 import HTTPError
 from socket import timeout
@@ -21,10 +20,8 @@ import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
-#from colors import *
-from willie import web
 from willie.tools import Nick
-from willie.module import commands, rule, rate
+from willie.module import commands, rule
 
 _url = u'(reddit\.com|redd\.it)'
 _partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
@@ -32,11 +29,10 @@ _ignore = [u'hushmachine', u'tmoister1']
 _TIMEOUT = 20
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _timeout_message = u'Sorry, reddit is unavailable right now.'
+_error_msg = u"That doesn't exist, or reddit is being squirrely."
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
-_error_msg = u"That doesn't exist, or reddit is being squirrely."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
-_INCLUDE = ['#reddit-mlpds']
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 
 #Use multiprocess handler for multiple bots on same server
@@ -300,7 +296,8 @@ def reddit_post(Willie, trigger):
         sub_name = full_url.strip(u'/').rpartition(u'/')[2]
         Willie.debug(u"reddit:reddit_post", sub_name, u"verbose")
         try:
-            sub = rc.get_subreddit(sub_name)
+            #sub = rc.get_subreddit(sub_name)
+            pass
         except InvalidSubreddit:
             #Willie.say(_bad_reddit_msg)
             return
@@ -318,79 +315,6 @@ def reddit_post(Willie, trigger):
                      u"warning"
                      )
         #fail silently
-
-
-@commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')
-@rate(120)
-def mlpds_check(Willie, trigger):
-    '''Checks for posts within the last 48h with fewer than 2 comments'''
-    if trigger.sender not in _INCLUDE:
-        return
-    try:
-        mlpds = rc.get_subreddit(u'MLPDrawingSchool')
-    except InvalidSubreddit:
-        Willie.say(_bad_reddit_msg)
-        return
-    except HTTPError:
-        Willie.say(_error_msg)
-        return
-    except timeout:
-        Willie.say(_timeout_message)
-        return
-    new_posts = mlpds.get_new(limit=50)
-    #Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
-    uncommented = []
-    for post in new_posts:
-        if post.num_comments < 2 and \
-                post.created_utc > (time.time() - (48 * 60 * 60)):
-            uncommented.append(post)
-    if uncommented:
-        uncommented.reverse()  # Reverse so list is old to new
-        post_count = len(uncommented)
-        spammy = False
-        if post_count > 2:
-            spammy = True
-        if spammy:
-            Willie.reply(u"There are a few, I'll send them in pm.")
-        for post in uncommented:
-            if post.num_comments == 0:
-                num_com = u"There are no comments"
-            else:
-                num_com = u"There is only 1 comment"
-            if post.author.name.lower()[len(post.author.name) - 1] == u's':
-                apos = u"'"
-            else:
-                apos = u"'s"
-            c_date = datetime.utcfromtimestamp(post.created_utc)
-            f_date = c_date.strftime(u'%b %d')
-            if spammy:
-                Willie.msg(
-                    trigger.nick,
-                    u'%s on %s%s post (%s) on %s entitled "%s"' % (
-                        num_com,
-                        colors.colorize(post.author.name, [u'purple']),
-                        apos,
-                        post.short_link,
-                        f_date,
-                        colors.colorize(post.title, [u'blue'])
-                    )
-                )
-            else:
-                Willie.reply(
-                    u'%s on %s%s post (%s) on %s entitled "%s"' % (
-                        num_com,
-                        colors.colorize(post.author.name, [u'purple']),
-                        apos,
-                        post.short_link,
-                        f_date,
-                        colors.colorize(post.title, [u'blue'])
-                    )
-                )
-    else:
-        Willie.reply(u"I don't see any lonely posts. There could still be "
-                     u"posts that need critiquing, though: "
-                     u"http://mlpdrawingschool.reddit.com/"
-                     )
 
 
 if __name__ == "__main__":
