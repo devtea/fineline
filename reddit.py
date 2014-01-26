@@ -5,6 +5,8 @@ Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
+
+Depends on PRAW: https://github.com/praw-dev/praw
 """
 import re
 import time
@@ -35,6 +37,7 @@ _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _INCLUDE = ['#reddit-mlpds']
+_re_shorturl = re.compile('.*?redd\.it/(\w+)')
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -223,8 +226,12 @@ def reddit_post(Willie, trigger):
                      u"matched is %s" % full_url,
                      u"verbose"
                      )
-        if re.match(u'.*?redd\.it', full_url):
+        results = _re_shorturl.search(full_url)
+        if results:
             Willie.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
+            use_id = True
+            post_id = results.groups()[0]
+            '''
             try:
                 full_url = web.get_urllib_object(full_url, _TIMEOUT).geturl()
             except InvalidSubreddit:
@@ -236,12 +243,19 @@ def reddit_post(Willie, trigger):
             except timeout:
                 Willie.say(_timeout_message)
                 return
-        Willie.debug(u"reddit:reddit_post",
-                     u'URL is %s' % full_url,
-                     u"verbose"
-                     )
+            '''
+        if use_id:
+            pass
+        else:
+            Willie.debug(u"reddit:reddit_post",
+                         u'URL is %s' % full_url,
+                         u"verbose"
+                         )
         try:
-            page = rc.get_submission(full_url)
+            if use_id:
+                page = rc.get_submission(submission_id=post_id)
+            else:
+                page = rc.get_submission(full_url)
         except HTTPError:
             Willie.say(_error_msg)
             return
