@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 #TODO user aliases
-#TODO add database access
-#TODO add memory lock
 
 #import time
 from willie.module import commands
@@ -15,6 +13,7 @@ from willie.tools import Nick
 import random
 import imp
 import sys
+import threading
 
 # Bot framework is stupid about importing, so we need to override so that
 # the colors module is always available for import.
@@ -34,7 +33,6 @@ except:
 
 
 _excludes = []
-_lists = {}
 _listexclude = ['sex', 'fucking', 'life', 'death', 'money', 'all', 'everything']
 _front = ['any', 'some']
 _back = ['one', 'body', 'pony', 'poni', 'pone']
@@ -67,16 +65,35 @@ _all = [u'yells "BOOP" and giggles to herself',
 
 
 def setup(bot):
-    #do setup stuff
-    pass
+    if 'boop_lock' not in bot.memory:
+        bot.memory['boop_lock'] = threading.Lock()
+    if 'boop_list' not in bot.memory:
+        bot.memory['boop_lists'] = {}
+
+    with bot.memory['boop_lock']:
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        dbnames = None
+        try:
+            cur.execute('''CREATE TABLE IF NOT EXISTS boop_lists
+                           (list text, nick text, host text)''')
+            dbcon.commit()
+
+            if not bot.memory['boop_lists']:
+                cur.execute('select list, nick, host from boop_lists')
+                dbnames = cur.fetchall()
+        finally:
+            cur.close()
+            dbcon.close()
+        for l, n, h in dbnames:
+            if l not in bot.memory['boop_lists']:
+                bot.memory['boop_lists'][l] = []
+            bot.memory['boop_lists'][l].append(bot.memory['NickPlus'](n, h))
 
 
 @commands(u'boop')
 def boop(bot, trigger):
-    """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis sodales. """
-    #print 'Fineline is in this room: %s' % bot.memory['nick_func'](trigger.sender, 'fineline')
-    #print 'Nicks in this room: %r' % bot.memory['nick_func'](trigger.sender)
-    #TODO make sure there are no hostname collisions
+    """Boops."""
     try:
         target = bot.memory['NickPlus'](trigger.args[1].split()[1])
     except IndexError:
@@ -103,19 +120,25 @@ def boop(bot, trigger):
             target = nick_list.pop(i)
             #TODO small chance to boop random person
             bot.action(random.choice(_boop) % target)
-        elif target in _lists and len(_lists[target]) > 0:
+        elif target in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target]) > 0:
             try:
-                message = trigger.args[1].split(' ', 2)[2]
+                message = trigger.args[1].split(' ', 1)[2].strip()
             except IndexError:
                 message = None
             msg = 'boops'
             nick_list = []
             nick_list.extend(bot.memory['nick_func'](trigger.sender))
-            for name in _lists[target]:
+            for name in bot.memory['boop_lists'][target]:
                 if bot.memory['nick_func'](trigger.sender, name):
-                    i = nick_list.index(name)
-                    name = nick_list.pop(i)
-                    msg = "%s %s," % (msg, name)
+                    try:
+                        i = nick_list.index(name)
+                        name = nick_list.pop(i)
+                        msg = "%s %s," % (msg, name)
+                    except ValueError:
+                        # One person may have multiple nicks in list but only
+                        # one in room. Value errors will be thrown after the
+                        # first nick matches and is popped from the list.
+                        pass
             msg = msg.strip(',')
             msg = "%s %s" % (msg, '[%s]' % colors.colorize(target, [u'orange']))
 
@@ -133,52 +156,94 @@ def boop(bot, trigger):
 
 @commands(u'optin')
 def optin(bot, trigger):
-    try:
-        #multiword triggers cause problems.
-        #target = trigger.args[1].split(' ', 1)[1].lower()
-        target = trigger.args[1].split()[1].lower()
-    except IndexError:
-        bot.reply("You must specify a list to opt into.")
-    else:
-        name = bot.memory['NickPlus'](trigger.nick, trigger.host)
-        if target in _listexclude:
-            bot.reply(u'You can\'t opt into that...')
-            return
-        elif target in _lists and Nick(trigger.nick) not in _lists[target]:
-            _lists[target].append(name)
-            print _lists[target]
-            bot.reply('You are on the %s list.' % colors.colorize(target, [u'orange']))
+    """Opt into being pinged/booped for a list."""
+    if len(trigger.args[1].split()) > 2:
+        bot.reply('List names cannot contain spaces.')
+        return
+    with bot.memory['boop_lock']:
+        # Database stuff
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            #multiword triggers cause problems.
+            #target = trigger.args[1].split(' ', 1)[1].lower()
+            target = trigger.args[1].split()[1].lower()
+        except IndexError:
+            bot.reply("You must specify a list to opt into.")
         else:
-            _lists[target] = [bot.memory['NickPlus'](trigger.nick)]
-            bot.reply('You\'ve been added to the %s list.' % colors.colorize(target, [u'orange']))
+            name = bot.memory['NickPlus'](trigger.nick, trigger.host)
+            if target in _listexclude:
+                bot.reply(u'You can\'t opt into that...')
+                return
+            elif target in bot.memory['boop_lists'] and Nick(trigger.nick) not in bot.memory['boop_lists'][target]:
+                bot.memory['boop_lists'][target].append(name)
+                cur.execute('''insert into boop_lists (list, nick, host)
+                               values (?, ?, ?)''', (target, trigger.nick, trigger.host))
+                dbcon.commit()
+                bot.reply('You are on the %s list.' % colors.colorize(target, [u'orange']))
+            else:
+                bot.memory['boop_lists'][target] = [bot.memory['NickPlus'](trigger.nick)]
+                cur.execute('''insert into boop_lists (list, nick, host)
+                               values (?, ?, ?)''', (target, trigger.nick, trigger.host))
+                dbcon.commit()
+                bot.reply('You\'ve been added to the %s list.' % colors.colorize(target, [u'orange']))
+        finally:
+            cur.close()
+            dbcon.close()
 
 
 @commands(u'optout')
 def optout(bot, trigger):
-    try:
-        target = trigger.args[1].split()[1].lower()
-    except IndexError:
-        bot.reply("You must specify a list to opt out of.")
-    else:
-        name = bot.memory['NickPlus'](trigger.nick, trigger.host)
-        if target in _lists and name in _lists[target]:
-            _lists[target] = [i for i in _lists[target] if i != name]
-            bot.reply('You have been removed from the %s list.' % colors.colorize(target, [u'orange']))
-        elif target in ['all', 'everything']:
-            for i in _lists:
-                try:
-                    _lists[i].remove(name)
-                except:
-                    pass
-            bot.reply('You have been removed from the all lists.')
+    """Opt out from being pinged/booped for a list."""
+    if len(trigger.args[1].split()) > 2:
+        bot.reply('List names cannot contain spaces.')
+        return
+    with bot.memory['boop_lock']:
+        # Database stuff
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            target = trigger.args[1].split()[1].lower()
+        except IndexError:
+            bot.reply("You must specify a list to opt out of.")
         else:
-            bot.reply('That list does not exist.')
+            name = bot.memory['NickPlus'](trigger.nick, trigger.host)
+            if target in bot.memory['boop_lists'] and name in bot.memory['boop_lists'][target]:
+                bot.memory['boop_lists'][target] = [i for i in bot.memory['boop_lists'][target] if i != name]
+                cur.execute('''delete from boop_lists
+                               where lower(list) = ?
+                               and (lower(nick) = ?
+                                   or lower(host) = ?
+                                   )
+                               ''', (target, trigger.nick.lower(), trigger.host.lower()))
+                dbcon.commit()
+                bot.reply('You have been removed from the %s list.' % colors.colorize(target, [u'orange']))
+            elif target in ['all', 'everything']:
+                for i in bot.memory['boop_lists']:
+                    try:
+                        bot.memory['boop_lists'][i].remove(name)
+                    except:
+                        pass
+                cur.execute('''delete from boop_lists
+                               where lower(nick) = ?
+                               or lower(host) = ?
+                               ''', (trigger.nick.lower(), trigger.host.lower()))
+                dbcon.commit()
+                bot.reply('You have been removed from the all lists.')
+            elif target in bot.memory['boop_lists']:
+                bot.reply('You are not on that list.')
+            else:
+                bot.reply('That list does not exist.')
+        finally:
+            cur.close()
+            dbcon.close()
 
 
 @commands(u'opts', u'opt')
 def opts(bot, trigger):
     #TODO list opts lists
     pass
+
 
 if __name__ == "__main__":
     print __doc__.strip()
