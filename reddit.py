@@ -14,6 +14,7 @@ from datetime import datetime
 from socket import timeout
 import imp
 import sys
+import threading
 
 import praw
 import praw.errors
@@ -21,11 +22,10 @@ from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
 from willie.tools import Nick
-from willie.module import commands, rule
+from willie.module import commands, rule, interval
 
 _url = u'(reddit\.com|redd\.it)'
 _partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
-_ignore = [u'hushmachine', u'tmoister1']
 _TIMEOUT = 20
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _timeout_message = u'Sorry, reddit is unavailable right now.'
@@ -34,13 +34,14 @@ _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
+_fetch_quiet = ['hushmachine', 'hushmachinemk2', 'hushbot']
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 
 # Bot framework is stupid about importing, so we need to override so that
-# the colors module is always available for import.
+# various modules are always available for import.
 try:
     import colors
 except:
@@ -54,10 +55,231 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import nicks
+except:
+    try:
+        print "trying manual import of nicks"
+        fp, pathname, description = imp.find_module('nicks',
+                                                    ['./.willie/modules/']
+                                                    )
+        nicks = imp.load_source('nicks', pathname, fp)
+        sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
+
+
+def setup(bot):
+    if 'reddit_lock' not in bot.memory:
+        bot.memory['reddit_lock'] = threading.Lock()
+    with bot.memory['reddit_lock']:
+        bot.memory['reddit-announce'] = {}
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        dbnames = None
+        try:
+            cur.execute('''CREATE TABLE IF NOT EXISTS reddit_list
+                           (channel text, subreddit text)''')
+            dbcon.commit()
+            if not bot.memory['reddit-announce']:
+                cur.execute('select channel, subreddit from reddit_list')
+                dbnames = cur.fetchall()
+        finally:
+            cur.close()
+            dbcon.close()
+        # Prepopulate list of channels
+        for c, s in dbnames:
+            if c not in bot.memory['reddit-announce']:
+                bot.memory['reddit-announce'][c] = {}
+            bot.memory['reddit-announce'][c][s] = []
+        # Prepopulate list of channels
+        #for d in reddits_to_fetch:
+        #    bot.memory['reddit-announce'][d] = {}
+        #    for s in reddits_to_fetch[d]:
+        #        bot.memory['reddit-announce'][d][s] = []
+
+
+@commands('reddit_list')
+def reddit_list(bot, trigger):
+    '''ADMIN: List watched subreddits'''
+    if not trigger.owner:
+        return
+    with bot.memory['reddit_lock']:
+        subs = []
+        for c in bot.memory['reddit-announce']:
+            for s in bot.memory['reddit-announce'][c]:
+                subs.append(s)
+            bot.reply(u'Channel: %s Subs: %s' % (c, u', '.join(subs)))
+            subs = []
+
+
+@commands('reddit_add')
+def reddit_add(bot, trigger):
+    '''ADMIN: Add watched subreddit. Syntax = #Channel subredditname'''
+    if not trigger.owner:
+        return
+    try:
+        channel = trigger.args[1].split()[1]
+        sub = trigger.args[1].split()[2]
+    except IndexError:
+        bot.reply('Malformed input. Takes 2 arguments: Channel and Subreddit')
+        return
+    with bot.memory['reddit_lock']:
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('''select count(*) from reddit_list
+                           where channel = ? and subreddit = ?''',
+                        (channel, sub))
+            count = cur.fetchall()
+            if count[0][0] > 0:
+                bot.reply('That already exists')
+            else:
+                cur.execute('''insert into reddit_list (channel, subreddit)
+                               values (?, ?)''', (channel, sub))
+                dbcon.commit()
+                if channel not in bot.memory['reddit-announce']:
+                    bot.memory['reddit-announce'][channel] = {}
+                bot.memory['reddit-announce'][channel][sub] = []
+                bot.reply('Done.')
+        finally:
+            cur.close()
+            dbcon.close()
+
+
+@commands('reddit_del')
+def reddit_del(bot, trigger):
+    '''ADMIN: Remove watched subreddit. Syntax = #Channel subredditname'''
+    if not trigger.owner:
+        return
+    try:
+        channel = trigger.args[1].split()[1]
+        sub = trigger.args[1].split()[2]
+    except IndexError:
+        bot.reply('Malformed input. Takes 2 arguments: Channel and Subreddit')
+        return
+    with bot.memory['reddit_lock']:
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('''delete from reddit_list
+                           where channel = ? and subreddit = ?''',
+                        (channel, sub))
+            dbcon.commit()
+            if channel in bot.memory['reddit-announce'] and sub in bot.memory['reddit-announce'][channel]:
+                del bot.memory['reddit-announce'][channel][sub]
+                if len(bot.memory['reddit-announce'][channel]) == 0:
+                    del bot.memory['reddit-announce'][channel]
+            bot.reply('Done.')
+        finally:
+            cur.close()
+            dbcon.close()
+
+
+@interval(31)
+@commands('fetch')
+def fetch_reddits(bot, trigger=None):
+    try:
+        for channel in bot.memory['reddit-announce']:
+            if channel not in bot.channels:
+                # Do nothing if not connected to channel
+                return
+            for n in _fetch_quiet:
+                # Shutup
+                if nicks.in_chan(bot, channel, n):
+                    return
+            bot.debug(u'reddit.fetch', u'channel = %s' % channel, 'verbose')
+            for sub in bot.memory['reddit-announce'][channel]:
+                bot.debug(u'reddit.fetch', u'sub = %s' % sub, 'verbose')
+                try:
+                    posts = [p for p in rc.get_subreddit(sub).get_new(limit=10)]
+                # may need additional exceptions here for malformed pages
+                except timeout:
+                    pass
+                except:
+                    bot.debug(u"reddit:fetch",
+                              u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                              u"verbose"
+                              )
+                    return
+
+                if not bot.memory['reddit-announce'][channel][sub]:
+                    # If our list is empty, we probably have just started up
+                    # and don't need to be spammin'
+                    bot.debug(u'reddit.fetch', u'Initializing history', 'verbose')
+                    bot.memory['reddit-announce'][channel][sub].extend([p.id for p in posts])
+                    return
+                posts.reverse()
+                for p in posts:
+                    if p.id not in bot.memory['reddit-announce'][channel][sub]:
+                        try:
+                            page = rc.get_submission(submission_id=p.id)
+                        except HTTPError:
+                            bot.debug(u'reddit:fetch_reddits',
+                                      _error_msg,
+                                      u'verbose')
+                            return
+                        except timeout:
+                            bot.debug(u'reddit:fetch_reddits',
+                                      _timeout_message,
+                                      u'verbose')
+                            return
+                        except:
+                            bot.debug(u"reddit:fetch",
+                                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                                      u"verbose"
+                                      )
+                            return
+                        msg = link_parser(page, url=True)
+                        msg = u' '.join(msg.split()[1:])
+                        bot.msg(channel, 'New link %s' % msg)
+                        bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
+                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                            bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                    else:
+                        bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
+    except:
+        bot.debug(u'reddit:fetch',
+                  u'Unhandled exception: %s' % sys.exc_info()[0],
+                  u'always')
+        return
+
+
+def link_parser(subm, url=False):
+    '''Takes a praw submission object and returns a formatted straing'''
+    page_self = u'Link'
+    if subm.is_self:
+        page_self = u'Self'
+    nsfw = u''
+    if subm.over_18:
+        nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
+    pname = u'[deleted]'
+    if subm.author:
+        pname = colors.colorize(subm.author.name, [u'purple'])
+    score = u'(↑%s|↓%s|%sc) ' % (
+        colors.colorize(str(subm.ups), [u'green']),
+        colors.colorize(str(subm.downs), [u'orange']),
+        subm.num_comments
+    )
+    short_url = u''
+    if url:
+        score = u''
+        short_url = u' [ %s ]' % subm.short_link
+    return u'%s%s post %sby %s to /r/%s — %s%s' % (
+        nsfw,
+        page_self,
+        score,
+        pname,
+        subm.subreddit.display_name,
+        colors.colorize(subm.title, [u'blue']),
+        short_url
+    )
 
 
 @rule(u'(.*?%s)|(.*?%s)' % (_url, _partial))
-def reddit_post(Willie, trigger):
+def reddit_post(bot, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
     user = ur'/u(ser)?/[^/\s)"\'\}\]]{3,20}'
@@ -79,7 +301,7 @@ def reddit_post(Willie, trigger):
         return short
 
     def date_aniv(aniv, day=datetime.now()):
-        Willie.debug(u'reddit.py:date_aniv', aniv, u'verbose')
+        bot.debug(u'reddit.py:date_aniv', aniv, u'verbose')
 
         def set_date(year, month, day):
             try:
@@ -119,36 +341,41 @@ def reddit_post(Willie, trigger):
 
     # User Section
     if re.match(u'.*?%s' % user, trigger.bytes):
-        Willie.debug(u"reddit:reddit_post", u"URL is user", u"verbose")
+        bot.debug(u"reddit:reddit_post", u"URL is user", u"verbose")
         full_url = re.search(
             ur'(https?://)?(www\.)?%s?%s' % (_url, user),
             trigger.bytes
         ).group(0)
         if re.match(u'^/u', full_url):
             full_url = u'http://reddit.com%s' % full_url
-        Willie.debug(u"reddit:reddit_post",
-                     u'URL is %s' % full_url,
-                     u"verbose"
-                     )
+        bot.debug(u"reddit:reddit_post",
+                  u'URL is %s' % full_url,
+                  u"verbose"
+                  )
         # If you change these, you're going to have to update others too
         username = re.split(
             u"reddit\.com/u(ser)?/",
             full_url
         )[2].strip(u'/')
-        Willie.debug(u"reddit:reddit_post",
-                     u'Username is %s' % username,
-                     u"verbose"
-                     )
+        bot.debug(u"reddit:reddit_post",
+                  u'Username is %s' % username,
+                  u"verbose"
+                  )
         try:
             redditor = rc.get_redditor(username)
         except (InvalidUser):
-            Willie.say(_bad_user_msg)
+            bot.say(_bad_user_msg)
             return
         except HTTPError:
-            Willie.say(_error_msg)
+            bot.say(_error_msg)
             return
         except timeout:
-            Willie.say(_timeout_message)
+            bot.say(_timeout_message)
+            return
+        except:
+            bot.debug(u'reddit:redditor',
+                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                      u'always')
             return
         # Use created date to determine next cake day
         cakeday = datetime.utcfromtimestamp(redditor.created_utc)
@@ -160,11 +387,11 @@ def reddit_post(Willie, trigger):
         else:
             # oh shit, something went wrong
             cake_message = u""
-            Willie.debug('reddit:reddit_post',
-                         'Date parsing broke!',
-                         'warning'
-                         )
-        Willie.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
+            bot.debug('reddit:reddit_post',
+                      'Date parsing broke!',
+                      'warning'
+                      )
+        bot.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
             colors.colorize(redditor.name, [u'purple']),
             redditor.link_karma,
             redditor.comment_karma, cake_message)
@@ -172,7 +399,7 @@ def reddit_post(Willie, trigger):
 
     # Comment Section
     elif re.match(u'.*?%s' % cmnt, trigger.bytes):
-        Willie.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
+        bot.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
         full_url = u''.join(
             re.search(ur'(https?://)?(www\.)?%s' % cmnt,
                       trigger.bytes
@@ -182,13 +409,17 @@ def reddit_post(Willie, trigger):
         try:
             post = rc.get_submission(url=full_url)
         except HTTPError:
-            Willie.say(_error_msg)
+            bot.say(_error_msg)
             return
         except timeout:
-            Willie.say(_timeout_message)
+            bot.say(_timeout_message)
+            return
+        except:
+            bot.debug(u'reddit:comment',
+                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                      u'always')
             return
         comment = post.comments[0]
-        #Willie.debug("reddit:reddit_post", pprint(vars(post)), "verbose")
         nsfw = u''
         if post.over_18:
             nsfw = u'%s post: ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
@@ -196,7 +427,7 @@ def reddit_post(Willie, trigger):
         match = re.compile(ur'\n')  # 2 lines to remove newline markup
         snippet = match.sub(u' ', snippet)
         snippet = trc(snippet, 15)
-        Willie.say(
+        bot.say(
             u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
                 colors.colorize(str(comment.ups), [u'green']),
                 colors.colorize(str(comment.downs), [u'orange']),
@@ -212,108 +443,85 @@ def reddit_post(Willie, trigger):
         for n in _ignore:
             if re.match(u'%s.*?' % n, trigger.nick):
                 return
-        Willie.debug(u"reddit:reddit_post", u"URL is submission", u"verbose")
+        bot.debug(u"reddit:reddit_post", u"URL is submission", u"verbose")
         full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
                              trigger.bytes
                              ).group(0)
         if not re.match(u'^http', full_url):
             full_url = u'http://%s' % full_url
-        Willie.debug(u"reddit:reddit_post",
-                     u"matched is %s" % full_url,
-                     u"verbose"
-                     )
+        bot.debug(u"reddit:reddit_post",
+                  u"matched is %s" % full_url,
+                  u"verbose"
+                  )
         results = _re_shorturl.search(full_url)
         if results:
-            Willie.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
-            use_id = True
+            bot.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
             post_id = results.groups()[0]
-            '''
-            try:
-                full_url = web.get_urllib_object(full_url, _TIMEOUT).geturl()
-            except InvalidSubreddit:
-                Willie.say(_bad_reddit_msg)
-                return
-            except HTTPError:
-                Willie.say(_error_msg)
-                return
-            except timeout:
-                Willie.say(_timeout_message)
-                return
-            '''
-        if use_id:
-            pass
+            bot.debug(u'reddit:reddit_post',
+                      u'ID is %s' % post_id,
+                      u'verbose')
         else:
-            Willie.debug(u"reddit:reddit_post",
-                         u'URL is %s' % full_url,
-                         u"verbose"
-                         )
+            bot.debug(u"reddit:reddit_post",
+                      u'URL is %s' % full_url,
+                      u"verbose")
         try:
-            if use_id:
+            if results:
                 page = rc.get_submission(submission_id=post_id)
             else:
                 page = rc.get_submission(full_url)
         except HTTPError:
-            Willie.say(_error_msg)
+            bot.say(_error_msg)
             return
         except timeout:
-            Willie.say(_timeout_message)
+            bot.say(_timeout_message)
             return
-        page_self = u'Link'
-        if page.is_self:
-            page_self = u'Self'
-        nsfw = u''
-        if page.over_18:
-            nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
-        pname = u'[deleted]'
-        if page.author:
-            pname = colors.colorize(page.author.name, [u'purple'])
-        Willie.say(
-            u'%s%s post (↑%s|↓%s|%sc) by %s to %s — %s' % (
-                nsfw,
-                page_self,
-                colors.colorize(str(page.ups), [u'green']),
-                colors.colorize(str(page.downs), [u'orange']),
-                page.num_comments,
-                pname,
-                page.subreddit.display_name,
-                colors.colorize(page.title, [u'blue'])
-            )
-        )
+        except:
+            bot.debug(u'reddit:post',
+                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                      u'always')
+            return
+        msg = link_parser(page)
+        bot.say(msg)
 
     # Subreddit Section
     elif re.match(u'.*?%s' % subr, trigger.bytes):
-        Willie.debug(u"reddit:reddit_post", u"URL is subreddit", u"verbose")
+        bot.debug(u"reddit:reddit_post", u"URL is subreddit", u"verbose")
         full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
                              trigger.bytes
                              ).group(0)
-        Willie.debug(u"reddit:reddit_post",
-                     u'URL is %s' % full_url,
-                     u"verbose"
-                     )
+        bot.debug(u"reddit:reddit_post",
+                  u'URL is %s' % full_url,
+                  u"verbose"
+                  )
         # TODO pull back and display appropriate information for this.
         # I honestly don't know what useful info there is here!
         # So here's a stub
         sub_name = full_url.strip(u'/').rpartition(u'/')[2]
-        Willie.debug(u"reddit:reddit_post", sub_name, u"verbose")
+        bot.debug(u"reddit:reddit_post", sub_name, u"verbose")
         try:
             #sub = rc.get_subreddit(sub_name)
             pass
         except InvalidSubreddit:
-            #Willie.say(_bad_reddit_msg)
+            #bot.say(_bad_reddit_msg)
             return
         except HTTPError:
-            #Willie.say(_error_msg)
+            #bot.say(_error_msg)
             return
         except timeout:
-            #Willie.say(_timeout_message)
+            #bot.say(_timeout_message)
+            return
+        except:
+            bot.debug(u'reddit:subreddit',
+                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                      u'always')
             return
         #do stuff?
     # Invalid URL Section
     else:
-        Willie.debug(u"reddit:reddit_post",
-                     u"Matched URL is invalid",
-                     u"warning"
-                     )
+        bot.debug(u"reddit:reddit_post",
+                  u"Matched URL is invalid",
+                  u"warning"
+                  )
         #fail silently
 
 

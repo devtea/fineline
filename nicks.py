@@ -38,6 +38,15 @@ class NickPlus(Nick):
         return self._lowered == Nick._lower(other)
 
 
+#def shared_nicks(channel, nick=None):
+def in_chan(bot, channel, nick=None):
+    if not nick and channel in bot.memory['chan_nicks']:
+        return bot.memory['chan_nicks'][channel]
+    elif nick and channel in bot.memory['chan_nicks']:
+        return nick in bot.memory['chan_nicks'][channel]
+    return None
+
+
 def setup(bot):
     # bot.memory['chan_nicks']['#channel_name'] = [list, of, nicks]
     #               ^ dict          ^dict
@@ -46,18 +55,6 @@ def setup(bot):
         bot.memory['nick_lock'] = threading.Lock()
     if 'whois_lock' not in bot.memory:
         bot.memory['whois_lock'] = threading.Lock()
-    # trying real quick for debugging
-    # Our custom class and nick function may be useful to other
-    # modules
-    bot.memory['NickPlus'] = NickPlus
-    if 'nick_func' not in bot.memory:
-        def shared_nicks(channel, nick=None):
-            if not nick and channel in bot.memory['chan_nicks']:
-                return bot.memory['chan_nicks'][channel]
-            elif nick and channel in bot.memory['chan_nicks']:
-                return nick in bot.memory['chan_nicks'][channel]
-            return None
-        bot.memory['nick_func'] = shared_nicks
     bot.memory['whois_time'] = {}
     refresh_nicks(bot)
 
