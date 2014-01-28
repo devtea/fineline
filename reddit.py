@@ -232,9 +232,8 @@ def fetch_reddits(bot, trigger=None):
                                       u"verbose"
                                       )
                             return
-                        msg = link_parser(page, url=True)
-                        msg = u' '.join(msg.split()[1:])
-                        bot.msg(channel, 'New link %s' % msg)
+                        msg = link_parser(page, url=True, new=True)
+                        bot.msg(channel, msg)
                         bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
@@ -248,11 +247,15 @@ def fetch_reddits(bot, trigger=None):
         return
 
 
-def link_parser(subm, url=False):
+def link_parser(subm, url=False, new=False):
     '''Takes a praw submission object and returns a formatted straing'''
     page_self = u'Link'
     if subm.is_self:
         page_self = u'Self'
+    newpost = ''
+    if new:
+        newpost = 'New '
+        page_self = page_self.lower()
     nsfw = u''
     if subm.over_18:
         nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
@@ -268,7 +271,8 @@ def link_parser(subm, url=False):
     if url:
         score = u''
         short_url = u' [ %s ]' % subm.short_link
-    return u'%s%s post %sby %s to /r/%s — %s%s' % (
+    return u'%s%s%s post %sby %s to /r/%s — %s%s' % (
+        newpost,
         nsfw,
         page_self,
         score,
