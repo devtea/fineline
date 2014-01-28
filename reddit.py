@@ -35,6 +35,7 @@ _bad_user_msg = u"That user doesn't seem to exist."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 _fetch_quiet = ['hushmachine', 'hushmachinemk2', 'hushbot']
+_fetch_interval = 100  # Seconds between checking reddit for new posts
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -177,7 +178,7 @@ def reddit_del(bot, trigger):
             dbcon.close()
 
 
-@interval(31)
+@interval(_fetch_interval)
 @commands('fetch')
 def fetch_reddits(bot, trigger=None):
     try:
