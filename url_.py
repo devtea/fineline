@@ -19,7 +19,9 @@ from socket import timeout
 url_finder = None
 exclusion_char = '!'
 _EXCLUDE = ['[ imgur: the simple image sharer ] - imgur.com',
-            '[ imgur: the simple image sharer ]']
+            '[ imgur: the simple image sharer ]',
+            '[ imgur: the simple overloaded page] - imgur.com',
+            '[ imgur: the simple overloaded page]']
 _ignore = re.compile(r'hushmachine.*')
 # These are used to clean up the title tag before actually parsing it. Not the
 # world's best way to do this, but it'll do for now.
