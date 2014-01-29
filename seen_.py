@@ -1,5 +1,5 @@
 """
-seen.py - A simple willie module to track nicks
+seen.py - A simple Willie module to track nicks
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -57,28 +57,28 @@ except:
             fp.close()
 
 
-def setup(willie):
+def setup(bot):
     global log_dir
-    if willie.config.has_option('seen', 'log_dir'):
-        log_dir = willie.config.seen.log_dir
-        willie.debug(u'seen:logdir', u'found dir %s' % log_dir, u'verbose')
-    if 'seen_lock' not in willie.memory:
-        willie.memory['seen_lock'] = threading.Lock()
-    if willie.db and not willie.db.check_table('seen',
-                                               ['nick', 'data'],
-                                               'nick'
-                                               ):
-        willie.db.add_table('seen', ['nick', 'data'], 'nick')
+    if bot.config.has_option('seen', 'log_dir'):
+        log_dir = bot.config.seen.log_dir
+        bot.debug(u'seen:logdir', u'found dir %s' % log_dir, u'verbose')
+    if 'seen_lock' not in bot.memory:
+        bot.memory['seen_lock'] = threading.Lock()
+    if bot.db and not bot.db.check_table('seen',
+                                         ['nick', 'data'],
+                                         'nick'
+                                         ):
+        bot.db.add_table('seen', ['nick', 'data'], 'nick')
     # TODO Initialize preference table for those who wish to not be recorded
-    seen_reload(willie)
+    seen_reload(bot)
 
 
-def seen_reload(willie):
-    willie.memory['seen_lock'].acquire()
+def seen_reload(bot):
+    bot.memory['seen_lock'].acquire()
     try:
-        willie.memory['seen'] = {}
-        for row in willie.db.seen.keys('nick'):
-            nick, json_data = willie.db.seen.get(
+        bot.memory['seen'] = {}
+        for row in bot.db.seen.keys('nick'):
+            nick, json_data = bot.db.seen.get(
                 row[0],  # We're getting back ('x',) when we need 'x'
                 ('nick', 'data'),
                 'nick'
@@ -90,12 +90,12 @@ def seen_reload(willie):
             chan = data['channel']
             msg = data['message']
             r_tup = (tm, chan, msg)
-            willie.memory['seen'][nn.lower()] = r_tup
+            bot.memory['seen'][nn.lower()] = r_tup
     finally:
-        willie.memory['seen_lock'].release()
+        bot.memory['seen_lock'].release()
 
 
-def seen_insert(willie, nick, data):
+def seen_insert(bot, nick, data):
     # TODO change data imput to dict
     # TODO Just pass data through to databasae
 
@@ -111,72 +111,72 @@ def seen_insert(willie, nick, data):
     dict['channel'] = data[1]  # data[1] should be unicode
     dict['message'] = data[2]
 
-    willie.memory['seen'][nn] = data
-    #willie.debug('to insert', '%s, %r' % (nn.lower(), dict) ,'verbose')
-    willie.db.seen.update(nn.lower(), {'data': escape(json.dumps(dict))})
+    bot.memory['seen'][nn] = data
+    #bot.debug('to insert', '%s, %r' % (nn.lower(), dict) ,'verbose')
+    bot.db.seen.update(nn.lower(), {'data': escape(json.dumps(dict))})
 
 
 '''
 # TODO
 #def seen_delete()
-    willie.memory['seen_lock'].acquire()
+    bot.memory['seen_lock'].acquire()
     try:
     finally:
-        willie.memory['seen_lock'].release()
+        bot.memory['seen_lock'].release()
 
 # TODO
 #def seen_ignore()
-    willie.memory['seen_lock'].acquire()
+    bot.memory['seen_lock'].acquire()
     try:
     finally:
-        willie.memory['seen_lock'].release()
+        bot.memory['seen_lock'].release()
 '''
 
 
 @commands(u'seen_load_logs')
-def load_from_logs(willie, trigger):
+def load_from_logs(bot, trigger):
     if trigger.owner:
-        willie.reply(u"Alright, I'll start looking through the logs, " +
-                     u"but this is going to take a while..."
-                     )
-        willie.memory['seen_lock'].acquire()
+        bot.reply(u"Alright, I'll start looking through the logs, " +
+                  u"but this is going to take a while..."
+                  )
+        bot.memory['seen_lock'].acquire()
         try:
-            willie.debug(u'load_from_logs', u'=' * 25, u'verbose')
-            willie.debug(u'load_from_logs', u'Starting', u'verbose')
+            bot.debug(u'load_from_logs', u'=' * 25, u'verbose')
+            bot.debug(u'load_from_logs', u'Starting', u'verbose')
             filelist = []
             for f in os.listdir(log_dir):
                 if log_regex.match(f) and os.path.isfile(log_dir + f):
                     filelist.append(log_dir + f)
             filelist.sort()
             for log in filelist:
-                willie.debug(u'%f load_from_logs' % time(),
-                             u'opening %s' % log,
-                             u'verbose'
-                             )
+                bot.debug(u'%f load_from_logs' % time(),
+                          u'opening %s' % log,
+                          u'verbose'
+                          )
                 with open(log, 'r') as file:
                     file_list = []
                     for l in file:
                         # omfg took me way too long to figure out 'replace'
                         file_list.append(l.decode('utf-8', 'replace'))
-                    willie.debug(u'%f' % time(),
-                                 u'finished loading file',
-                                 u'verbose'
-                                 )
+                    bot.debug(u'%f' % time(),
+                              u'finished loading file',
+                              u'verbose'
+                              )
                     for line in file_list:
                         #line = line.decode('utf-8', 'replace')
-                        #willie.debug('load_from_logs: line', line,'verbose')
-                        willie.debug(u'%f' % time(),
-                                     u'checking line',
-                                     u'verbose'
-                                     )
+                        #bot.debug('load_from_logs: line', line,'verbose')
+                        bot.debug(u'%f' % time(),
+                                  u'checking line',
+                                  u'verbose'
+                                  )
                         m = line_regex.search(line)
                         if m:
-                            '''willie.debug(
+                            '''bot.debug(
                                     'load_from_logs',
                                     'line is message',
                                     'verbose'
                                     )'''
-                            '''willie.debug(
+                            '''bot.debug(
                                     'line',
                                     '%s %s %s' % (
                                         m.group(1),
@@ -204,35 +204,35 @@ def load_from_logs(willie, trigger):
                             )
                             utc_dt = cen.normalize(cen.localize(dt))
                             timestamp = float(utc_dt.strftime(u'%s'))
-                            '''willie.debug(
+                            '''bot.debug(
                                     'logname',
                                     'utc timestamp is %f' % timestamp,
                                     'verbose'
                                     )'''
                             data = (timestamp, chan, msg)
-                            seen_insert(willie, nn.lower(), data)
+                            seen_insert(bot, nn.lower(), data)
         finally:
-            willie.memory['seen_lock'].release()
-        willie.debug(u'', u'done', u'verbose')
-        willie.reply(u"Okay, I'm done reading the logs!")
+            bot.memory['seen_lock'].release()
+        bot.debug(u'', u'done', u'verbose')
+        bot.reply(u"Okay, I'm done reading the logs!")
 
 
 @commands('nuke')
 @priority('low')
-def seen_nuke(willie, trigger):
+def seen_nuke(bot, trigger):
     '''ADMIN: Nuke the seen database'''
     if trigger.owner:
-        willie.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
-        willie.memory['seen_lock'].acquire()
+        bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
+        bot.memory['seen_lock'].acquire()
         try:
-            willie.memory['seen'] = {}  # NUKE IT FROM ORBIT
-            for row in willie.db.seen.keys('nick'):
-                willie.db.seen.delete(row[0], 'nick')
-            willie.reply(u"Done!")
+            bot.memory['seen'] = {}  # NUKE IT FROM ORBIT
+            for row in bot.db.seen.keys('nick'):
+                bot.db.seen.delete(row[0], 'nick')
+            bot.reply(u"Done!")
         finally:
-            willie.memory['seen_lock'].release()
+            bot.memory['seen_lock'].release()
     else:
-        willie.debug(
+        bot.debug(
             u'seen.py:nuke',
             u'%s just tried to use the !nuke command!' % trigger.nick,
             u'always'
@@ -241,7 +241,7 @@ def seen_nuke(willie, trigger):
 
 @priority(u'low')
 @rule(u'.*')
-def seen_recorder(willie, trigger):
+def seen_recorder(bot, trigger):
     if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
         return  # ignore priv msg and excepted rooms
     nn = Nick(trigger.nick)
@@ -251,34 +251,33 @@ def seen_recorder(willie, trigger):
 
     data = (now, chan, msg)
 
-    willie.memory['seen_lock'].acquire()
+    bot.memory['seen_lock'].acquire()
     try:
-        seen_insert(willie, nn.lower(), data)
+        seen_insert(bot, nn.lower(), data)
     finally:
-        willie.memory['seen_lock'].release()
+        bot.memory['seen_lock'].release()
 
 
 @commands('seen')
 @example(u'!seen tdreyer1')
-def seen(willie, trigger):
+def seen(bot, trigger):
     '''Reports the last time a nick was seen.'''
-    willie.debug(u'seen:seen', u'triggered custom module', u'verbose')
+    bot.debug(u'seen:seen', u'triggered custom module', u'verbose')
     if len(trigger.args[1].split()) == 1:
-        willie.reply(u"Seen who?")
+        bot.reply(u"Seen who?")
         return
     nn = Nick(trigger.args[1].split()[1])
     chan = trigger.args[0]
 
-    willie.memory['seen_lock'].acquire()
-    try:
-        if nn.lower() == willie.nick.lower():
-            willie.reply(u"[](/ohcomeon \"I'm right here!\")")
-        elif nn.lower() == trigger.nick.lower():
-            willie.reply(u"What am I, blind?")
-        elif nn in willie.memory['seen']:
-            last = willie.memory['seen'][nn][0]
-            chan = willie.memory['seen'][nn][1]
-            msg = willie.memory['seen'][nn][2]
+    with bot.memory['seen_lock']:
+        if nn == bot.nick:
+            bot.reply(u"[](/ohcomeon \"I'm right here!\")")
+        elif nn == trigger.nick:
+            bot.reply(u"What am I, blind?")
+        elif nn in bot.memory['seen']:
+            last = bot.memory['seen'][nn][0]
+            chan = bot.memory['seen'][nn][1]
+            msg = bot.memory['seen'][nn][2]
 
             if msg.startswith("\x01ACTION") and msg.endswith("\x01"):
                 msg = "* %s %s" % (nn, msg[7:-1])
@@ -302,17 +301,26 @@ def seen(willie, trigger):
                 dt = datetime.utcfromtimestamp(last)
                 f_datetime = dt.strftime('%b %d, %Y at %H:%M')
                 t = u'on %s UTC ' % f_datetime
-            willie.reply(u'I last saw %s in %s %s saying, "%s"' % (
-                         colors.colorize(nn, [u'purple']),
-                         chan,
-                         t,
-                         colors.colorize(msg, [u'blue'])
-                         ))
+            bot.reply(u'I last saw %s in %s %s saying, "%s"' % (
+                      colors.colorize(nn, [u'purple']),
+                      chan,
+                      t,
+                      colors.colorize(msg, [u'blue'])
+                      ))
             return
         else:
-            willie.reply(u"I've not seen '%s'." % nn)
-    finally:
-        willie.memory['seen_lock'].release()
+            maybes = []
+            for n in bot.memory['seen']:
+                res = re.search(trigger.args[1].split()[1], n, flags=re.IGNORECASE)
+                if res:
+                    maybes.append(n)
+            if maybes:
+                if len(maybes) <= 10:
+                    bot.reply(u'Perhaps you meant one of the following: %s' % u', '.join(maybes))
+                else:
+                    bot.reply(u'Sorry, that returned too many results. Try something more specific.')
+            else:
+                bot.reply(u"I've not seen '%s'." % nn)
 
 
 if __name__ == "__main__":
