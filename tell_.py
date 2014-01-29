@@ -10,11 +10,30 @@ import os
 import time
 import datetime
 import pytz
+import imp
+import sys
 import threading
 from willie.tools import Nick
-from willie.module import commands, nickname_commands, rule, priority, example
+from willie.module import commands, nickname_commands, rule, priority
 
 maximum = 4
+_quiet = ['hushmachine', 'hushbot', 'hushmachine_mk2']
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import nicks
+except:
+    try:
+        print "trying manual import of nicks"
+        fp, pathname, description = imp.find_module('nicks',
+                                                    ['./.willie/modules/']
+                                                    )
+        nicks = imp.load_source('nicks', pathname, fp)
+        sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
 
 
 def loadReminders(fn, lock):
@@ -88,6 +107,10 @@ def f_remind(bot, trigger):
     """Give someone a message the next time they're seen"""
     if not trigger.sender.startswith('#'):
         return
+    for n in _quiet:
+        # Shutup
+        if nicks.in_chan(bot, trigger.sender, n):
+            return
     teller = trigger.nick
 
     verb = trigger.group(1)
