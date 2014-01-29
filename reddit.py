@@ -34,8 +34,9 @@ _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
-_fetch_quiet = ['hushmachine', 'hushmachinemk2', 'hushbot']
+_fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
+_announce_interval = 75  # Seconds between announcing found posts
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -75,6 +76,7 @@ def setup(bot):
     if 'reddit_lock' not in bot.memory:
         bot.memory['reddit_lock'] = threading.Lock()
     with bot.memory['reddit_lock']:
+        bot.memory['reddit_msg_queue'] = {}
         bot.memory['reddit-announce'] = {}
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -93,6 +95,7 @@ def setup(bot):
         for c, s in dbnames:
             if c not in bot.memory['reddit-announce']:
                 bot.memory['reddit-announce'][c] = {}
+                bot.memory['reddit_msg_queue'][c] = []
             bot.memory['reddit-announce'][c][s] = []
         # Prepopulate list of channels
         #for d in reddits_to_fetch:
@@ -178,6 +181,23 @@ def reddit_del(bot, trigger):
             dbcon.close()
 
 
+@commands('reddit_queue')
+def reddit_queue(bot, trigger):
+    '''ADMIN: List watched subreddits'''
+    if not trigger.owner:
+        return
+    for c in bot.memory['reddit_msg_queue']:
+        bot.reply('%s: %i' % (c, len(bot.memory['reddit_msg_queue'][c])))
+
+
+@interval(_announce_interval)
+def announce_posts(bot, trigger=None):
+    with bot.memory['reddit_lock']:
+        for c in bot.memory['reddit_msg_queue']:
+            if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
+                bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
+
+
 @interval(_fetch_interval)
 @commands('fetch')
 def fetch_reddits(bot, trigger=None):
@@ -233,7 +253,7 @@ def fetch_reddits(bot, trigger=None):
                                       )
                             return
                         msg = link_parser(page, url=True, new=True)
-                        bot.msg(channel, msg)
+                        bot.memory['reddit_msg_queue'][channel].append(msg)
                         bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
