@@ -425,10 +425,14 @@ def reddit_post(bot, trigger):
     # Comment Section
     elif re.match(u'.*?%s' % cmnt, trigger.bytes):
         bot.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
-        full_url = u''.join(
-            re.search(ur'(https?://)?(www\.)?%s' % cmnt,
-                      trigger.bytes
-                      ).groups())
+        try:
+            full_url = u''.join(
+                re.search(ur'(https?://)?(www\.)?%s' % cmnt,
+                        trigger.bytes
+                        ).groups())
+        except TypeError:
+            #no match
+            return
         if not re.match(u'^http', full_url):
             full_url = u'http://%s' % full_url
         try:
