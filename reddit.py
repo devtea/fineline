@@ -104,6 +104,25 @@ def setup(bot):
         #        bot.memory['reddit-announce'][d][s] = []
 
 
+@commands('reddit_dump')
+def reddit_dump(bot, trigger):
+    '''ADMIN: Dumps debug data for the reddit autoannouncer.'''
+    if not trigger.owner:
+        return
+    with bot.memory['reddit_lock']:
+        bot.debug(u'>', u'reddit-announce length: %i' % len(bot.memory['reddit-announce']), u'always')
+        for channel in bot.memory['reddit-announce']:
+            bot.debug(u'>>>', u'Channel: %s' % channel, u'always')
+            bot.debug(u'>>>', u'Channel length: %i' % len(bot.memory['reddit-announce'][channel]), u'always')
+            for sub in bot.memory['reddit-announce'][channel]:
+                bot.debug(u'>>>>>>', u'Subreddit: %s' % sub, u'always')
+                bot.debug(u'>>>>>>', u'Channel length: %i' % len(bot.memory['reddit-announce'][channel][sub]), u'always')
+                for id in bot.memory['reddit-announce'][channel][sub]:
+                    bot.debug(u'>>>>>>>>>', id, u'always')
+    #bot.debug(u'>>>', u'', u'always')
+    bot.reply(u"done")
+
+
 @commands('reddit_list')
 def reddit_list(bot, trigger):
     '''ADMIN: List watched subreddits'''
