@@ -5,7 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-
 import random
 import bisect
 import threading
@@ -74,8 +73,34 @@ def ship(bot, trigger):
     bot.reply(random.choice(_reply_list) % pair)
 
 
-@commands(u'addpony')
-def addpony(bot, trigger):
+@commands(u'ship_delname')
+def delname(bot, trigger):
+    '''ADMIN: Removes a pony from the database. Admin only.'''
+    if not trigger.admin:
+        return
+    name = ' '.join(trigger.split(u' ')[1:]).lower()
+    print name
+    with bot.memory['pony_list_lock']:
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('select name, weight from prompt_ponies where lower(name) = ?', (name,))
+            rows = cur.fetchall()
+            bot.debug(u'ship', u'%s' % rows, u'verbose')
+            if rows:
+                cur.execute('delete from prompt_ponies where lower(name) = ?', (name,))
+                dbcon.commit()
+                bot.memory['pony_list'] = [x for x in bot.memory['pony_list'] if x[0].lower() != name]
+                bot.reply(u'Deleted %s (%s) from the list.' % (rows[0][0], rows[0][1]))
+            else:
+                bot.reply(u'%s was not found in the list.' % name)
+        finally:
+            cur.close()
+            dbcon.close()
+
+
+@commands(u'ship_addname')
+def addname(bot, trigger):
     '''ADMIN: Adds a pony to the database. Admin only.'''
     if not trigger.admin:
         return
@@ -89,7 +114,6 @@ def addpony(bot, trigger):
         bot.reply('Invalid weight. Final argument must be an integer.')
         return
     command.pop(0)
-
     name = ' '.join(command)
     print 'name: "%s", weight: "%i"' % (name, weight)
     with bot.memory['pony_list_lock']:
@@ -98,7 +122,9 @@ def addpony(bot, trigger):
         try:
             cur.execute('''insert into prompt_ponies (name, weight)
                            values (?, ?)''', (name, weight))
-            cur.commit()
+            dbcon.commit()
+            bot.memory['pony_list'].append((name, weight))
+            bot.reply(u'Done')
         finally:
             cur.close()
             dbcon.close()
