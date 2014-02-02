@@ -56,6 +56,7 @@ _boop = [u'boops %s',
          u'boops %s http://i.imgur.com/ruiIBf5.gif',
          u'boops %s http://i.imgur.com/QlSFlMK.gif',
          u'boops %s http://i.imgur.com/nra4yDL.gif',
+         u'boops %s http://i.imgur.com/I8wxiat.jpg',
          u'boops %s http://i.imgur.com/ZQCHJTM.png',  # handsockz
          u'boops %s http://i.imgur.com/WhSWjJa.png',  # grenadder
          u'boops %s http://i.imgur.com/YryE7MX.png',  # brainstew00
