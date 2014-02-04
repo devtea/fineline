@@ -36,7 +36,7 @@ _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 _fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
-_announce_interval = 200  # Seconds between announcing found posts
+_announce_interval = 300  # Seconds between announcing found posts
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
