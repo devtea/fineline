@@ -206,11 +206,20 @@ def reddit_del(bot, trigger):
 
 @commands('reddit_queue')
 def reddit_queue(bot, trigger):
-    '''ADMIN: List watched subreddits'''
+    '''ADMIN: List size of queues'''
     if not trigger.owner:
         return
     for c in bot.memory['reddit_msg_queue']:
         bot.reply('%s: %i' % (c, len(bot.memory['reddit_msg_queue'][c])))
+
+
+@commands('reddit_queue_del')
+def queue_del(bot, trigger):
+    '''ADMIN: clears announce queue'''
+    if not trigger.owner:
+        return
+    bot.memory['reddit_msg_queue'] = {}
+
 
 
 @interval(_announce_interval)
