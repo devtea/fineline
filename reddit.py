@@ -8,6 +8,9 @@ http://bitbucket.org/tdreyer/fineline
 
 Depends on PRAW: https://github.com/praw-dev/praw
 """
+#TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
+#TODO Increase initial buffer fill to 1000
+#TODO add recency filter for announced reddit posts
 import re
 from datetime import datetime
 #from urllib2 import HTTPError
@@ -287,39 +290,52 @@ def fetch_reddits(bot, trigger=None):
 
 
 def link_parser(subm, url=False, new=False):
-    '''Takes a praw submission object and returns a formatted straing'''
+    '''Takes a praw submission object and returns a formatted string
+       When url is True, the URL is included in the formatted string.
+       When new is True, the phrasing is appropriate for announcing a
+       new post from a subscribed subreddit.
+    '''
     page_self = u'Link'
     if subm.is_self:
         page_self = u'Self'
-    newpost = ''
-    if new:
-        newpost = 'New '
-        page_self = page_self.lower()
+    #newpost = ''
+    #if new:
+        #newpost = 'New '
+        #page_self = page_self.lower()
     nsfw = u''
     if subm.over_18:
         nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
     pname = u'[deleted]'
     if subm.author:
         pname = colors.colorize(subm.author.name, [u'purple'])
-    score = u'(↑%s|↓%s|%sc) ' % (
-        colors.colorize(str(subm.ups), [u'green']),
-        colors.colorize(str(subm.downs), [u'orange']),
+    score = u'(%s|%s|%sc) ' % (
+        colors.colorize(u'↑%s' % str(subm.ups), [u'orange']),
+        colors.colorize(u'↓%s' % str(subm.downs), [u'navy']),
         subm.num_comments
     )
     short_url = u''
     if url:
         score = u''
-        short_url = u' [ %s ]' % subm.short_link
-    return u'%s%s%s post %sby %s to /r/%s — %s%s' % (
-        newpost,
-        nsfw,
-        page_self,
-        score,
-        pname,
-        subm.subreddit.display_name,
-        colors.colorize(subm.title, [u'blue']),
-        short_url
-    )
+        short_url = u'[ %s ]' % subm.short_link
+    if new:
+        return u'%s%s New %s post to /r/%s — %s' % (
+            short_url,
+            nsfw,
+            page_self.lower(),
+            subm.subreddit.display_name,
+            colors.colorize(subm.title, [u'green'])
+        )
+    else:
+        return u'%s%s post %sby %s to /r/%s — %s %s' % (
+            #newpost,
+            nsfw,
+            page_self,
+            score,
+            pname,
+            subm.subreddit.display_name,
+            colors.colorize(subm.title, [u'green']),
+            short_url
+        )
 
 
 @rule(u'(.*?%s)|(.*?%s)' % (_url, _partial))
