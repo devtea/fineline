@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-#TODO the initialization routine should also add everyone currently in the room.
-
 from willie.module import commands, rule, event, unblockable, priority
 import threading
 import gzip
@@ -242,7 +240,7 @@ def join_watcher(bot, trigger):
                         bot.msg(trigger.sender, u'%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
                     else:
                         print "NOTICE send: %s | msg: %s" % (trigger.nick, bot.memory['greet']['ings'][channel][1])
-                        bot.write(['NOTICE', trigger.nick], bot.memory['greet']['ings'][channel][1])
+                        bot.write(['NOTICE', trigger.nick], '%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
         except:
             bot.debug(logtime(), u'[greeting] Unhandled exception in hostname watcher! %s [%s]' % (sys.exc_info()[0], trigger.bytes), u'always')
 
