@@ -79,7 +79,8 @@ def setup(bot):
     if 'reddit_lock' not in bot.memory:
         bot.memory['reddit_lock'] = threading.Lock()
     with bot.memory['reddit_lock']:
-        bot.memory['reddit_msg_queue'] = {}
+        if 'reddit-msg_queue' not in bot.memory:
+            bot.memory['reddit_msg_queue'] = {}
         bot.memory['reddit-announce'] = {}
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -227,7 +228,7 @@ def fetch_reddits(bot, trigger=None):
         for channel in bot.memory['reddit-announce']:
             if channel not in bot.channels:
                 # Do nothing if not connected to channel
-                return
+                continue
             for n in _fetch_quiet:
                 # Shutup
                 if nicks.in_chan(bot, channel, n):
@@ -315,10 +316,9 @@ def link_parser(subm, url=False, new=False):
     )
     short_url = u''
     if url:
-        score = u''
-        short_url = u'[ %s ]' % subm.short_link
+        short_url = u'%s ' % subm.short_link
     if new:
-        return u'%s%s New %s post to /r/%s — %s' % (
+        return u'%s%sNew %s post to /r/%s — %s' % (
             short_url,
             nsfw,
             page_self.lower(),
