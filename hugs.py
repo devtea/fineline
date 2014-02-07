@@ -91,7 +91,7 @@ def hug_intercept(Willie, trigger):
                 u"tackles"
         ])):
             Willie.debug(u"", u"inner trigger", u"verbose")
-            if random.uniform(0, 1) < 0.08:
+            if random.uniform(0, 1) < 0.04:
                 Willie.action(random.choice([
                     u"quickly jumps in between them and gets the hug instead.",
                     u"leaps over and shoves %s out of the " % trigger.nick +
