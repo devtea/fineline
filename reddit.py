@@ -221,7 +221,6 @@ def queue_del(bot, trigger):
     bot.memory['reddit_msg_queue'] = {}
 
 
-
 @interval(_announce_interval)
 def announce_posts(bot, trigger=None):
     with bot.memory['reddit_lock']:
@@ -351,7 +350,7 @@ def link_parser(subm, url=False, new=False):
 def reddit_post(bot, trigger):
     """Posts basic info on reddit links"""
     #If you change these, you're going to have to update others too
-    user = ur'/u(ser)?/[^/\s)"\'\}\]]{3,20}'
+    user = ur'(^|\s|reddit.com)/u(ser)?/[^/\s)"\'\}\]]{3,20}'
     subm = (u'%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
             u'(/[^/\s)]{4,}/?))') % _url
     cmnt = (u'%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}' +
