@@ -53,7 +53,7 @@ _services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
              'ustream.tv']
 _SUB = ('?',)  # This will be replaced in setup()
 #TODO move this to memory
-_exclude = ['#reddit-mlpds-bots', '#fineline_testing']
+_exclude = ['#reddit-mlpds-bots', '#fineline_testing', '#reddit-mlpds-spoilers']
 
 
 class stream(object):
