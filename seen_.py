@@ -258,7 +258,7 @@ def seen_recorder(bot, trigger):
         bot.memory['seen_lock'].release()
 
 
-@commands('seen')
+@commands('seen', 'lastseen')
 @example(u'!seen tdreyer1')
 def seen(bot, trigger):
     '''Reports the last time a nick was seen.'''
