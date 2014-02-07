@@ -8,9 +8,10 @@ Licensed under the Eiffel Forum License 2.
 
 http://willie.dftba.net
 """
+#TODO Truncate URLS that have too many 'tags' ie split on commas and trim
 
 import re
-from htmlentitydefs import name2codepoint
+#from htmlentitydefs import name2codepoint
 from willie import web, tools
 from willie.module import commands, rule, example
 import urlparse
@@ -18,6 +19,7 @@ from socket import timeout
 
 url_finder = None
 exclusion_char = '!'
+#TODO move these to the database
 _EXCLUDE = ['[ imgur: the simple image sharer ] - imgur.com',
             '[ imgur: the simple image sharer ]',
             '[ imgur: the simple overloaded page] - imgur.com',
@@ -47,10 +49,14 @@ def configure(config):
     if config.option('Exclude certain URLs from automatic title display', False):
         if not config.has_section('url'):
             config.add_section('url')
-        config.add_list('url', 'exclude', 'Enter regular expressions for each URL you would like to exclude.',
-            'Regex:')
-        config.interactive_add('url', 'exclusion_char',
-            'Prefix to suppress URL titling', '!')
+        config.add_list('url',
+                        'exclude',
+                        'Enter regular expressions for each URL you would like to exclude.',
+                        'Regex:')
+        config.interactive_add('url',
+                               'exclusion_char',
+                               'Prefix to suppress URL titling',
+                               '!')
 
 
 def setup(bot=None):
@@ -86,8 +92,7 @@ def setup(bot=None):
     if bot.config.has_option('url', 'exclusion_char'):
         exclusion_char = bot.config.url.exclusion_char
 
-    url_finder = re.compile(r'(?u)(%s?(?:http|https|ftp)(?:://\S+))' %
-        (exclusion_char))
+    url_finder = re.compile(r'(?u)(%s?(?:http|https|ftp)(?:://\S+))' % (exclusion_char))
 
 
 @commands('title')
@@ -245,7 +250,14 @@ def find_title(url):
     title = web.decode(content[start + 7:end])
     title = title.strip()[:200]
 
-    title = ' '.join(title.split())  # cleanly remove multiple spaces
+    #title = ' '.join(title.split())  # cleanly remove multiple spaces
+
+    # If the title has too many words, trim it.
+    title_l = title.split()
+    if len(title_l) > 10:
+        title_l = title_l[:10]
+        title_l.append(u'...')
+    title = ' '.join(title_l)
 
     # More cryptic regex substitutions. This one looks to be myano's invention.
     title = re_dcc.sub('', title)
