@@ -213,6 +213,11 @@ def greet_dump(bot, trigger):
 def join_watcher(bot, trigger):
     if not trigger.sender.startswith('#'):
         return
+    # apparently the bot framework can call this before setup()...
+    if trigger.nick == bot.nick:
+        return
+    if 'greet_lock' not in bot.memory:
+        return
     with bot.memory['greet_lock']:
         try:
             nick = nicks.NickPlus(trigger.nick, trigger.host.lstrip('~'))
