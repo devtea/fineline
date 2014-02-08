@@ -39,7 +39,7 @@ _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 _fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
-_announce_interval = 300  # Seconds between announcing found posts
+_announce_interval = 3  # Seconds between announcing found posts
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -230,38 +230,32 @@ def announce_posts(bot, trigger=None):
 
 
 @interval(_fetch_interval)
-@commands('fetch')
+@commands('reddit_fetch')
 def fetch_reddits(bot, trigger=None):
     try:
         for channel in bot.memory['reddit-announce']:
             if channel not in bot.channels:
                 # Do nothing if not connected to channel
                 continue
-            for n in _fetch_quiet:
-                # Shutup
-                if nicks.in_chan(bot, channel, n):
-                    return
-            bot.debug(u'reddit.fetch', u'channel = %s' % channel, 'verbose')
+            if [i for i in _fetch_quiet if nicks.in_chan(bot, channel, i)]:
+                continue
             for sub in bot.memory['reddit-announce'][channel]:
-                bot.debug(u'reddit.fetch', u'sub = %s' % sub, 'verbose')
                 try:
                     posts = [p for p in rc.get_subreddit(sub).get_new(limit=10)]
                 # may need additional exceptions here for malformed pages
                 except timeout:
-                    pass
+                    continue
                 except:
                     bot.debug(u"reddit:fetch",
-                              u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                              u'Unhandled exception when fetching posts: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
                               u"verbose"
                               )
-                    return
-
+                    continue
                 if not bot.memory['reddit-announce'][channel][sub]:
                     # If our list is empty, we probably have just started up
                     # and don't need to be spammin'
-                    bot.debug(u'reddit.fetch', u'Initializing history', 'verbose')
                     bot.memory['reddit-announce'][channel][sub].extend([p.id for p in posts])
-                    return
+                    continue
                 posts.reverse()
                 for p in posts:
                     if p.id not in bot.memory['reddit-announce'][channel][sub]:
@@ -271,18 +265,18 @@ def fetch_reddits(bot, trigger=None):
                             bot.debug(u'reddit:fetch_reddits',
                                       _error_msg,
                                       u'verbose')
-                            return
+                            continue
                         except timeout:
                             bot.debug(u'reddit:fetch_reddits',
                                       _timeout_message,
                                       u'verbose')
-                            return
+                            continue
                         except:
                             bot.debug(u"reddit:fetch",
-                                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
+                                      u'Unhandled exception when fetching a page: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
                                       u"verbose"
                                       )
-                            return
+                            continue
                         msg = link_parser(page, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
                         bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
@@ -293,7 +287,7 @@ def fetch_reddits(bot, trigger=None):
                         bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
     except:
         bot.debug(u'reddit:fetch',
-                  u'Unhandled exception: %s' % sys.exc_info()[0],
+                  u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0],
                   u'always')
         return
 
@@ -326,11 +320,10 @@ def link_parser(subm, url=False, new=False):
     if url:
         short_url = u'%s ' % subm.short_link
     if new:
-        return u'%s%sNew %s post to /r/%s — %s' % (
+        return u'/r/%s [%s] %s%s' % (
+            subm.subreddit.display_name,
             short_url,
             nsfw,
-            page_self.lower(),
-            subm.subreddit.display_name,
             colors.colorize(subm.title, [u'green'])
         )
     else:
