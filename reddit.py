@@ -421,10 +421,7 @@ def reddit_post(bot, trigger):
                   u"verbose"
                   )
         # If you change these, you're going to have to update others too
-        username = re.split(
-            u"reddit\.com/u(ser)?/",
-            full_url
-        )[2].strip(u'/')
+        username = re.split(u"u(ser)?/", full_url)[2].strip(u'/')
         bot.debug(u"reddit:reddit_post",
                   u'Username is %s' % username,
                   u"verbose"
