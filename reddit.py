@@ -9,7 +9,6 @@ http://bitbucket.org/tdreyer/fineline
 Depends on PRAW: https://github.com/praw-dev/praw
 """
 #TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
-#TODO Increase initial buffer fill to 1000
 #TODO add recency filter for announced reddit posts
 import re
 import traceback
@@ -19,6 +18,7 @@ from socket import timeout
 import imp
 import sys
 import threading
+import time
 
 import praw
 import praw.errors
@@ -264,6 +264,12 @@ def fetch_reddits(bot, trigger=None):
                     continue
                 posts.reverse()
                 for p in posts:
+                    if p.created_utc < time.time() - (10 * 60 * 60):
+                        bot.debug(u'reddit.fetch', u'found id %s too old' % p.id, 'verbose')
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
+                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                            bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        continue
                     if p.id not in bot.memory['reddit-announce'][channel][sub]:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
