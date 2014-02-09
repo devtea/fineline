@@ -225,9 +225,14 @@ def queue_del(bot, trigger):
 @interval(_announce_interval)
 def announce_posts(bot, trigger=None):
     with bot.memory['reddit_lock']:
-        for c in bot.memory['reddit_msg_queue']:
-            if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
-                bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
+        try:
+            for c in bot.memory['reddit_msg_queue']:
+                if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
+                    bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
+        except:
+            bot.debug(u'reddit:fetch', u'Unhandled exception announcing new reddit posts: %s' % sys.exc_info()[0], u'always')
+            print traceback.format_exc()
+            return
 
 
 @interval(_fetch_interval)
@@ -386,196 +391,181 @@ def reddit_post(bot, trigger):
             diff = int(diff.total_seconds() / (24 * 60 * 60))
         return diff
 
-    trigger_nick = Nick(trigger.nick)
-    for i in _ignore:
-        if i == trigger_nick:
-            return
-
-    # User Section
-    if re.match(u'.*?%s' % user, trigger.bytes):
-        bot.debug(u"reddit:reddit_post", u"URL is user", u"verbose")
-        full_url = re.search(
-            ur'(https?://)?(www\.)?%s?%s' % (_url, user),
-            trigger.bytes
-        ).group(0)
-        if re.match(u'^/u', full_url):
-            full_url = u'http://reddit.com%s' % full_url
-        bot.debug(u"reddit:reddit_post",
-                  u'URL is %s' % full_url,
-                  u"verbose"
-                  )
-        # If you change these, you're going to have to update others too
-        username = re.split(u"u(ser)?/", full_url)[2].strip(u'/')
-        bot.debug(u"reddit:reddit_post",
-                  u'Username is %s' % username,
-                  u"verbose"
-                  )
-        try:
-            redditor = rc.get_redditor(username)
-        except (InvalidUser):
-            bot.say(_bad_user_msg)
-            return
-        except HTTPError:
-            bot.say(_error_msg)
-            return
-        except timeout:
-            bot.say(_timeout_message)
-            return
-        except:
-            bot.debug(u'reddit:redditor',
-                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                      u'always')
-            return
-        # Use created date to determine next cake day
-        cakeday = datetime.utcfromtimestamp(redditor.created_utc)
-        diff_days = date_aniv(cakeday)
-        if diff_days == 0:
-            cake_message = colors.rainbow(u'HAPPY CAKEDAY!')
-        elif diff_days > 0:
-            cake_message = u"Cakeday in %i day(s)" % diff_days
-        else:
-            # oh shit, something went wrong
-            cake_message = u""
-            bot.debug('reddit:reddit_post',
-                      'Date parsing broke!',
-                      'warning'
-                      )
-        bot.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
-            colors.colorize(redditor.name, [u'purple']),
-            redditor.link_karma,
-            redditor.comment_karma, cake_message)
-        )
-
-    # Comment Section
-    elif re.match(u'.*?%s' % cmnt, trigger.bytes):
-        bot.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
-        try:
-            full_url = u''.join(
-                re.search(ur'(https?://)?(www\.)?%s' % cmnt,
-                          trigger.bytes
-                          ).groups())
-        except TypeError:
-            #no match
-            return
-        if not re.match(u'^http', full_url):
-            full_url = u'http://%s' % full_url
-        try:
-            post = rc.get_submission(url=full_url)
-        except HTTPError:
-            bot.say(_error_msg)
-            return
-        except timeout:
-            bot.say(_timeout_message)
-            return
-        except:
-            bot.debug(u'reddit:comment',
-                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                      u'always')
-            return
-        comment = post.comments[0]
-        nsfw = u''
-        if post.over_18:
-            nsfw = u'%s post: ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
-        snippet = comment.body
-        match = re.compile(ur'\n')  # 2 lines to remove newline markup
-        snippet = match.sub(u' ', snippet)
-        snippet = trc(snippet, 15)
-        bot.say(
-            u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
-                colors.colorize(str(comment.ups), [u'green']),
-                colors.colorize(str(comment.downs), [u'orange']),
-                colors.colorize(comment.author.name, [u'purple']),
-                nsfw,
-                trc(post.title, 15),
-                colors.colorize(snippet.strip(), [u'blue'])
-            )
-        )
-
-    # Submission Section
-    elif re.match(u'.*?%s' % subm, trigger.bytes):
-        for n in _ignore:
-            if re.match(u'%s.*?' % n, trigger.nick):
+    try:
+        trigger_nick = Nick(trigger.nick)
+        for i in _ignore:
+            if i == trigger_nick:
                 return
-        bot.debug(u"reddit:reddit_post", u"URL is submission", u"verbose")
-        full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
-                             trigger.bytes
-                             ).group(0)
-        if not re.match(u'^http', full_url):
-            full_url = u'http://%s' % full_url
-        bot.debug(u"reddit:reddit_post",
-                  u"matched is %s" % full_url,
-                  u"verbose"
-                  )
-        results = _re_shorturl.search(full_url)
-        if results:
-            bot.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
-            post_id = results.groups()[0]
-            bot.debug(u'reddit:reddit_post',
-                      u'ID is %s' % post_id,
-                      u'verbose')
-        else:
+
+        # User Section
+        if re.match(u'.*?%s' % user, trigger.bytes):
+            bot.debug(u"reddit:reddit_post", u"URL is user", u"verbose")
+            full_url = re.search(
+                ur'(https?://)?(www\.)?%s?%s' % (_url, user),
+                trigger.bytes
+            ).group(0)
+            if re.match(u'^/u', full_url):
+                full_url = u'http://reddit.com%s' % full_url
             bot.debug(u"reddit:reddit_post",
                       u'URL is %s' % full_url,
-                      u"verbose")
-        try:
-            if results:
-                page = rc.get_submission(submission_id=post_id)
+                      u"verbose"
+                      )
+            # If you change these, you're going to have to update others too
+            username = re.split(u"u(ser)?/", full_url)[2].strip(u'/')
+            bot.debug(u"reddit:reddit_post",
+                      u'Username is %s' % username,
+                      u"verbose"
+                      )
+            try:
+                redditor = rc.get_redditor(username)
+            except (InvalidUser):
+                bot.say(_bad_user_msg)
+                return
+            except HTTPError:
+                bot.say(_error_msg)
+                return
+            except timeout:
+                bot.say(_timeout_message)
+                return
+            # Use created date to determine next cake day
+            cakeday = datetime.utcfromtimestamp(redditor.created_utc)
+            diff_days = date_aniv(cakeday)
+            if diff_days == 0:
+                cake_message = colors.rainbow(u'HAPPY CAKEDAY!')
+            elif diff_days > 0:
+                cake_message = u"Cakeday in %i day(s)" % diff_days
             else:
-                page = rc.get_submission(full_url)
-        except HTTPError:
-            bot.say(_error_msg)
-            return
-        except timeout:
-            bot.say(_timeout_message)
-            return
-        except:
-            bot.debug(u'reddit:post',
-                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                      u'always')
-            return
-        msg = link_parser(page)
-        bot.say(msg)
+                # oh shit, something went wrong
+                cake_message = u""
+                bot.debug('reddit:reddit_post',
+                          'Date parsing broke!',
+                          'warning'
+                          )
+            bot.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
+                colors.colorize(redditor.name, [u'purple']),
+                redditor.link_karma,
+                redditor.comment_karma, cake_message)
+            )
 
-    # Subreddit Section
-    elif re.match(u'.*?%s' % subr, trigger.bytes):
-        bot.debug(u"reddit:reddit_post", u"URL is subreddit", u"verbose")
-        full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
-                             trigger.bytes
-                             ).group(0)
-        bot.debug(u"reddit:reddit_post",
-                  u'URL is %s' % full_url,
-                  u"verbose"
-                  )
-        # TODO pull back and display appropriate information for this.
-        # I honestly don't know what useful info there is here!
-        # So here's a stub
-        sub_name = full_url.strip(u'/').rpartition(u'/')[2]
-        bot.debug(u"reddit:reddit_post", sub_name, u"verbose")
-        try:
-            #sub = rc.get_subreddit(sub_name)
-            pass
-        except InvalidSubreddit:
-            #bot.say(_bad_reddit_msg)
-            return
-        except HTTPError:
-            #bot.say(_error_msg)
-            return
-        except timeout:
-            #bot.say(_timeout_message)
-            return
-        except:
-            bot.debug(u'reddit:subreddit',
-                      u'Unhandled exception: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                      u'always')
-            return
-        #do stuff?
-    # Invalid URL Section
-    else:
-        bot.debug(u"reddit:reddit_post",
-                  u"Matched URL is invalid",
-                  u"warning"
-                  )
-        #fail silently
+        # Comment Section
+        elif re.match(u'.*?%s' % cmnt, trigger.bytes):
+            bot.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
+            try:
+                full_url = u''.join(
+                    re.search(ur'(https?://)?(www\.)?%s' % cmnt,
+                              trigger.bytes
+                              ).groups())
+            except TypeError:
+                #no match
+                return
+            if not re.match(u'^http', full_url):
+                full_url = u'http://%s' % full_url
+            try:
+                post = rc.get_submission(url=full_url)
+            except HTTPError:
+                bot.say(_error_msg)
+                return
+            except timeout:
+                bot.say(_timeout_message)
+                return
+            comment = post.comments[0]
+            nsfw = u''
+            if post.over_18:
+                nsfw = u'%s post: ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
+            snippet = comment.body
+            match = re.compile(ur'\n')  # 2 lines to remove newline markup
+            snippet = match.sub(u' ', snippet)
+            snippet = trc(snippet, 15)
+            bot.say(
+                u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
+                    colors.colorize(str(comment.ups), [u'green']),
+                    colors.colorize(str(comment.downs), [u'orange']),
+                    colors.colorize(comment.author.name, [u'purple']),
+                    nsfw,
+                    trc(post.title, 15),
+                    colors.colorize(snippet.strip(), [u'blue'])
+                )
+            )
+
+        # Submission Section
+        elif re.match(u'.*?%s' % subm, trigger.bytes):
+            for n in _ignore:
+                if re.match(u'%s.*?' % n, trigger.nick):
+                    return
+            bot.debug(u"reddit:reddit_post", u"URL is submission", u"verbose")
+            full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
+                                 trigger.bytes
+                                 ).group(0)
+            if not re.match(u'^http', full_url):
+                full_url = u'http://%s' % full_url
+            bot.debug(u"reddit:reddit_post",
+                      u"matched is %s" % full_url,
+                      u"verbose"
+                      )
+            results = _re_shorturl.search(full_url)
+            if results:
+                bot.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
+                post_id = results.groups()[0]
+                bot.debug(u'reddit:reddit_post',
+                          u'ID is %s' % post_id,
+                          u'verbose')
+            else:
+                bot.debug(u"reddit:reddit_post",
+                          u'URL is %s' % full_url,
+                          u"verbose")
+            try:
+                if results:
+                    page = rc.get_submission(submission_id=post_id)
+                else:
+                    page = rc.get_submission(full_url)
+            except HTTPError:
+                bot.say(_error_msg)
+                return
+            except timeout:
+                bot.say(_timeout_message)
+                return
+            msg = link_parser(page)
+            bot.say(msg)
+
+        # Subreddit Section
+        elif re.match(u'.*?%s' % subr, trigger.bytes):
+            bot.debug(u"reddit:reddit_post", u"URL is subreddit", u"verbose")
+            full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
+                                 trigger.bytes
+                                 ).group(0)
+            bot.debug(u"reddit:reddit_post",
+                      u'URL is %s' % full_url,
+                      u"verbose"
+                      )
+            # TODO pull back and display appropriate information for this.
+            # I honestly don't know what useful info there is here!
+            # So here's a stub
+            sub_name = full_url.strip(u'/').rpartition(u'/')[2]
+            bot.debug(u"reddit:reddit_post", sub_name, u"verbose")
+            try:
+                #sub = rc.get_subreddit(sub_name)
+                pass
+            except InvalidSubreddit:
+                #bot.say(_bad_reddit_msg)
+                return
+            except HTTPError:
+                #bot.say(_error_msg)
+                return
+            except timeout:
+                #bot.say(_timeout_message)
+                return
+            #do stuff?
+        # Invalid URL Section
+        else:
+            bot.debug(u"reddit:reddit_post",
+                      u"Matched URL is invalid",
+                      u"warning"
+                      )
+            #fail silently
+    except:
+        bot.debug(u'reddit', u'Unhandled exception parsing reddit link: %s' % sys.exc_info()[0], u'always')
+        print traceback.format_exc()
+        return
 
 
 if __name__ == "__main__":
