@@ -40,7 +40,7 @@ _ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 _fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
-_announce_interval = 3  # Seconds between announcing found posts
+_announce_interval = 300  # Seconds between announcing found posts
 
 #Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -262,19 +262,7 @@ def fetch_reddits(bot, trigger=None):
                 posts.reverse()
                 for p in posts:
                     if p.id not in bot.memory['reddit-announce'][channel][sub]:
-                        try:
-                            page = rc.get_submission(submission_id=p.id)
-                        except HTTPError:
-                            bot.debug(u'reddit:fetch_reddits', _error_msg, u'verbose')
-                            continue
-                        except timeout:
-                            bot.debug(u'reddit:fetch_reddits', _timeout_message, u'verbose')
-                            continue
-                        except:
-                            bot.debug(u"reddit:fetch", u'Unhandled exception when fetching a page: %s [%s]' % (sys.exc_info()[0], trigger.bytes), u"verbose")
-                            print traceback.format_exc()
-                            continue
-                        msg = link_parser(page, url=True, new=True)
+                        msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
                         bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
@@ -297,10 +285,6 @@ def link_parser(subm, url=False, new=False):
     page_self = u'Link'
     if subm.is_self:
         page_self = u'Self'
-    #newpost = ''
-    #if new:
-        #newpost = 'New '
-        #page_self = page_self.lower()
     nsfw = u''
     if subm.over_18:
         nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
@@ -324,7 +308,6 @@ def link_parser(subm, url=False, new=False):
         )
     else:
         return u'%s%s post %sby %s to /r/%s — %s %s' % (
-            #newpost,
             nsfw,
             page_self,
             score,
