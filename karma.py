@@ -79,6 +79,8 @@ def timecheck(bot, trigger):
 @example(u'!karma fzoo')
 def karma(bot, trigger):
     obj = trigger.bytes[7:].lower().strip()
+    if not obj:
+        return
     karm = modkarma(bot, obj, 0)
     bot.reply("Karma for %s is at %i" % (obj, karm))
 
