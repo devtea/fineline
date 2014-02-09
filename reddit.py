@@ -12,6 +12,7 @@ Depends on PRAW: https://github.com/praw-dev/praw
 #TODO Increase initial buffer fill to 1000
 #TODO add recency filter for announced reddit posts
 import re
+import traceback
 from datetime import datetime
 #from urllib2 import HTTPError
 from socket import timeout
@@ -242,14 +243,11 @@ def fetch_reddits(bot, trigger=None):
             for sub in bot.memory['reddit-announce'][channel]:
                 try:
                     posts = [p for p in rc.get_subreddit(sub).get_new(limit=10)]
-                # may need additional exceptions here for malformed pages
                 except timeout:
                     continue
                 except:
-                    bot.debug(u"reddit:fetch",
-                              u'Unhandled exception when fetching posts: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                              u"verbose"
-                              )
+                    bot.debug(u"reddit:fetch", u'Unhandled exception when fetching posts: %s [%s]' % (sys.exc_info()[0], trigger.bytes), u"verbose")
+                    print traceback.format_exc()
                     continue
                 if not bot.memory['reddit-announce'][channel][sub]:
                     # If our list is empty, we probably have just started up
@@ -262,20 +260,14 @@ def fetch_reddits(bot, trigger=None):
                         try:
                             page = rc.get_submission(submission_id=p.id)
                         except HTTPError:
-                            bot.debug(u'reddit:fetch_reddits',
-                                      _error_msg,
-                                      u'verbose')
+                            bot.debug(u'reddit:fetch_reddits', _error_msg, u'verbose')
                             continue
                         except timeout:
-                            bot.debug(u'reddit:fetch_reddits',
-                                      _timeout_message,
-                                      u'verbose')
+                            bot.debug(u'reddit:fetch_reddits', _timeout_message, u'verbose')
                             continue
                         except:
-                            bot.debug(u"reddit:fetch",
-                                      u'Unhandled exception when fetching a page: %s [%s]' % (sys.exc_info()[0], trigger.bytes),
-                                      u"verbose"
-                                      )
+                            bot.debug(u"reddit:fetch", u'Unhandled exception when fetching a page: %s [%s]' % (sys.exc_info()[0], trigger.bytes), u"verbose")
+                            print traceback.format_exc()
                             continue
                         msg = link_parser(page, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
@@ -286,9 +278,8 @@ def fetch_reddits(bot, trigger=None):
                     else:
                         bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
     except:
-        bot.debug(u'reddit:fetch',
-                  u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0],
-                  u'always')
+        bot.debug(u'reddit:fetch', u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0], u'always')
+        print traceback.format_exc()
         return
 
 
@@ -320,7 +311,7 @@ def link_parser(subm, url=False, new=False):
     if url:
         short_url = u'%s ' % subm.short_link
     if new:
-        return u'/r/%s [%s] %s%s' % (
+        return u'/r/%s [ %s] %s%s' % (
             subm.subreddit.display_name,
             short_url,
             nsfw,
