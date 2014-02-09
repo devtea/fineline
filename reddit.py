@@ -264,21 +264,22 @@ def fetch_reddits(bot, trigger=None):
                     continue
                 posts.reverse()
                 for p in posts:
-                    if p.created_utc < time.time() - (10 * 60 * 60):
+                    if p.id in bot.memory['reddit-announce'][channel][sub]:
+                        bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
+                        continue
+                    elif p.created_utc < time.time() - (10 * 60 * 60):
                         bot.debug(u'reddit.fetch', u'found id %s too old' % p.id, 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         continue
-                    if p.id not in bot.memory['reddit-announce'][channel][sub]:
+                    else:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
                         bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
-                    else:
-                        bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
     except:
         bot.debug(u'reddit:fetch', u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0], u'always')
         print traceback.format_exc()
