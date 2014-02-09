@@ -22,7 +22,7 @@ Recognized 'default' colors:
     15 Light Grey
 '''
 from random import choice
-from types import *
+from types import ListType
 
 RESET = u"\x0f"
 COLORS = {
@@ -31,8 +31,7 @@ COLORS = {
     u"dark blue": u"02", u"navy": u"02", u"2": u"02", u"02": u"02",
     u"green": u"03", u"3": u"03", u"03": u"03",
     u"red": u"04", u"4": u"04", u"04": u"04",
-    u"dark red": u"05", u"brown": u"05", u"maroon": u"05",
-    u"5": u"05", u"05": u"05",
+    u"dark red": u"05", u"brown": u"05", u"maroon": u"05", u"5": u"05", u"05": u"05",
     u"purple": u"06", u"violet": u"06", u"6": u"06", u"06": u"06",
     u"orange": u"07", u"olive": u"07", u"7": u"07", u"07": u"07",
     u"yellow": u"08", u"8": u"08", u"08": u"08",
@@ -40,10 +39,8 @@ COLORS = {
     u"teal": u"10", u"blue cyan": u"10", u"10": u"10",
     u"cyan": u"11", u"aqua": u"11", u"11": u"11",
     u"blue": u"12", u"light blue": u"12", u"royal blue": u"12", u"12": u"12",
-    u"magenta": u"13", u"pink": u"13", u"light red": u"13", u"fuchsia": u"13",
-    u"13": u"13",
-    u"dark grey": u"14", u"dark gray": u"14", u"grey": u"14", u"gray": u"14",
-    u"14": u"14",
+    u"magenta": u"13", u"pink": u"13", u"light red": u"13", u"fuchsia": u"13", u"13": u"13",
+    u"dark grey": u"14", u"dark gray": u"14", u"grey": u"14", u"gray": u"14", u"14": u"14",
     u"light grey": u"15", u"light gray": u"15", u"silver": u"15", u"15": u"15"
 }
 STYLES = {
@@ -60,18 +57,16 @@ def colorize(text, colors=[], styles=[]):
     assert type(styles) is ListType, u"Styles must be in a list."
     assert len(colors) < 3, u"Too many colors."
     assert len(styles) < 4, u"Too many styles."
-    print type(text)
-    #text = text.encode('utf-8', 'replace')
     if colors or styles:
         message = text
         if len(colors) == 1:
             try:
-                message = u'\x03%s%s%s' % (COLORS[colors[0].lower()],
-                                           message,
-                                           RESET
-                                           )
+                message = u'\x03%s%s%s' % (COLORS[colors[0].lower()], message, RESET)
             except KeyError:
                 raise KeyError(u'Color "%s" is invalid.' % colors[0])
+            except UnicodeDecodeError:
+                message = message.decode('utf-8', 'replace')
+                message = u'\x03%s%s%s' % (COLORS[colors[0].lower()], message, RESET)
         elif len(colors) == 2:
             try:
                 message = u'\x03%s,%s%s\x0f' % (
@@ -84,12 +79,22 @@ def colorize(text, colors=[], styles=[]):
                     colors[0],
                     colors[1]
                 ))
+            except UnicodeDecodeError:
+                message = message.decode('utf-8', 'replace')
+                message = u'\x03%s,%s%s\x0f' % (
+                    COLORS[colors[0].lower()],
+                    COLORS[colors[1].lower()],
+                    message
+                )
         if styles:
             for style in styles:
                 try:
                     message = u'%s%s\x0f' % (STYLES[style.lower()], message)
                 except KeyError:
                     raise KeyError(u'Style "%s" is invalid.' % style)
+                except UnicodeDecodeError:
+                    message = message.decode('utf-8', 'replace')
+                    message = u'%s%s\x0f' % (STYLES[style.lower()], message)
         return message
     else:
         return text
@@ -101,10 +106,7 @@ def rainbow(text):
     rainbow = [u'black', u'red', u'navy', u'green', u'purple', u'pink']
     message = u''
     for c in text:
-        message = u'%s%s' % (
-            message,
-            colorize(c, [rainbow[choice(range(len(rainbow)))]])
-        )
+            message = u'%s%s' % (message, colorize(c, [rainbow[choice(range(len(rainbow)))]]))
     message = u'%s%s' % (message, RESET)
     return message
 
