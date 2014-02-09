@@ -1151,14 +1151,9 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_full_list != contents:
+        bot.debug(u'streams.py', u'Found change in full list html file.', u'verbose')
         with open(bot.memory['streamSet']['list_main_dest_path'], 'w') as f:
             f.write(contents)
-    else:
-        bot.debug(
-            u'streams.py',
-            u'No chage in full list html file, skipping.',
-            u'verbose'
-        )
     #Generate featured list HTML
     live_list = []
     dead_list = []
@@ -1178,14 +1173,9 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_feat_list != contents:
+        bot.debug(u'streams.py', u'Found change in featured list html file.', u'verbose')
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'w') as f:
             f.write(contents)
-    else:
-        bot.debug(
-            u'streams.py',
-            u'No chage in featured list html file, skipping.',
-            u'verbose'
-        )
     return
 
 
@@ -1419,7 +1409,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     bot.debug('streams:subscribe', msg, 'warning')
 
 
-@interval(19)
+@interval(47)
 def announcer(bot):
     def whisper(nick, strm):
         if strm.alias:
