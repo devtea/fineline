@@ -139,7 +139,7 @@ def badbot(Willie, trigger):
 
 @rule(u"^!swo[o]+sh")
 def swish(Willie, trigger):
-    if random.uniform(0, 1) < 0.1:
+    if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
         Willie.debug(u"swoosh", trigger.group(0), u"verbose")
         i = u"i" * (len(trigger.group(0)) - 5)
