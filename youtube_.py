@@ -17,8 +17,7 @@ import json
 import re
 from HTMLParser import HTMLParser
 
-#_EXCLUDE=['#reddit-mlpds']
-_EXCLUDE=[]
+_EXCLUDE=['#reddit-mlpds']
 
 
 def setup(bot):
