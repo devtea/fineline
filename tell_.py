@@ -63,7 +63,7 @@ def dumpReminders(fn, data, lock):
             for remindon in data[tellee]:
                 line = '\t'.join((tellee,) + remindon)
                 try:
-                    f.write((line + '\n').encode('utf-8'))
+                    f.write((line.decode('utf-8', 'replace') + '\n').encode('utf-8'))
                 except IOError:
                     break
         try:
