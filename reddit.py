@@ -257,12 +257,12 @@ def fetch_reddits(bot, trigger=None):
                     bot.debug(u"reddit:fetch", u'Unhandled exception when fetching posts: %s [%s]' % (sys.exc_info()[0], trigger.bytes), u"verbose")
                     print traceback.format_exc()
                     continue
+                posts.reverse()
                 if not bot.memory['reddit-announce'][channel][sub]:
                     # If our list is empty, we probably have just started up
                     # and don't need to be spammin'
                     bot.memory['reddit-announce'][channel][sub].extend([p.id for p in posts])
                     continue
-                posts.reverse()
                 for p in posts:
                     if p.id in bot.memory['reddit-announce'][channel][sub]:
                         bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
