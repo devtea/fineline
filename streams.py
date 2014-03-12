@@ -110,7 +110,7 @@ class stream(object):
     @live.setter
     def live(self, value):
         assert isinstance(value, bool)
-        self.live = value
+        self._live = value
 
     @property
     def name(self):
