@@ -7,6 +7,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 
 """
+#todo add boop
 import datetime
 import feedparser
 import random
@@ -80,34 +81,25 @@ def fetch_rss(willie, feed_url):
     def refresh_feed(willie, url):
         try:
             feedparser.parse(url)
-            willie.memory["fetch_rss"][feed_url].append(time.time())
-            willie.memory["fetch_rss"][feed_url].append(
-                feedparser.parse(feed_url))
-            willie.debug(u"timers:fetch_rss", u"Updated feed and stored " +
-                         u"cached version.", u"verbose")
         except:
-            willie.debug(u"timers:fetch_rss", u"Could not update feed, " +
-                         u"using cached version.", u"verbose")
+            willie.debug(u"timers:fetch_rss", u"Could not update feed, using cached version.", u"verbose")
+            return
+        willie.memory["fetch_rss"][feed_url] = []
+        willie.memory["fetch_rss"][feed_url].append(time.time())
+        willie.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
+        willie.debug(u"timers:fetch_rss", u"Updated feed and stored cached version.", u"verbose")
     willie.memory["fetch_rss_lock"].acquire()
     try:
         # {feed_url: [time, feed]}
+        willie.debug('fetchrss', 'Checking feed url %s' % feed_url, 'verbose')
         if feed_url in willie.memory["fetch_rss"]:
-            willie.debug(
-                u"timers:fetch_rss",
-                u"Found cached RSS feed, checking age.",
-                u"verbose"
-            )
-            if willie.memory["fetch_rss"][feed_url][0] > time.time() - \
-               (60 * 60 * 48):  # refresh every 48 hours
-                willie.debug(
-                    u"timers:fetch_rss",
-                    u"Feed is young, using cached version",
-                    u"verbose"
-                )
+            willie.debug(u"timers:fetch_rss", u"Found cached RSS feed, checking age.", u"verbose")
+            willie.debug(time.time(), willie.memory["fetch_rss"][feed_url][0], 'verbose')
+            if willie.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
+                willie.debug(u"timers:fetch_rss", u"Feed is young, using cached version", u"verbose")
             else:
                 refresh_feed(willie, feed_url)
         else:  # No cached version, try to get new
-            willie.memory["fetch_rss"][feed_url] = []
             refresh_feed(willie, feed_url)
         return willie.memory["fetch_rss"][feed_url][1]
     finally:
