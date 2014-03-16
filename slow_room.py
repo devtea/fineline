@@ -94,7 +94,7 @@ def fetch_rss(willie, feed_url):
         willie.debug('fetchrss', 'Checking feed url %s' % feed_url, 'verbose')
         if feed_url in willie.memory["fetch_rss"]:
             willie.debug(u"timers:fetch_rss", u"Found cached RSS feed, checking age.", u"verbose")
-            willie.debug(time.time(), willie.memory["fetch_rss"][feed_url][0], 'verbose')
+            willie.debug(str(time.time()), willie.memory["fetch_rss"][feed_url][0], 'verbose')
             if willie.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
                 willie.debug(u"timers:fetch_rss", u"Feed is young, using cached version", u"verbose")
             else:
