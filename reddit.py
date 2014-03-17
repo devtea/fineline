@@ -13,7 +13,7 @@ Depends on PRAW: https://github.com/praw-dev/praw
 import re
 import traceback
 from datetime import datetime
-#from urllib2 import HTTPError
+import HTMLParser
 from socket import timeout
 import imp
 import sys
@@ -30,6 +30,7 @@ from willie.module import commands, rule, interval
 
 _url = u'(reddit\.com|redd\.it)'
 _partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
+_util_html = HTMLParser.HTMLParser()
 _TIMEOUT = 20
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _timeout_message = u'Sorry, reddit is unavailable right now.'
@@ -276,7 +277,7 @@ def fetch_reddits(bot, trigger=None):
                     else:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
-                        bot.debug(u'reddit.fetch', u'%s %s %s' % (p.title, p.author, p.url), 'verbose')
+                        bot.debug(u'reddit.fetch', u'%s %s %s' % (_util_html.unescape(p.title), p.author, p.url), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
@@ -314,7 +315,7 @@ def link_parser(subm, url=False, new=False):
             subm.subreddit.display_name,
             short_url,
             nsfw,
-            colors.colorize(subm.title, [u'green'])
+            colors.colorize(_util_html.unescape(subm.title), [u'green'])
         )
     else:
         return u'%s%s post %sby %s to /r/%s — %s %s' % (
@@ -323,7 +324,7 @@ def link_parser(subm, url=False, new=False):
             score,
             pname,
             subm.subreddit.display_name,
-            colors.colorize(subm.title, [u'green']),
+            colors.colorize(_util_html.unescape(subm.title), [u'green']),
             short_url
         )
 
@@ -475,7 +476,7 @@ def reddit_post(bot, trigger):
                     colors.colorize(str(comment.downs), [u'orange']),
                     colors.colorize(comment.author.name, [u'purple']),
                     nsfw,
-                    trc(post.title, 15),
+                    trc(_util_html.unescape(post.title), 15),
                     colors.colorize(snippet.strip(), [u'blue'])
                 )
             )
