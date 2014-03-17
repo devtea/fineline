@@ -79,7 +79,7 @@ def start_stream(bot, ep):
             )
         )
     bot.debug(
-        datetime.now(),
+        str(datetime.now()),
         'streamer.py Starting stream of %s' % ep,
         'always')
     bot.memory['streaming']['live'] = True
