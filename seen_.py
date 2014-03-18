@@ -315,7 +315,7 @@ def seen(bot, trigger):
                 if res:
                     maybes.append(n)
             if maybes:
-                if len(maybes) <= 10:
+                if len(maybes) <= 20:
                     bot.reply(u'Perhaps you meant one of the following: %s' % u', '.join(maybes))
                 else:
                     bot.reply(u'Sorry, that returned too many results. Try something more specific.')
