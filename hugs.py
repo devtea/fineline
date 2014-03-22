@@ -14,8 +14,8 @@ from willie.module import rule, rate
 random.seed()
 
 
-@rule(u'\001ACTION [a-zA-Z0-9 ,]*?' +
-      u'((hugs? $nickname)|(gives $nickname a hug))')
+@rule(ur'\001ACTION [a-zA-Z0-9 ,]*?' +
+      ur'((\bhugs? $nickname)|(\bgives $nickname a hug))')
 @rate(90)
 def hugback(Willie, trigger):
     """Returns a 'hug' action directed at the bot."""
