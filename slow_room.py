@@ -13,6 +13,7 @@ import feedparser
 import random
 import time
 import threading
+from socket import EBADF
 
 from willie.module import interval, rule, commands
 
@@ -45,29 +46,34 @@ def slow_room(willie):
 
     willie.memory["slow_timer_lock"].acquire()
     try:
-        for key in willie.memory["slow_timer"]:
-            if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
-               and key in willie.channels:
-                function = random.randint(0, 11)
-                if function == 0:
-                    poke(willie, key)
-                elif function == 1:
-                    fzoo(willie, key)
-                elif function == 2:
-                    quote(willie, key)
-                elif function == 3:
-                    arttip(willie, key)
-                elif function == 4:
-                    sing(willie, key)
-                # This is a bad way to do probablity and you should feel bad
-                elif function in range(5, 8):  # It's easy though, so fuck off
-                    cute(willie, key)
-                elif function in range(9, 11):  # No really, go away
-                    features(willie, key)
-                willie.memory["slow_timer"][key] = time.time()
-            else:
-                if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
-                    __ = fetch_rss(willie, willie.memory["da_faves"])  # update feed regularly
+        for key in willie.memory["slow_timer"].keys():
+            try:
+                if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
+                        and key in willie.channels:
+                    function = random.randint(0, 11)
+                    if function == 0:
+                        poke(willie, key)
+                    elif function == 1:
+                        fzoo(willie, key)
+                    elif function == 2:
+                        quote(willie, key)
+                    elif function == 3:
+                        arttip(willie, key)
+                    elif function == 4:
+                        sing(willie, key)
+                    # This is a bad way to do probablity and you should feel bad
+                    elif function in range(5, 8):  # It's easy though, so fuck off
+                        cute(willie, key)
+                    elif function in range(9, 11):  # No really, go away
+                        features(willie, key)
+                    willie.memory["slow_timer"][key] = time.time()
+                else:
+                    if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
+                        fetch_rss(willie, willie.memory["da_faves"])  # update feed regularly
+            except EBADF:
+                # It appears a bad file descriptor can be cached when the bot
+                # disconnects and reconnects. We need to flush these.
+                del willie.memory["slow_timer"][key]
     finally:
         willie.memory["slow_timer_lock"].release()
 
