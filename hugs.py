@@ -1,5 +1,5 @@
 """
-hugs.py - A simple Willie Module for interacting with 'hug' actions
+hugs.py - A simple willie Module for interacting with 'hug' actions
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -17,9 +17,9 @@ random.seed()
 @rule(ur'\001ACTION [a-zA-Z0-9 ,]*?' +
       ur'((\bhugs? $nickname)|(\bgives $nickname a hug))')
 @rate(90)
-def hugback(Willie, trigger):
+def hugback(bot, trigger):
     """Returns a 'hug' action directed at the bot."""
-    Willie.action(random.choice([
+    bot.action(random.choice([
         u'hugs %s back' % trigger.nick,
         u'returns the hug',
         u'grips %s tightly' % trigger.nick,
@@ -36,42 +36,42 @@ def hugback(Willie, trigger):
       u"(joins.+?in)" +
       u")"
       )
-def hug_intercept(Willie, trigger):
+def hug_intercept(bot, trigger):
     """Intercepts hugs from another bot"""
-    Willie.debug(u"hugback.py:hug_intercept", u"Caught hug.", u"verbose")
+    bot.debug(u"hugback.py:hug_intercept", u"Caught hug.", u"verbose")
     # First make sure we're intercepting the proper user's actions
     if re.match("hushmachine", trigger.nick):
-        #Hugs directed at the bot
-        if re.match(u"\001ACTION\s.+?%s.+?" % Willie.nick, trigger.args[1]):
+        # Hugs directed at the bot
+        if re.match(u"\001ACTION\s.+?%s.+?" % bot.nick, trigger.args[1]):
             time.sleep(1)
-            Willie.say(random.choice([u":D", u"Aww, thanks!"]))
-        elif re.findall(Willie.nick, trigger.args[1]):
+            bot.say(random.choice([u":D", u"Aww, thanks!"]))
+        elif re.findall(bot.nick, trigger.args[1]):
             return
-        #special hugging
+        # special hugging
         elif re.match(u"\001ACTION\sdrags.+?into the closet", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(1)
                 if random.uniform(0, 1) < 0.9:
-                    Willie.say(random.choice([u"[](/ww20)", u"Oh my..."]))
+                    bot.say(random.choice([u"[](/ww20)", u"Oh my..."]))
                 else:
-                    Willie.say(u"I wish someone would 'special hug' me... :(")
-        #spaghetti
+                    bot.say(u"I wish someone would 'special hug' me... :(")
+        # spaghetti
         elif re.match(u"\001ACTION\snervously hugs .*? fanny",
                       trigger.args[1]
                       ):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(1)
-                Willie.action(
+                bot.action(
                     u"sneaks over and nicks %s's " % trigger.nick +
                     u"fanny pack"
                 )
-        #posts
+        # posts
         elif re.match(u"\001ACTION\sstarts a hug, but the", trigger.args[1]):
             if random.uniform(0, 1) < 5:
                 time.sleep(1)
-                Willie.say(u"Yikes!")
+                bot.say(u"Yikes!")
                 time.sleep(2)
-                Willie.action(
+                bot.action(
                     u"hands " +
                     u"%s a towel." % trigger.args[1].split()[19].rstrip(
                         "s").rstrip("'")
@@ -90,9 +90,9 @@ def hug_intercept(Willie, trigger):
                 u"fish",
                 u"tackles"
         ])):
-            Willie.debug(u"", u"inner trigger", u"verbose")
+            bot.debug(u"", u"inner trigger", u"verbose")
             if random.uniform(0, 1) < 0.04:
-                Willie.action(random.choice([
+                bot.action(random.choice([
                     u"quickly jumps in between them and gets the hug instead.",
                     u"leaps over and shoves %s out of the " % trigger.nick +
                     u"way so she can give the hug instead.",
@@ -100,25 +100,23 @@ def hug_intercept(Willie, trigger):
                     u"affectionately hugs him in a way that only " +
                     u"two bots in love can manage."
                 ]))
-        #smelling distance
+        # smelling distance
         elif re.match(u"\001ACTION\sgets just within", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(1)
-                Willie.action(u"slowly backs away from the stench.")
-        #too long
+                bot.action(u"slowly backs away from the stench.")
+        # too long
         elif re.match(u"\001ACTION\sholds on to", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(2)
-                Willie.action(u"joins the hug, " +
-                              "but it just makes things worse."
-                              )
-        #!no
+                bot.action(u"joins the hug, but it just makes things worse.")
+        # !no
         elif re.match(u"\001ACTION\s\!no", trigger.args[1]):
             time.sleep(1)
-            Willie.say(random.choice([u":o hushmachine!",
-                                      u"Oh my...",
-                                      u"lol"
-                                      ]))
+            bot.say(random.choice([
+                u":o hushmachine!",
+                u"Oh my...",
+                u"lol"]))
 
 
 if __name__ == "__main__":

@@ -10,8 +10,8 @@ from willie.module import commands, priority
 
 @commands(u'ping')
 @priority(u'high')
-def ping(Willie, trigger):
-    Willie.say(u'Pony!')
+def ping(bot, trigger):
+    bot.say(u'Pony!')
 
 
 if __name__ == "__main__":

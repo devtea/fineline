@@ -1,6 +1,6 @@
 # coding=utf8
 """
-ai.py - A simple Willie module for misc silly ai
+ai.py - A simple willie module for misc silly ai
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -39,9 +39,9 @@ basic_slap = u"slap[p]?[s]?|hit[s]?|smack[s]?\b"
 random.seed()
 
 
-#@rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
+# @rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
 @rule(r'^.*?\bderp\b')
-def derp(Willie, trigger):
+def derp(bot, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
     if trigger.owner:
         prob = 1
@@ -49,7 +49,7 @@ def derp(Willie, trigger):
         prob = 0.1
     if random.uniform(0, 1) < prob:
         time.sleep(random.uniform(1, 3))
-        Willie.say(random.choice([
+        bot.say(random.choice([
             u"[](/derpwizard)",
             u"[](/derpwizard)",
             u"[](/derpout)",
@@ -65,15 +65,15 @@ def derp(Willie, trigger):
 @rule(
     u"(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
     (u"([A-Za-z0-9,.!\s]*?(%s)[^A-Za-z0-9]" +
-    u"([A-Za-z0-9,.!\s]*?$nickname))") % basic_thanks
+     u"([A-Za-z0-9,.!\s]*?$nickname))") % basic_thanks
 )
-def ty(Willie, trigger):
+def ty(bot, trigger):
     '''Politely replies to thank you's.'''
     if not set(trigger.args[1].lower().split()).intersection(set([u'not',
                                                                   u'no',
                                                                   u'at'])):
         time.sleep(random.uniform(1, 3))
-        Willie.reply(
+        bot.reply(
             random.choice([
                 u"Yep",
                 u"You're welcome",
@@ -86,7 +86,7 @@ def ty(Willie, trigger):
 
 
 @rule(u'^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)' % basic_woo)
-def woo(Willie, trigger):
+def woo(bot, trigger):
     '''Sometimes replies to a woo with an emote'''
     if trigger.owner:
         prob = 1
@@ -94,7 +94,7 @@ def woo(Willie, trigger):
         prob = 0.1
     if random.uniform(0, 1) < prob:
         time.sleep(random.uniform(1, 3))
-        Willie.say(
+        bot.say(
             random.choice([
                 u"[](/flutteryay",
                 u"[](/ppwooo",
@@ -113,16 +113,16 @@ def woo(Willie, trigger):
 
 @rule(
     u"(((^|%s+?\s)$nickname[.,-:]\s(%s+?\s)?(%s)([^A-Za-z0-9]|$))|" % (
-    n_text, n_text, basic_badbot) +
+        n_text, n_text, basic_badbot) +
     u"((^|%s+?\s)((%s)\s)(%s*?\s)?$nickname([^A-Za-z0-9]|$))|" % (
         n_text, basic_badbot, n_text) +
     u"(($nickname%s+?)(%s)([^A-Za-z0-9]|$)))" % (n_text, basic_badbot)
 )
-def badbot(Willie, trigger):
+def badbot(bot, trigger):
     '''Appropriate replies to chastening'''
     time.sleep(random.uniform(1, 3))
     if trigger.owner:
-        Willie.say(random.choice([
+        bot.say(random.choice([
             u"[](/sadderpy)",
             u"[](/raritysad)",
             u"[](/sadtwilight2)",
@@ -134,14 +134,14 @@ def badbot(Willie, trigger):
             u"[](/pinkiefear)"
         ]))
     elif Nick(trigger.nick) == Nick('DarkFlame'):
-        Willie.say(random.choice([
+        bot.say(random.choice([
             u'[](/ppnowhy "Why are you so mean to me?!")',
             u'[](/ppnowhy "Why do you hate me?!")',
             u'[](/ppnowhy "Why is nothing I do ever good enough for you?!")',
             u'[](/ppnowhy "?!")'
         ]))
     elif random.uniform(0, 1) < 0.1:
-        Willie.reply(random.choice([
+        bot.reply(random.choice([
             u"[](/derpsrs)",
             u"[](/cheersrsly)",
             u"[](/fluttersrs)",
@@ -155,12 +155,12 @@ def badbot(Willie, trigger):
 
 
 @rule(u"^!swo[o]+sh")
-def swish(Willie, trigger):
+def swish(bot, trigger):
     if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
-        Willie.debug(__file__, log.format(trigger.group(0)), u"verbose")
+        bot.debug(__file__, log.format(trigger.group(0)), u"verbose")
         i = u"i" * (len(trigger.group(0)) - 5)
-        Willie.say(u"[](/dhexcited) Sw%ssh! ♥" % i)
+        bot.say(u"[](/dhexcited) Sw%ssh! ♥" % i)
 
 
 @rule(
@@ -170,15 +170,15 @@ def swish(Willie, trigger):
     u"(\001ACTION [A-Za-z0-9,.'!\s]+?$nickname" +
     u"[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
 )
-def slapped(Willie, trigger):
+def slapped(bot, trigger):
     time.sleep(random.uniform(1, 3))
-    Willie.reply(random.choice([
+    bot.reply(random.choice([
         u'Stop that!',
         u'Hey!',
         u'Violence is not the answer!',
         u"Didn't your mother teach you not to hit?"
     ]))
-    Willie.reply(u"[](/pinkieslap)")
+    bot.reply(u"[](/pinkieslap)")
 
 
 hi_prefix = ur"($nickname[:,]?\s+)"
@@ -191,23 +191,23 @@ hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
 
 @rule(ur"(" + hi_to_fineline + ur")|" + ur"(" + hi_to_all + ur")")
 @rate(300)
-def hi(Willie, trigger):
+def hi(bot, trigger):
     """Replies to greetings."""
     message = random.choice([u"Hi", u"Hello", u"Yo", u"Hey", u"Ahoy"])
     punctuation = random.choice([u".", u"", u"!"])
     time.sleep(random.uniform(0, 3))
     if random.uniform(0, 1) > 0.5:
-        Willie.reply(message + punctuation)
+        bot.reply(message + punctuation)
     else:
-        Willie.say(message + u" " + trigger.nick + punctuation)
+        bot.say(message + u" " + trigger.nick + punctuation)
 
 
 @rule(ur'.*$nickname\:?,?\s+Are you a bot|.*$nickname (is )?a bot')
 @rate(300)
-def isbot(Willie, trigger):
+def isbot(bot, trigger):
     """Replies to queries about fineline being a bot"""
     time.sleep(random.uniform(1, 2))
-    Willie.say(random.choice(
+    bot.say(random.choice(
         [u"Nope, I'm just fast.",
          u"Nah, I just type really fast and know a lot.",
          u"What makes you think that?",
@@ -215,7 +215,7 @@ def isbot(Willie, trigger):
          u"Uh.....no?"]
     ))
     time.sleep(random.uniform(3, 5))
-    Willie.say(random.choice(
+    bot.say(random.choice(
         [u"Come on, don't you see these hooves?",
          u"If I were a bot, how come I have hooves?",
          u"See? I have hooves! *wiggles hooves*",
@@ -245,7 +245,7 @@ night_universal = ur".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
 )
 @priority('high')
 @rate(1000)
-def night(Willie, trigger):
+def night(bot, trigger):
     """Responds to people saying good night"""
     if re.match(u'.*?night', trigger.bytes):
         message = random.choice([u"Goodnight", u"'Night", u"Later", u"Bye"])
@@ -253,24 +253,24 @@ def night(Willie, trigger):
         message = random.choice([u"Later", u"Bye"])
     punctuation = random.choice([u".", u"", u"!"])
     # Test statment to filter negetive statements
-    Willie.debug(__file__, log.format(trigger.bytes), u"verbose")
+    bot.debug(__file__, log.format(trigger.bytes), u"verbose")
     # Use a set intersection to filter triggering lines by keyword
     if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at'])):
         time.sleep(1)
         if random.uniform(0, 1) > 0.5:
-            Willie.reply(message + punctuation)
+            bot.reply(message + punctuation)
         else:
-            Willie.say(message + u" " + trigger.nick + punctuation)
+            bot.say(message + u" " + trigger.nick + punctuation)
 
 """
-def smart_action(Willie, trigger):
+def smart_action(bot, trigger):
     '''Hopefully a flexible, fun action system for admins'''
-    Willie.debug("ai:derp", "triggered", "verbose")
-    Willie.debug("ai:derp", trigger.nick, "verbose")
-    Willie.debug("ai:derp", trigger.args, "verbose")
-    Willie.debug("ai:derp", "admin: " + str(trigger.admin), "verbose")
-    Willie.debug("ai:derp", "owner: " + str(trigger.owner), "verbose")
-    Willie.debug("ai:derp", "isop: " + str(trigger.isop), "verbose")
+    bot.debug("ai:derp", "triggered", "verbose")
+    bot.debug("ai:derp", trigger.nick, "verbose")
+    bot.debug("ai:derp", trigger.args, "verbose")
+    bot.debug("ai:derp", "admin: " + str(trigger.admin), "verbose")
+    bot.debug("ai:derp", "owner: " + str(trigger.owner), "verbose")
+    bot.debug("ai:derp", "isop: " + str(trigger.isop), "verbose")
 basic_smart = "would you kindly|please|go"
 smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)" +
     "(a|an|the|some)(OBJECT)?")
@@ -279,14 +279,14 @@ smart_action.priority = 'medium'
 
 
 @rule(ur'^$nickname\s?[!\.]\s?$')
-def nick(Willie, trigger):
+def nick(bot, trigger):
     message = trigger.nick
-    if re.match(Willie.nick.upper(), trigger.bytes):
+    if re.match(bot.nick.upper(), trigger.bytes):
         message = message.upper()
     if re.findall('!', trigger.bytes):
-        Willie.say(u'%s!' % message)
+        bot.say(u'%s!' % message)
     else:
-        Willie.say(u'%s.' % message)
+        bot.say(u'%s.' % message)
 
 
 @rule(u'^\001ACTION awkwardly tries to flirt with Fineline.')

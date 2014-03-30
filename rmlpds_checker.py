@@ -42,7 +42,7 @@ try:
 except:
     try:
         fp, pathname, description = imp.find_module('colors',
-                                                    ['./.bot/modules/']
+                                                    ['./.willie/modules/']
                                                     )
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
