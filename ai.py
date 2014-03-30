@@ -6,12 +6,29 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
 import time
 import random
 import re
 from willie.tools import Nick
 
 from willie.module import rule, rate, priority
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 basic_thanks = r"\bty|thanks|gracias|thank\s?you|thank\s?ya|\bta"
 basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
@@ -141,7 +158,7 @@ def badbot(Willie, trigger):
 def swish(Willie, trigger):
     if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
-        Willie.debug(u"swoosh", trigger.group(0), u"verbose")
+        Willie.debug(__file__, log.format(trigger.group(0)), u"verbose")
         i = u"i" * (len(trigger.group(0)) - 5)
         Willie.say(u"[](/dhexcited) Sw%ssh! ♥" % i)
 
@@ -236,12 +253,9 @@ def night(Willie, trigger):
         message = random.choice([u"Later", u"Bye"])
     punctuation = random.choice([u".", u"", u"!"])
     # Test statment to filter negetive statements
-    Willie.debug(u"ai_night.py:night", trigger.bytes, u"verbose")
+    Willie.debug(__file__, log.format(trigger.bytes), u"verbose")
     # Use a set intersection to filter triggering lines by keyword
-    if not set(trigger.args[1].lower().split()).intersection(set([u'not',
-                                                                  u'no',
-                                                                  u'at'
-                                                                  ])):
+    if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at'])):
         time.sleep(1)
         if random.uniform(0, 1) > 0.5:
             Willie.reply(message + punctuation)
@@ -308,4 +322,4 @@ def flirt(bot, trigger):
         bot.say(response[1])
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

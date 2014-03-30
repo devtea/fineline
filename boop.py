@@ -5,27 +5,38 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-#TODO user aliases
+# TODO user aliases
+from __future__ import print_function
 
-#import time
 from willie.module import commands
 from willie.tools import Nick
 import random
-import imp
-import sys
 import threading
-#import time
 
 # Bot framework is stupid about importing, so we need to override so that
-# these modules are always available for import.
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 try:
     import colors
 except:
+    import imp
+    import sys
     try:
-        print "trying manual import of colors"
-        fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("trying manual import of colors")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -34,11 +45,11 @@ except:
 try:
     import nicks
 except:
+    import imp
+    import sys
     try:
-        print "trying manual import of nicks"
-        fp, pathname, description = imp.find_module('nicks',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("trying manual import of nicks")
+        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
@@ -137,7 +148,7 @@ def boop(bot, trigger):
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
             i = nicks.in_chan(bot, trigger.sender).index(target)
             target = nick_list.pop(i)
-            #TODO small chance to boop random person
+            # TODO small chance to boop random person
             bot.action(random.choice(_boop) % target)
         elif target in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target]) > 0:
             message = u' '.join(trigger.args[1].split()[2:])
@@ -158,7 +169,7 @@ def boop(bot, trigger):
             msg = msg.strip(',')
             msg = "%s %s" % (msg, '[%s]' % colors.colorize(target, [u'orange']))
 
-            #TODO account for really long messages
+            # TODO account for really long messages
             if message:
                 msg = "%s %s" % (msg, '| <%s> %s')
                 bot.action(msg % (colors.colorize(trigger.nick, [u'purple']),
@@ -258,9 +269,9 @@ def optout(bot, trigger):
 
 @commands(u'opts', u'opt')
 def opts(bot, trigger):
-    #TODO list opts lists
+    # TODO list opts lists
     pass
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())
