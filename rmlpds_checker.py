@@ -6,22 +6,20 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-import threading
-import time
-import random
-import re
 from datetime import datetime
 import imp
+import random
+import re
 from socket import timeout
 import sys
-#from urllib2 import HTTPError
+import threading
+import time
 
 import praw
 import praw.errors
 from praw.errors import InvalidSubreddit
 from requests import HTTPError
 
-#from colors import *
 from willie.module import interval, commands, rate
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
@@ -44,7 +42,7 @@ try:
 except:
     try:
         fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
+                                                    ['./.bot/modules/']
                                                     )
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
@@ -53,12 +51,12 @@ except:
             fp.close()
 
 
-def setup(willie):
-    if "rmlpds_timer" not in willie.memory:
+def setup(bot):
+    if "rmlpds_timer" not in bot.memory:
         # Set the timer and do the first check in a minute
-        willie.memory["rmlpds_timer"] = time.time() - _check_interval + 60
-    if "rmlpds_timer_lock" not in willie.memory:
-        willie.memory["rmlpds_timer_lock"] = threading.Lock()
+        bot.memory["rmlpds_timer"] = time.time() - _check_interval + 60
+    if "rmlpds_timer_lock" not in bot.memory:
+        bot.memory["rmlpds_timer_lock"] = threading.Lock()
 
 
 def filter_posts(posts):
@@ -131,11 +129,11 @@ def filter_posts(posts):
 
 
 @interval(23)
-def rmlpds(willie):
+def rmlpds(bot):
     """Checks the subreddit for unattended recent posts."""
-    if willie.memory["rmlpds_timer"] > time.time() - _check_interval:
+    if bot.memory["rmlpds_timer"] > time.time() - _check_interval:
         return  # return if not enough time has elapsed since last full run
-    willie.memory["rmlpds_timer_lock"].acquire()
+    bot.memory["rmlpds_timer_lock"].acquire()
     try:
         try:
             mlpds = rc.get_subreddit(u'MLPDrawingSchool')
@@ -145,10 +143,10 @@ def rmlpds(willie):
             sub_exists = True
         finally:
             # Set the timer for a 5 min. retry in case something goes wrong.
-            willie.memory["rmlpds_timer"] = time.time() - _check_interval + \
+            bot.memory["rmlpds_timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            willie.debug(u'rmlpds_checker.py', u"Sub exists.", u"verbose")
+            bot.debug(u'rmlpds_checker.py', u"Sub exists.", u"verbose")
             new_posts = mlpds.get_new(limit=50)
             uncommented = []
             for post in new_posts:
@@ -156,7 +154,7 @@ def rmlpds(willie):
                 if post.num_comments == 0 and \
                     post.created_utc > (time.time() - (48 * 60 * 60)) and \
                         post.created_utc < (time.time() - (8 * 60 * 60)):
-                    willie.debug(
+                    bot.debug(
                         u'rmlpds_checker.py',
                         u"Adding post to list.",
                         u"verbose"
@@ -164,13 +162,13 @@ def rmlpds(willie):
                     uncommented.append(post)
             uncommented = filter_posts(uncommented)
             if uncommented:
-                willie.debug(
+                bot.debug(
                     u'rmlpds_checker.py',
                     u"There are %i uncommented posts." % len(uncommented),
                     u"verbose"
                 )
                 # There were posts, so set full timer
-                willie.memory["rmlpds_timer"] = time.time()
+                bot.memory["rmlpds_timer"] = time.time()
                 post = random.choice(uncommented)
                 c_date = datetime.utcfromtimestamp(post.created_utc)
                 td = datetime.utcnow() - c_date
@@ -182,12 +180,12 @@ def rmlpds(willie):
                     msg = u'Hey everyone, there are at least %i ' % len(uncommented) + \
                           u'posts that might need critique! Here is a random one:'
                 for chan in _channels:
-                    if chan in willie.channels:
+                    if chan in bot.channels:
                         nsfw = u''
                         if post.over_18:
                             nsfw = u'[%s] ' % colors.colorize(u'NSFW', ['red'], ['b'])
-                        willie.msg(chan, msg)
-                        willie.msg(
+                        bot.msg(chan, msg)
+                        bot.msg(
                             chan,
                             u'%s%s posted %s – "%s" [ %s ] ' % (
                                 nsfw,
@@ -199,38 +197,38 @@ def rmlpds(willie):
                         )
             else:
                 # There were no posts, so set a short timer
-                willie.memory["rmlpds_timer"] = time.time() - \
+                bot.memory["rmlpds_timer"] = time.time() - \
                     (_check_interval * 3 / 4)
-                willie.debug(
+                bot.debug(
                     u"rmlpds_checker",
                     u"No uncommented posts found.",
                     u"verbose"
                 )
         else:
-            willie.debug(u"rmlpds_checker", u"Cannot check posts.", u"warning")
+            bot.debug(u"rmlpds_checker", u"Cannot check posts.", u"warning")
     finally:
-        willie.memory["rmlpds_timer_lock"].release()
+        bot.memory["rmlpds_timer_lock"].release()
 
 
 @commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')
 @rate(120)
-def mlpds_check(Willie, trigger):
+def mlpds_check(bot, trigger):
     '''Checks for posts within the last 48h with fewer than 2 comments'''
     if trigger.sender not in _INCLUDE:
         return
     try:
         mlpds = rc.get_subreddit(u'MLPDrawingSchool')
     except InvalidSubreddit:
-        Willie.say(_bad_reddit_msg)
+        bot.say(_bad_reddit_msg)
         return
     except HTTPError:
-        Willie.say(_error_msg)
+        bot.say(_error_msg)
         return
     except timeout:
-        Willie.say(_timeout_message)
+        bot.say(_timeout_message)
         return
     new_posts = mlpds.get_new(limit=50)
-    #Willie.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
+    #bot.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
     uncommented = []
     for post in new_posts:
         if post.num_comments < 2 and \
@@ -243,7 +241,7 @@ def mlpds_check(Willie, trigger):
         if post_count > 2:
             spammy = True
         if spammy:
-            Willie.reply(u"There are a few, I'll send them in pm.")
+            bot.reply(u"There are a few, I'll send them in pm.")
         for post in uncommented:
             if post.num_comments == 0:
                 num_com = u"There are no comments"
@@ -256,7 +254,7 @@ def mlpds_check(Willie, trigger):
             c_date = datetime.utcfromtimestamp(post.created_utc)
             f_date = c_date.strftime(u'%b %d')
             if spammy:
-                Willie.msg(
+                bot.msg(
                     trigger.nick,
                     u'%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
@@ -268,7 +266,7 @@ def mlpds_check(Willie, trigger):
                     )
                 )
             else:
-                Willie.reply(
+                bot.reply(
                     u'%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
                         colors.colorize(post.author.name, [u'purple']),
@@ -279,10 +277,10 @@ def mlpds_check(Willie, trigger):
                     )
                 )
     else:
-        Willie.reply(u"I don't see any lonely posts. There could still be "
-                     u"posts that need critiquing, though: "
-                     u"http://mlpdrawingschool.reddit.com/"
-                     )
+        bot.reply(u"I don't see any lonely posts. There could still be "
+                  u"posts that need critiquing, though: "
+                  u"http://mlpdrawingschool.reddit.com/"
+                  )
 
 
 if __name__ == "__main__":

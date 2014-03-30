@@ -1,5 +1,5 @@
 """
-prompt.py - A Willie module that generates simple drawing ideas
+prompt.py - A willie module that generates simple drawing ideas
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -13,35 +13,39 @@ from willie.module import commands
 
 random.seed()
 
+ponies = []
+verbs = []
+nouns = []
 
-def setup(Willie):
+
+def setup(bot):
     #Load list of names
     global ponies
     ponies = []
-    for row in Willie.db.prompt_ponies.keys():
-        ponies.append(Willie.db.prompt_ponies.get(row[0], ('name', 'weight')))
-    Willie.debug(u"prompt.py",
-                 u"Loaded %s weighted ponies." % str(len(ponies)),
-                 u"verbose"
-                 )
+    for row in bot.db.prompt_ponies.keys():
+        ponies.append(bot.db.prompt_ponies.get(row[0], ('name', 'weight')))
+    bot.debug(u"prompt.py",
+              u"Loaded %s weighted ponies." % str(len(ponies)),
+              u"verbose"
+              )
     #Load list of nouns
     global nouns
     nouns = []
-    for row in Willie.db.prompt_nouns.keys():
-        nouns.append(Willie.db.prompt_nouns.get(row[0], 'noun'))
-    Willie.debug(u"prompt.py",
-                 u"Loaded %s nouns." % str(len(nouns)),
-                 u"verbose"
-                 )
+    for row in bot.db.prompt_nouns.keys():
+        nouns.append(bot.db.prompt_nouns.get(row[0], 'noun'))
+    bot.debug(u"prompt.py",
+              u"Loaded %s nouns." % str(len(nouns)),
+              u"verbose"
+              )
     #Load list of verbs
     global verbs
     verbs = []
-    for row in Willie.db.prompt_verbs.keys():
-        verbs.append(Willie.db.prompt_verbs.get(row[0], 'verb'))
-    Willie.debug(u"prompt.py",
-                 u"Loaded %s verbs." % str(len(verbs)),
-                 u"verbose"
-                 )
+    for row in bot.db.prompt_verbs.keys():
+        verbs.append(bot.db.prompt_verbs.get(row[0], 'verb'))
+    bot.debug(u"prompt.py",
+              u"Loaded %s verbs." % str(len(verbs)),
+              u"verbose"
+              )
 
 
 def weighted_choice(weighted):
@@ -58,11 +62,11 @@ def weighted_choice(weighted):
 
 
 @commands(u'prompt')
-def prompt(Willie, trigger):
+def prompt(bot, trigger):
     """Gives a short drawing prompt using ponies from the show."""
 
-    Willie.debug(u"prompt.py", u"==============", u"verbose")
-    Willie.debug(u"prompt.py", u"Module started", u"verbose")
+    bot.debug(u"prompt.py", u"==============", u"verbose")
+    bot.debug(u"prompt.py", u"Module started", u"verbose")
     #Make our random selections for our prompt construction
     index_no = weighted_choice(ponies)
     sentence = [u"Your random prompt is: ",
@@ -70,7 +74,7 @@ def prompt(Willie, trigger):
                 random.choice(verbs).strip(),
                 random.choice(nouns).strip() + u"."
                 ]
-    Willie.reply(u" ".join(sentence))
+    bot.reply(u" ".join(sentence))
 
 
 if __name__ == "__main__":

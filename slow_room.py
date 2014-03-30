@@ -24,113 +24,113 @@ _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
 
-def setup(willie):
-    if "fetch_rss" not in willie.memory:
-        willie.memory["fetch_rss"] = {}
-    if "fetch_rss_lock" not in willie.memory:
-        willie.memory["fetch_rss_lock"] = threading.Lock()
-    if "slow_timer" not in willie.memory:
-        willie.memory["slow_timer"] = {}
-    if "slow_timer_lock" not in willie.memory:
-        willie.memory["slow_timer_lock"] = threading.Lock()
+def setup(bot):
+    if "fetch_rss" not in bot.memory:
+        bot.memory["fetch_rss"] = {}
+    if "fetch_rss_lock" not in bot.memory:
+        bot.memory["fetch_rss_lock"] = threading.Lock()
+    if "slow_timer" not in bot.memory:
+        bot.memory["slow_timer"] = {}
+    if "slow_timer_lock" not in bot.memory:
+        bot.memory["slow_timer_lock"] = threading.Lock()
     #link to deviant art RSS feed, preferably favorites.
-    willie.memory["da_faves"] = willie.config.slow_room.deviant_link
+    bot.memory["da_faves"] = bot.config.slow_room.deviant_link
 
 
 @interval(19)
-def slow_room(willie):
+def slow_room(bot):
     """A collection of actions to perform when the room is inactive for a
     period of time.
 
     """
 
-    willie.memory["slow_timer_lock"].acquire()
+    bot.memory["slow_timer_lock"].acquire()
     try:
-        for key in willie.memory["slow_timer"].keys():
+        for key in bot.memory["slow_timer"].keys():
             try:
-                if willie.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
-                        and key in willie.channels:
+                if bot.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
+                        and key in bot.channels:
                     function = random.randint(0, 11)
                     if function == 0:
-                        poke(willie, key)
+                        poke(bot, key)
                     elif function == 1:
-                        fzoo(willie, key)
+                        fzoo(bot, key)
                     elif function == 2:
-                        quote(willie, key)
+                        quote(bot, key)
                     elif function == 3:
-                        arttip(willie, key)
+                        arttip(bot, key)
                     elif function == 4:
-                        sing(willie, key)
+                        sing(bot, key)
                     # This is a bad way to do probablity and you should feel bad
                     elif function in range(5, 8):  # It's easy though, so fuck off
-                        cute(willie, key)
+                        cute(bot, key)
                     elif function in range(9, 11):  # No really, go away
-                        features(willie, key)
-                    willie.memory["slow_timer"][key] = time.time()
+                        features(bot, key)
+                    bot.memory["slow_timer"][key] = time.time()
                 else:
-                    if willie.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
-                        fetch_rss(willie, willie.memory["da_faves"])  # update feed regularly
+                    if bot.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
+                        fetch_rss(bot, bot.memory["da_faves"])  # update feed regularly
             except EBADF:
                 # It appears a bad file descriptor can be cached when the bot
                 # disconnects and reconnects. We need to flush these.
-                del willie.memory["slow_timer"][key]
+                del bot.memory["slow_timer"][key]
     finally:
-        willie.memory["slow_timer_lock"].release()
+        bot.memory["slow_timer_lock"].release()
 
 
-def fetch_rss(willie, feed_url):
+def fetch_rss(bot, feed_url):
     '''Determines if the specified RSS feed can be loaded from an existing
     cache, or if it will need to be reloaded.
 
     '''
 
-    def refresh_feed(willie, url):
+    def refresh_feed(bot, url):
         try:
             feedparser.parse(url)
         except:
-            willie.debug(u"timers:fetch_rss", u"Could not update feed, using cached version.", u"verbose")
+            bot.debug(u"timers:fetch_rss", u"Could not update feed, using cached version.", u"verbose")
             return
-        willie.memory["fetch_rss"][feed_url] = []
-        willie.memory["fetch_rss"][feed_url].append(time.time())
-        willie.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
-        willie.debug(u"timers:fetch_rss", u"Updated feed and stored cached version.", u"verbose")
-    willie.memory["fetch_rss_lock"].acquire()
+        bot.memory["fetch_rss"][feed_url] = []
+        bot.memory["fetch_rss"][feed_url].append(time.time())
+        bot.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
+        bot.debug(u"timers:fetch_rss", u"Updated feed and stored cached version.", u"verbose")
+    bot.memory["fetch_rss_lock"].acquire()
     try:
         # {feed_url: [time, feed]}
-        willie.debug('fetchrss', 'Checking feed url %s' % feed_url, 'verbose')
-        if feed_url in willie.memory["fetch_rss"]:
-            willie.debug(u"timers:fetch_rss", u"Found cached RSS feed, checking age.", u"verbose")
-            willie.debug(str(time.time()), willie.memory["fetch_rss"][feed_url][0], 'verbose')
-            if willie.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
-                willie.debug(u"timers:fetch_rss", u"Feed is young, using cached version", u"verbose")
+        bot.debug('fetchrss', 'Checking feed url %s' % feed_url, 'verbose')
+        if feed_url in bot.memory["fetch_rss"]:
+            bot.debug(u"timers:fetch_rss", u"Found cached RSS feed, checking age.", u"verbose")
+            bot.debug(str(time.time()), bot.memory["fetch_rss"][feed_url][0], 'verbose')
+            if bot.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
+                bot.debug(u"timers:fetch_rss", u"Feed is young, using cached version", u"verbose")
             else:
-                refresh_feed(willie, feed_url)
+                refresh_feed(bot, feed_url)
         else:  # No cached version, try to get new
-            refresh_feed(willie, feed_url)
-        return willie.memory["fetch_rss"][feed_url][1]
+            refresh_feed(bot, feed_url)
+        return bot.memory["fetch_rss"][feed_url][1]
     finally:
-        willie.memory["fetch_rss_lock"].release()
+        bot.memory["fetch_rss_lock"].release()
 
 
-def fzoo(willie, channel):
+def fzoo(bot, channel):
     x = random.uniform(0, 1)
     oos = u'o' * int(50 * x ** 4 - x ** 3 - 5 * x ** 2 + 2)
-    willie.msg(channel, u"!fzo%s ♥" % oos)
+    bot.msg(channel, u"!fzo%s ♥" % oos)
 
 
-def quote(willie, channel):
-    willie.msg(channel, ur"!quote")
+def quote(bot, channel):
+    bot.msg(channel, ur"!quote")
     time.sleep(random.uniform(3, 5))
     if random.uniform(0, 1) < 0.3:
-        willie.msg(channel, ur"[](/ppfear)")
+        bot.msg(channel, ur"[](/ppfear)")
 
 
-def arttip(willie, channel):
-    willie.msg(channel, ur"!arttip")
+def arttip(bot, channel):
+    bot.msg(channel, ur"!arttip")
 
 
-def sing(willie, channel):
-    willie.msg(channel, random.choice([
+def sing(bot, channel):
+    bot.msg(channel, random.choice([
         u"♫My little pony, my little pony!♪",
         u"♫When I was a little filly and the sun was going down...♪",
         u"♫Oh the Grand Galloping Gala is the best place for me!♪",
@@ -164,14 +164,14 @@ def sing(willie, channel):
     ]))
 
 
-def poke(willie, channel):
-    willie.msg(channel, u"\001ACTION pokes the chat\001")
+def poke(bot, channel):
+    bot.msg(channel, u"\001ACTION pokes the chat\001")
     if random.uniform(0, 1) > 0.9:
         time.sleep(1)
-        willie.msg(channel, u"It's dead Jim.")
+        bot.msg(channel, u"It's dead Jim.")
 
 
-def cute(willie, channel, is_timer=True):
+def cute(bot, channel, is_timer=True):
     pics = []
     intro = [
         u"It's a bit slow in here right now. How about a pony pic?",
@@ -182,17 +182,17 @@ def cute(willie, channel, is_timer=True):
         u"[](/ppwatching-r-90)",
         u"\001ACTION yawns blearily and a URL pops out!\001"
     ]
-    feed = fetch_rss(willie, willie.memory["da_faves"])
+    feed = fetch_rss(bot, bot.memory["da_faves"])
     if feed:
         for item in feed.entries:
             pics.append(item.link)
         if is_timer:
-            willie.msg(channel, random.choice(intro))
+            bot.msg(channel, random.choice(intro))
             time.sleep(random.uniform(1, 3))
-        willie.msg(channel, random.choice(pics))
+        bot.msg(channel, random.choice(pics))
     else:
-        willie.msg(channel, u"[](/derpyshock) Oh no, I was going to " +
-                            u"post from DA, but something went wrong!")
+        bot.msg(channel, u"[](/derpyshock) Oh no, I was going to " +
+                         u"post from DA, but something went wrong!")
 
 
 def features(bot, channel):
@@ -205,31 +205,31 @@ def features(bot, channel):
 
 
 @rule(u'.*')
-def last_activity(willie, trigger):
+def last_activity(bot, trigger):
     """Keeps track of the last activity for a room"""
     if trigger.sender.startswith("#") and \
             trigger.sender in _INCLUDE:
-        willie.debug(u"timers:last_activity", trigger.sender, u"verbose")
-        if 'slow_timer_lock' not in willie.memory:
-            willie.debug(
+        bot.debug(u"timers:last_activity", trigger.sender, u"verbose")
+        if 'slow_timer_lock' not in bot.memory:
+            bot.debug(
                 u'timers_slow:last_activity',
                 u'WTF Devs',
                 u'warning'
             )
-            setup(willie)
-        willie.memory["slow_timer_lock"].acquire()
+            setup(bot)
+        bot.memory["slow_timer_lock"].acquire()
         try:
-            willie.memory["slow_timer"][trigger.sender] = time.time()
+            bot.memory["slow_timer"][trigger.sender] = time.time()
         finally:
-            willie.memory["slow_timer_lock"].release()
+            bot.memory["slow_timer_lock"].release()
 
 
 @commands(u'pony', u'pon[ie]')
-def pony(willie, trigger):
+def pony(bot, trigger):
     '''Returns pony pic'''
-    willie.debug(u'pony.py', u'Triggered', u'verbose')
-    willie.debug(u'pony.py', trigger.sender, u'verbose')
-    cute(willie, trigger.sender, is_timer=False)
+    bot.debug(u'pony.py', u'Triggered', u'verbose')
+    bot.debug(u'pony.py', trigger.sender, u'verbose')
+    cute(bot, trigger.sender, is_timer=False)
 
 
 s4 = datetime.datetime(2013, 11, 23, 9)
