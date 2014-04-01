@@ -10,6 +10,7 @@ http://bitbucket.org/tdreyer/fineline
 # nick, removing a nick, or otherwise doing anything where you *don't* want
 # hostname matching to cause issues, explicitly use the .lower() method in your
 # comparison.
+from __future__ import print_function
 
 from willie.tools import Nick
 from willie.module import rule, event, commands, unblockable, thread, priority
@@ -18,6 +19,22 @@ import time
 import re
 
 re_hostname = re.compile(r':\S+\s311\s\S+\s(\S+)\s\S+\s(\S+)\s\*')
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 
 class NickPlus(Nick):
@@ -38,7 +55,7 @@ class NickPlus(Nick):
         return self._lowered == Nick._lower(other)
 
 
-#def shared_nicks(channel, nick=None):
+# def shared_nicks(channel, nick=None):
 def in_chan(bot, channel, nick=None):
     if not nick and channel in bot.memory['chan_nicks']:
         return bot.memory['chan_nicks'][channel]
@@ -73,9 +90,9 @@ def refresh_nicks(bot):
 def list_nicks(bot, trigger):
     for i in bot.memory['chan_nicks']:
         try:
-            print '%s: %r' % (i, [(n, n.hostname) for n in bot.memory['chan_nicks'][i]])
+            print('%s: %r' % (i, [(n, n.hostname) for n in bot.memory['chan_nicks'][i]]))
         except:
-            print '%s: %r' % (i, bot.memory['chan_nicks'][i])
+            print('%s: %r' % (i, bot.memory['chan_nicks'][i]))
 
 
 @rule('.*')
@@ -84,7 +101,7 @@ def list_nicks(bot, trigger):
 @priority('high')
 @thread(False)  # Don't remove this or you'll break the bot.raw call
 def whois_catcher(bot, trigger):
-    bot.debug(u'nicks.py', u'Caught WHOIS response', u'verbose')
+    bot.debug(__file__, log.format(u'Caught WHOIS response'), u'verbose')
     n, h = re_hostname.search(bot.raw).groups()
     who = NickPlus(n.lstrip('+%@&~'), h)
     with bot.memory['nick_lock']:
@@ -109,17 +126,17 @@ def whois(bot, trigger):
 @thread(False)  # Don't remove this or you'll break the bot.raw call
 def names(bot, trigger):
     buf = bot.raw.strip()  # bot.raw is undocumented but seems to be the raw line received
-    bot.debug(u'nicks.py', u'Caught NAMES response', u'verbose')
+    bot.debug(__file__, log.format(u'Caught NAMES response'), u'verbose')
     try:
         with bot.memory['nick_lock']:
             unprocessed_nicks = re.split(' ', trigger)
             stripped_nicks = [i.lstrip('+%@&~') for i in unprocessed_nicks]
             nicks = [NickPlus(i, None) for i in stripped_nicks]
-            channel = re.findall('#\S*', buf)[0]
+            channel = re.findall('# \S*', buf)[0]
             if not channel:
                 return
             bot.memory['chan_nicks'][channel] = nicks
-        bot.debug(u'nicks.py', u'Refeshing hosts for %s' % channel, 'verbose')
+        bot.debug(__file__, log.format(u'Refeshing hosts for ', channel), 'verbose')
         for n in nicks:
             with bot.memory['whois_lock']:
                 # Prevent whoising the same nick multiple times across threads (for a short time)
@@ -127,11 +144,11 @@ def names(bot, trigger):
                     bot.memory['whois_time'][n] = time.time()
                     bot.write(['WHOIS', n.lower()])
                     time.sleep(1)  # This keeps our aggregate whois rate reasonable
-            #time.sleep(3)  # Wait a bit for other threads to spam whoissses too
-        bot.debug(u'nicks.py', u'Done refeshing hosts for %s' % channel, 'verbose')
+            # time.sleep(3)  # Wait a bit for other threads to spam whoissses too
+        bot.debug(__file__, log.format(u'Done refeshing hosts for ', channel), 'verbose')
     except:
-        bot.debug(u'nicks.py:NAMES',
-                  u'ERROR: Unprocessable NAMES response: %s' % buf,
+        bot.debug(__file__,
+                  log.format(u'ERROR: Unprocessable NAMES response: ', buf),
                   u'always'
                   )
 
@@ -142,20 +159,20 @@ def names(bot, trigger):
 @thread(False)
 @priority('high')
 def join(bot, trigger):
-    #list_nicks(bot, trigger)
-    bot.debug(u'nicks.py', u'Caught JOIN by %s' % trigger.nick, u'verbose')
+    # list_nicks(bot, trigger)
+    bot.debug(__file__, log.format(u'Caught JOIN by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
-        if not trigger.sender.startswith('#'):
+        if not trigger.sender.startswith('# '):
             return
         with bot.memory['nick_lock']:
             # Coretasks should take care of adding channel and NAMES so we take
             # care of everyone else
             if name != bot.nick:
                 bot.memory['chan_nicks'][trigger.sender].append(name)
-    #list_nicks(bot, trigger)
+    # list_nicks(bot, trigger)
     except:
-        bot.debug(u'nicks.py:JOIN', u'ERROR: bot nick list is unsynced from server', u'always')
+        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
         refresh_nicks(bot)
 
 
@@ -165,8 +182,8 @@ def join(bot, trigger):
 @thread(False)
 @priority('high')
 def nick(bot, trigger):
-    #list_nicks(bot, trigger)
-    bot.debug(u'nicks.py', u'Caught NICK by %s >> %s' % (trigger.nick, trigger), u'verbose')
+    # list_nicks(bot, trigger)
+    bot.debug(__file__, log.format(u'Caught NICK by %s >> %s' % (trigger.nick, trigger)), u'verbose')
     # Trigger doesn't come from channel. Any replies will be sent to user.
     # Old nick is in trigger.nick while new nick is in trigger and
     # trigger.sender
@@ -178,9 +195,9 @@ def nick(bot, trigger):
                 bot.memory['chan_nicks'][chan] = \
                     [new_nick if old_nick.lower() == i.lower() else i for i in bot.memory['chan_nicks'][chan]]
     except:
-        bot.debug(u'nicks.py:NICK', u'ERROR: bot nick list is unsynced from server', u'always')
+        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
         refresh_nicks(bot)
-    #list_nicks(bot, trigger)
+    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -189,8 +206,8 @@ def nick(bot, trigger):
 @thread(False)
 @priority('high')
 def quit(bot, trigger):
-    #list_nicks(bot, trigger)
-    bot.debug(u'nicks.py', u'Caught QUIT by %s' % trigger.nick, u'verbose')
+    # list_nicks(bot, trigger)
+    bot.debug(__file__, log.format(u'Caught QUIT by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
         with bot.memory['nick_lock']:
@@ -200,11 +217,11 @@ def quit(bot, trigger):
                     bot.memory['chan_nicks'][chan].remove(Nick(name.lower()))
                 except:
                     # Didn't find nick in channel
-                    bot.debug(u'nicks.py', u'Didn\'t find %s in %s to remove.' % (name, chan), 'verbose')
+                    bot.debug(__file__, log.format(u'Didn\'t find %s in %s to remove.' % (name, chan)), 'verbose')
     except:
-        bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
+        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
         refresh_nicks(bot)
-    #list_nicks(bot, trigger)
+    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -213,11 +230,11 @@ def quit(bot, trigger):
 @thread(False)
 @priority('high')
 def kick(bot, trigger):
-    #list_nicks(bot, trigger)
-    bot.debug(u'nicks.py', u'Caught KICK by %s' % trigger.nick, u'verbose')
+    # list_nicks(bot, trigger)
+    bot.debug(__file__, log.format(u'Caught KICK by ', trigger.nick), u'verbose')
     try:
         name = Nick(trigger)  # Trigger comes in as trigger==kicked, trigger.nick==kicker
-        if not trigger.sender.startswith('#'):
+        if not trigger.sender.startswith('# '):
             return
         with bot.memory['nick_lock']:
                 if trigger == bot.nick:
@@ -226,9 +243,9 @@ def kick(bot, trigger):
                     # Use a Nick() so hostname don't fuck it up
                     bot.memory['chan_nicks'][trigger.sender].remove(Nick(name.lower()))
     except:
-        bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
+        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
         refresh_nicks(bot)
-    #list_nicks(bot, trigger)
+    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -237,11 +254,11 @@ def kick(bot, trigger):
 @thread(False)
 @priority('high')
 def part(bot, trigger):
-    #list_nicks(bot, trigger)
-    bot.debug(u'nicks.py', u'Caught PART by %s' % trigger.nick, u'verbose')
+    # list_nicks(bot, trigger)
+    bot.debug(__file__, log.format(u'Caught PART by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
-        if not trigger.sender.startswith('#'):
+        if not trigger.sender.startswith('# '):
             return
         with bot.memory['nick_lock']:
                 if trigger.nick == bot.nick:
@@ -250,10 +267,10 @@ def part(bot, trigger):
                     # Use a Nick() so hostname don't fuck it up
                     bot.memory['chan_nicks'][trigger.sender].remove(Nick(name.lower()))
     except:
-        bot.debug(u'nicks.py:PART', u'ERROR: bot nick list is unsynced from server', u'always')
+        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
         refresh_nicks(bot)
-    #list_nicks(bot, trigger)
+    # list_nicks(bot, trigger)
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

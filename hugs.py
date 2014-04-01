@@ -5,6 +5,8 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
+
 import random
 import re
 import time
@@ -12,6 +14,22 @@ import time
 from willie.module import rule, rate
 
 random.seed()
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 
 @rule(ur'\001ACTION [a-zA-Z0-9 ,]*?' +
@@ -38,7 +56,7 @@ def hugback(bot, trigger):
       )
 def hug_intercept(bot, trigger):
     """Intercepts hugs from another bot"""
-    bot.debug(u"hugback.py:hug_intercept", u"Caught hug.", u"verbose")
+    bot.debug(__file__, log.format(u"Caught hug."), u"verbose")
     # First make sure we're intercepting the proper user's actions
     if re.match("hushmachine", trigger.nick):
         # Hugs directed at the bot
@@ -90,7 +108,7 @@ def hug_intercept(bot, trigger):
                 u"fish",
                 u"tackles"
         ])):
-            bot.debug(u"", u"inner trigger", u"verbose")
+            bot.debug(__file__, log.format(u"inner trigger"), u"verbose")
             if random.uniform(0, 1) < 0.04:
                 bot.action(random.choice([
                     u"quickly jumps in between them and gets the hug instead.",
@@ -120,4 +138,4 @@ def hug_intercept(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

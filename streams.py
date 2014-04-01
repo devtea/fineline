@@ -5,29 +5,44 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
 
 import json
 import re
-import time
-import threading
-import imp
 import shutil
-import sys
 from socket import timeout
 from string import Template
+import threading
+import time
 
 import willie.web as web
 from willie.module import commands, interval
 from willie.tools import Nick
+
 # Bot framework is stupid about importing, so we need to override so that
-# the colors module is always available for import.
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 try:
     import colors
 except:
+    import imp
+    import sys
     try:
-        fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("Trying manual import of colors formatter.")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -48,12 +63,12 @@ _re_us = re.compile('((?<=ustream\.tv/channel/)|(?<=ustream\.tv/))([^/(){}[\]]+)
 _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('((youtube\.com/user/)|(youtube\.com/))([^\?/(){}[\]\s]+)')
 _exc_regex.append(re.compile('youtube\.com/'))
-#_url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
+# _url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
              'ustream.tv']
 _SUB = ('?',)  # This will be replaced in setup()
-#TODO move this to memory
-_exclude = ['#reddit-mlpds-bots', '#fineline_testing', '#reddit-mlpds-spoilers']
+# TODO move this to memory
+_exclude = ['# reddit-mlpds-bots', '#fineline_testing', '#reddit-mlpds-spoilers']
 
 
 class stream(object):
@@ -169,7 +184,7 @@ class justintv(stream):
     _base_url = 'http://api.justin.tv/api/'
     _service = 'justin.tv'
     _last_update = time.time()
-    #_header_info = ''
+    # _header_info = ''
 
     def __init__(self, name, alias=None):
         super(justintv, self).__init__(name, alias)
@@ -186,9 +201,9 @@ class justintv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print "Bad Json loaded from justin.tv"
-            print "Raw data is:"
-            print self._results
+            print("Bad Json loaded from justin.tv")
+            print("Raw data is:")
+            print(self._results)
             raise
         except IndexError:
             raise
@@ -211,9 +226,9 @@ class justintv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print "Bad Json loaded from justin.tv"
-            print "Raw data is:"
-            print self._results
+            print("Bad Json loaded from justin.tv")
+            print("Raw data is:")
+            print(self._results)
             raise
         except IndexError:
             raise
@@ -253,7 +268,7 @@ class livestream(stream):
     _base_url = '.api.channel.livestream.com/2.0/'
     _service = 'livestream.com'
     _last_update = time.time()
-    #_header_info = ''
+    # _header_info = ''
 
     def __init__(self, name, alias=None):
         super(livestream, self).__init__(name, alias)
@@ -267,21 +282,21 @@ class livestream(stream):
             self._form_j = json.loads(self._results)
         except ValueError:
             if re.findall('400 Bad Request', self._results):
-                print 'Livestream Error: 400 Bad Request'
+                print('Livestream Error: 400 Bad Request')
                 raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
-                print 'Livestream Error: 404 Not Found'
+                print('Livestream Error: 404 Not Found')
                 raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
-                print 'Livestream Error: 500 Internal Server Error'
+                print('Livestream Error: 500 Internal Server Error')
                 raise ValueError('500 Internal Server Error')
             elif re.findall('503 Service Unavailable', self._results):
-                print 'Livestream Error: 503 Service Unavailable'
+                print('Livestream Error: 503 Service Unavailable')
                 raise ValueError('503 Service Unavailable')
             else:
-                print "Bad Json loaded from livestream.com"
-                print "Raw data is:"
-                print self._results
+                print("Bad Json loaded from livestream.com")
+                print("Raw data is:")
+                print(self._results)
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
@@ -301,21 +316,21 @@ class livestream(stream):
             self._form_j = json.loads(self._results)
         except ValueError:
             if re.findall('400 Bad Request', self._results):
-                print 'Livestream Error: 400 Bad Request'
+                print('Livestream Error: 400 Bad Request')
                 raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
-                print 'Livestream Error: 404 Not Found'
+                print('Livestream Error: 404 Not Found')
                 raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
-                print 'Livestream Error: 500 Internal Server Error'
+                print('Livestream Error: 500 Internal Server Error')
                 raise ValueError('500 Internal Server Error')
             elif re.findall('503 Service Unavailable', self._results):
-                print 'Livestream Error: 503 Service Unavailable'
+                print('Livestream Error: 503 Service Unavailable')
                 raise ValueError('503 Service Unavailable')
             else:
-                print "Bad Json loaded from livestream.com"
-                print "Raw data is:"
-                print self._results
+                print("Bad Json loaded from livestream.com")
+                print("Raw data is:")
+                print(self._results)
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
@@ -330,7 +345,7 @@ class ustream(stream):
     _base_url = 'http://api.ustream.tv/json'
     _service = 'ustream.tv'
     _last_update = time.time()
-    #_header_info = ''
+    # _header_info = ''
 
     def __init__(self, name, alias=None):
         super(ustream, self).__init__(name, alias)
@@ -378,9 +393,9 @@ class youtube(stream):
         except ValueError:
             # TODO May not need to handle this here, but in calling code
             raise
-        #self._name = self._form_j['entry']['author'][0]['name']['$t']
+        # self._name = self._form_j['entry']['author'][0]['name']['$t']
         self._url_list = self._form_j['entry']['link']
-        #for d in [a for a in self._url_list if a['rel'] == 'alternate']:
+        # for d in [a for a in self._url_list if a['rel'] == 'alternate']:
         #    # TODO make sure this url is the live url, probably not
         #    self._url = d['href']
         self._url = 'http://youtube.com/%s' % self._form_j['entry']['yt$username']['$t']
@@ -405,11 +420,11 @@ class youtube(stream):
             self._last_update = time.time()
             if self._live:
                 # When going online, we should grab the live stream URL
-                print self._form_j['feed']['entry'][0]['content']['src']
+                print(self._form_j['feed']['entry'][0]['content']['src'])
                 self._event_url = 'http://youtube.com/watch?v=%s' % \
                     self._re_yturl.findall(self._form_j['feed']['entry'][0]['content']['src'])[0]
             else:
-                #when going offline, we should reset the URL
+                # when going offline, we should reset the URL
                 self._event_url = None
 
 
@@ -433,17 +448,17 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print "Bad Json loaded from twitch.tv"
-            print "Raw data is:"
-            print self._results
+            print("Bad Json loaded from twitch.tv")
+            print("Raw data is:")
+            print(self._results)
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s: %s' % (
                 self._form_j['status'],
                 self._form_j['error'],
                 self._form_j['message']))
-        #print 'got json'
-        #print json.dumps(self._form_j, indent=4)
+        # print('got json')
+        # print(json.dumps(self._form_j, indent=4))
         try:
             raise ValueError(self._form_j['error'])
         except KeyError:
@@ -468,9 +483,9 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print "Bad Json loaded from twitch.tv"
-            print "Raw data is:"
-            print self._results
+            print("Bad Json loaded from twitch.tv")
+            print("Raw data is:")
+            print(self._results)
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s %s' % (
@@ -575,22 +590,22 @@ def setup(bot):
             bot.memory['streamSet']['help_file_dest']
         )
     except:
-        bot.debug(u'streams.py',
-                  u'Unable to copy help file. Check configuration.',
+        bot.debug(__file__,
+                  log.format(u'Unable to copy help file. Check configuration.'),
                   u'always')
         raise
     with open(bot.memory['streamSet']['list_template_path']) as f:
         try:
             bot.memory['streamListT'] = Template(''.join(f.readlines()))
         except:
-            bot.debug(u'streams.py',
-                      u'Unable to load list template.',
+            bot.debug(__file__,
+                      log.format(u'Unable to load list template.'),
                       u'always')
             raise
 
     bot.debug(
-        u'streams.py',
-        u'Starting stream setup, this may take a bit.',
+        __file__,
+        log.format(u'Starting stream setup, this may take a bit.'),
         'always'
     )
     # TODO consider making these unique sets
@@ -637,7 +652,7 @@ def setup(bot):
 def load_from_db(bot, trigger=None):
     if trigger and not trigger.admin:
         return
-    bot.debug(u'streams.py:reload', u'Reloading from DB', 'verbose')
+    bot.debug(__file__, log.format(u'Reloading from DB'), 'verbose')
     bot.memory['streams'] = []
     bot.memory['feat_streams'] = []
     dbcon = bot.db.connect()  # sqlite3 connection
@@ -658,8 +673,8 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(
                 bot.memory['streamFac'].newStream(c, s, a))
         except:
-            bot.debug(u'streams.py:reload',
-                      u'Failed to initialize livestream: %s, %s, %s' % (c, s, a),
+            bot.debug(__file__,
+                      log.format(u'Failed to initialize livestream: %s, %s, %s' % (c, s, a)),
                       u'warning')
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
@@ -667,7 +682,7 @@ def load_from_db(bot, trigger=None):
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
         subscribe(bot, 'subscribe', (c, s), Nick(n), quiet=True)
-    bot.debug(u'streams.py:reload', u'Done.', 'verbose')
+    bot.debug(__file__, log.format(u'Done.'), 'verbose')
 
 
 def alias(bot, switch, channel, value=None):
@@ -736,7 +751,7 @@ def nsfw(bot, switch, channel, quiet=None):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug('streams:load_from_db', msg, 'warning')
+            bot.debug(__file__, log.format(msg), 'warning')
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -760,7 +775,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug('streams:load_from_db', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
                 return
 
             else:
@@ -768,7 +783,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug('streams:load_from_db', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
         elif switch == 'unnsfw':
             i = None
             for i in [a for a in bot.memory['streams']
@@ -795,28 +810,28 @@ def nsfw(bot, switch, channel, quiet=None):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug('streams:load_from_db', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
                     return
                 else:
                     msg = u"That doesn't have a NSFW tag."
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug('streams:load_from_db', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
                     return
             else:
                 msg = u"I don't have that stream."
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug('streams:load_from_db', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
         else:
             msg = u"Uh oh, that wasn't supposed to happen."
             if not quiet:
                 bot.say(msg)
                 bot.say(u"!tell tdreyer1 FIIIIIXX MEEEEEEEE!")
             else:
-                bot.debug('streams:load_from_db', msg, 'warning')
+                bot.debug(__file__, log.format(msg), 'warning')
 
 
 def more_help(bot, trigger):
@@ -998,11 +1013,11 @@ def add_stream(bot, user):
                 else:
                     bot.reply(u'There was an unknown error, check your ' +
                               u'spelling and try again later')
-                    bot.debug(u'streams.py', txt, 'warning')
+                    bot.debug(__file__, log.format(txt), 'warning')
                     return
             except timeout as txt:
-                bot.debug(u'streams.py',
-                          txt,
+                bot.debug(__file__,
+                          log.format(txt),
                           u'warnings')
                 bot.reply(u'Oops, the request to the service timed out! ' +
                           u'Try again later.')
@@ -1012,8 +1027,8 @@ def add_stream(bot, user):
                                WHERE channel = %s
                                AND service = %s''' % (_SUB * 2), (u, s))
                 if cur.fetchone()[0] == 0:
-                    bot.debug(u'streams.py',
-                              u'ADD: count was != 0',
+                    bot.debug(__file__,
+                              log.format(u'ADD: count was != 0'),
                               u'verbose')
                     cur.execute('''INSERT INTO streams (channel, service)
                                    VALUES (%s, %s)''' % (_SUB * 2), (u, s))
@@ -1042,7 +1057,7 @@ def list_streams(bot, arg=None, nick=None):
                                                                     ['blue']))
 
     if arg == 'subscribed' or arg == 'subscriptions':
-        #Private subscriptions should be PM'd, even if many
+        # Private subscriptions should be PM'd, even if many
         assert isinstance(nick, Nick)
         if len(bot.memory['streamSubs']) == 0:
             bot.say("You aren't subscribed to anything.")
@@ -1059,7 +1074,7 @@ def list_streams(bot, arg=None, nick=None):
             return
         bot.say("You aren't subscribed to anything.")
     elif arg == 'live' or arg == 'streaming':
-        #Should be few enough streaming at any one time, just say in chat
+        # Should be few enough streaming at any one time, just say in chat
         s = None
         for s in [a for a in bot.memory['streams'] if a.live]:
             _tmp_list.append(format_stream(s))
@@ -1070,7 +1085,7 @@ def list_streams(bot, arg=None, nick=None):
             return
         bot.say("No one is streaming right now.")
     elif not arg:
-        #Too many to say in chat, link to HTML list
+        # Too many to say in chat, link to HTML list
         if len(bot.memory['streams']) == 0:
             bot.say("I've got nothing.")
         else:
@@ -1114,9 +1129,9 @@ def publish_lists(bot, trigger=None):
     except IOError:
         previous_full_list = ''
         bot.debug(
-            u'streams.py',
-            u'IO error grabbing "list_main_dest_path" file contents. ' +
-            u'File may not exist yet',
+            __file__,
+            log.format(u'IO error grabbing "list_main_dest_path" file contents. ',
+                u'File may not exist yet'),
             u'warning'
         )
 
@@ -1126,13 +1141,13 @@ def publish_lists(bot, trigger=None):
     except IOError:
         previous_feat_list = ''
         bot.debug(
-            u'streams.py',
-            u'IO error grabbing "list_feat_dest_path" file contents. ' +
-            u'File may not exist yet',
+            __file__,
+            log.format(u'IO error grabbing "list_feat_dest_path" file contents. ',
+                u'File may not exist yet'),
             u'warning'
         )
 
-    #Generate full list HTML
+    # Generate full list HTML
     live_list = []
     dead_list = []
     for i in [a for a in bot.memory['streams'] if a.live]:
@@ -1151,10 +1166,10 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_full_list != contents:
-        bot.debug(u'streams.py', u'Found change in full list html file.', u'verbose')
+        bot.debug(__file__, log.format(u'Found change in full list html file.'), u'verbose')
         with open(bot.memory['streamSet']['list_main_dest_path'], 'w') as f:
             f.write(contents)
-    #Generate featured list HTML
+    # Generate featured list HTML
     live_list = []
     dead_list = []
     for i in [a for a in bot.memory['feat_streams'] if a.live]:
@@ -1173,7 +1188,7 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_feat_list != contents:
-        bot.debug(u'streams.py', u'Found change in featured list html file.', u'verbose')
+        bot.debug(__file__, log.format(u'Found change in featured list html file.'), u'verbose')
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'w') as f:
             f.write(contents)
     return
@@ -1252,7 +1267,7 @@ def feature(bot, switch, channel, quiet=False):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug('streams:load_from_db', msg, 'warning')
+            bot.debug(__file__, log.format(msg), 'warning')
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -1265,7 +1280,7 @@ def feature(bot, switch, channel, quiet=False):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug('streams:load_from_db', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
                     return
                 else:
                     try:
@@ -1287,13 +1302,13 @@ def feature(bot, switch, channel, quiet=False):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug('streams:load_from_db', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
                     return
             msg = u"Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
-                bot.debug('streams:load_from_db', msg, 'warning')
+                bot.debug(__file__, log.format(msg), 'warning')
             return
         elif switch == 'unfeature':
             for i in [a for a in bot.memory['feat_streams']
@@ -1311,20 +1326,20 @@ def feature(bot, switch, channel, quiet=False):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug('streams:load_from_db', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
                 return
             msg = u"Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
-                bot.debug('streams:load_from_db', msg, 'warning')
+                bot.debug(__file__, log.format(msg), 'warning')
             return
         else:
             msg = u"Oh shit, I don't know what just happened."
             if not quiet:
                 bot.reply(msg)
             else:
-                bot.debug('streams:load_from_db', msg, 'warning')
+                bot.debug(__file__, log.format(msg), 'warning')
 
 
 def subscribe(bot, switch, channel, nick, quiet=False):
@@ -1338,7 +1353,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug('streams:subscribe', msg, 'warning')
+            bot.debug(__file__, log.format(msg), 'warning')
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -1368,14 +1383,14 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     if not quiet:
                         bot.reply(msg)
                     else:
-                        bot.debug('streams:subscribe', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
                     return
                 else:
                     msg = u"You're already subscribed to that channel!"
                     if not quiet:
                         bot.reply(msg)
                     else:
-                        bot.debug('streams:subscribe', msg, 'warning')
+                        bot.debug(__file__, log.format(msg), 'warning')
             elif switch == 'unsubscribe':
                 if i in bot.memory['streamSubs']:
                     if nick in bot.memory['streamSubs'][i]:
@@ -1394,19 +1409,19 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                         if not quiet:
                             bot.reply(msg)
                         else:
-                            bot.debug('streams:subscribe', msg, 'warning')
+                            bot.debug(__file__, log.format(msg), 'warning')
                         return
                 msg = u"You weren't subscribed to that or that doesn't exist."
                 if not quiet:
                     bot.reply(msg)
                 else:
-                    bot.debug('streams:subscribe', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
             else:
                 msg = u"Oh shit, I don't know what just happened."
                 if not quiet:
                     bot.reply(msg)
                 else:
-                    bot.debug('streams:subscribe', msg, 'warning')
+                    bot.debug(__file__, log.format(msg), 'warning')
 
 
 @interval(47)
@@ -1422,7 +1437,7 @@ def announcer(bot):
             bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.alias, strm.url))
         else:
             bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.name, strm.url))
-    bot.debug(u'streams.py', u'Announcer waking up', u'verbose')
+    bot.debug(__file__, log.format(u'Announcer waking up'), u'verbose')
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
@@ -1467,20 +1482,20 @@ def announcer(bot):
                     # Chan was msg'd about stream too recently. The stream may
                     # be experiencing trouble so we don't want to spam
                     pass
-    bot.debug(u'streams.py', u'Announcer sleeping', u'verbose')
+    bot.debug(__file__, log.format(u'Announcer sleeping'), u'verbose')
 
 
 # Justin.tv caches for at least 60 seconds. Updating faster is pointless.
 @interval(211)
 def jtv_updater(bot):
-    bot.debug(u'streams.py', u'Starting justin.tv updater.', u'verbose')
+    bot.debug(__file__, log.format(u'Starting justin.tv updater.'), u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
-    bot.debug(u'streams.py',
-              u'jtv updater complete in %s seconds.' % (time.time() - now),
+    bot.debug(__file__,
+              log.format(u'jtv updater complete in %s seconds.' % (time.time() - now)),
               u'verbose')
 
 
@@ -1491,7 +1506,7 @@ def jtv_updater(bot):
 #    10000 requests per day ( ~1 / 9sec )
 @interval(223)
 def livestream_updater(bot):
-    bot.debug(u'streams.py', u'Starting livestream.com updater.', u'verbose')
+    bot.debug(__file__, log.format(u'Starting livestream.com updater.'), u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         try:
@@ -1509,43 +1524,43 @@ def livestream_updater(bot):
 
 @interval(227)
 def twitchtv_updater(bot):
-    bot.debug(u'streams.py', u'Starting twitch.tv updater.', u'verbose')
+    bot.debug(__file__, log.format(u'Starting twitch.tv updater.'), u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(
-        u'streams.py',
-        u'twitch.tv updater complete in %s seconds.' % (time.time() - now),
+        __file__,
+        log.format(u'twitch.tv updater complete in %s seconds.' % (time.time() - now)),
         u'verbose'
     )
 
 
 @interval(229)
 def youtube_updater(bot):
-    bot.debug(u'streams.py', u'Starting youtube.com updater.', u'verbose')
+    bot.debug(__file__, log.format(u'Starting youtube.com updater.'), u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(
-        u'streams.py',
-        u'youtube.com updater complete in %s seconds.' % (time.time() - now),
+        __file__,
+        log.format(u'youtube.com updater complete in %s seconds.' % (time.time() - now)),
         u'verbose'
     )
 
 
 @interval(239)
 def ustream_updater(bot):
-    bot.debug(u'streams.py', u'Starting ustream.tv updater.', u'verbose')
+    bot.debug(__file__, log.format(u'Starting ustream.tv updater.'), u'verbose')
     now = time.time()
-    #channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
-    #if len(channel_list) == 0:
+    # channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
+    # if len(channel_list) == 0:
     #    return
     # Range will be length mod 10
-    #for i in channel_list:
+    # for i in channel_list:
     for s in [i for i in bot.memory['streams'] if i.service == 'ustream.tv']:
         s.update()
         time.sleep(0.25)
@@ -1560,8 +1575,8 @@ def ustream_updater(bot):
         time.sleep(0.25)
         '''
     bot.debug(
-        u'streams.py',
-        u'ustream.tv updater complete in %s seconds.' % (time.time() - now),
+        __file__,
+        log.format(u'ustream.tv updater complete in %s seconds.' % (time.time() - now)),
         u'verbose'
     )
 
@@ -1616,4 +1631,4 @@ def update_database_tables(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

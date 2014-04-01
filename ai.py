@@ -265,12 +265,12 @@ def night(bot, trigger):
 """
 def smart_action(bot, trigger):
     '''Hopefully a flexible, fun action system for admins'''
-    bot.debug("ai:derp", "triggered", "verbose")
-    bot.debug("ai:derp", trigger.nick, "verbose")
-    bot.debug("ai:derp", trigger.args, "verbose")
-    bot.debug("ai:derp", "admin: " + str(trigger.admin), "verbose")
-    bot.debug("ai:derp", "owner: " + str(trigger.owner), "verbose")
-    bot.debug("ai:derp", "isop: " + str(trigger.isop), "verbose")
+    bot.debug(__file__, log.format("triggered"), "verbose")
+    bot.debug(__file__, log.format(trigger.nick), "verbose")
+    bot.debug(__file__, log.format(trigger.args), "verbose")
+    bot.debug(__file__, log.format("admin: ", trigger.admin), "verbose")
+    bot.debug(__file__, log.format("owner: ", trigger.owner), "verbose")
+    bot.debug(__file__, log.format("isop: ",trigger.isop), "verbose")
 basic_smart = "would you kindly|please|go"
 smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)" +
     "(a|an|the|some)(OBJECT)?")

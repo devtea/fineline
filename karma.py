@@ -12,6 +12,8 @@ import time
 from willie.module import commands, example, rule, priority
 from willie.tools import Nick
 
+_ignore = ['hushmachine']
+
 
 def setup(bot):
     if 'karma_lock' not in bot.memory:
@@ -43,6 +45,8 @@ def setup(bot):
 @rule(u'[^!]*(\+\+|--)$')
 def karmaRule(bot, trigger):
     if trigger.sender[0] != '#':
+        return
+    if trigger.nick in _ignore:
         return
     obj = trigger.bytes.strip()
     if not obj or len(obj) < 3:

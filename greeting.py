@@ -5,38 +5,47 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from willie.module import commands, rule, event, unblockable, priority
+from __future__ import print_function
+
 import threading
 import gzip
 import re
 import os
-import time
 
 from willie.tools import Nick
+from willie.module import commands, rule, event, unblockable, priority
 
 _re_loglines = re.compile(r'\[[0-9:]*]\s\*{3}\sJoins:\s(\S+)\s\(([^)]+)\)')
 _chan_regex = re.compile(u'^(.*?)_\d{8}')
 
 # Bot framework is stupid about importing, so we need to override so that
-# these modules are always available for import.
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 try:
     import nicks
 except:
     import imp
     import sys
     try:
-        print "trying manual import of nicks"
+        print("trying manual import of nicks")
         fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
         if fp:
             fp.close()
-
-
-def logtime():
-    # A quick time formatting function return time formatted for logs.
-    return unicode(time.strftime('%Y%m%d %H:%M:%S UTC', time.gmtime()))
 
 
 def configure(config):
@@ -109,14 +118,14 @@ def greeting_initialize(bot, trigger):
         file_list = []
         for l in log_file:
             file_list.append(l.decode('utf-8', 'replace'))  # omfg took me way too long to figure out 'replace'
-        bot.debug(logtime(), u'finished loading file', u'verbose')
+        bot.debug(__file__, log.format(u'finished loading file'), u'verbose')
         for line in file_list:
             nicknhost = _re_loglines.search(line)
             if nicknhost:
                 nn, host = nicknhost.groups()
                 nn = Nick(nn)
                 host = host.lstrip('~')
-                bot.debug(logtime(), u'found nick and host. %s %s for %s' % (nn, host, channel), u'verbose')
+                bot.debug(__file__, log.format(u'found nick and host. %s %s for %s' % (nn, host, channel)), u'verbose')
                 if channel not in tmp_hostlist:
                     tmp_hostlist[channel] = {}
                 if nn not in tmp_hostlist[channel]:
@@ -126,8 +135,8 @@ def greeting_initialize(bot, trigger):
 
     bot.reply(u"Okay, I'll start looking through the logs, but this may take a while.")
     with bot.memory['greet_lock']:
-        bot.debug(logtime(), u'=' * 25, u'verbose')
-        bot.debug(logtime(), u'Starting', u'verbose')
+        bot.debug(__file__, log.format(u'=' * 25), u'verbose')
+        bot.debug(__file__, log.format('Starting'), u'verbose')
         filelist = []
         # Parse provided log files for nicks and hostnames. ZNC Default logs
         for dir in bot.memory['greet']['logs']:
@@ -135,9 +144,9 @@ def greeting_initialize(bot, trigger):
                 if bot.memory['greet']['log_regex'].match(f) and os.path.isfile(dir + f):
                     filelist.append(dir + f)
         for log in filelist:
-            bot.debug(logtime(), u'opening %s' % log, u'verbose')
+            bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
             log_name = os.path.splitext(os.path.basename(log))
-            bot.debug(logtime(), u'logname %s' % log_name[0], u'verbose')
+            bot.debug(__file__, log.format(u'logname %s' % log_name[0]), u'verbose')
             chan = _chan_regex.search(log_name[0]).groups()[0].decode('utf-8', 'replace')
             if log.endswith('gz'):
                 with gzip.open(log, 'rb') as gfile:  # May need to switch to r if problems
@@ -168,7 +177,7 @@ def greeting_initialize(bot, trigger):
             finally:
                 cur.close()
                 db.close()
-    bot.debug(logtime(), u'done loading from logs!', u'verbose')
+    bot.debug(__file__, log.format(u'done loading from logs!'), u'verbose')
     bot.reply(u"Okay, I'm done reading the logs! ^_^")
 
 
@@ -189,7 +198,7 @@ def greet_nuke(bot, trigger):
                 db.close()
         bot.reply(u"Done!")
     else:
-        bot.debug(logtime(), u'%s(%s) just tried to use the !nuke command!' % (trigger.nick, trigger.host), u'always')
+        bot.debug(__file__, log.format(u'%s(%s) just tried to use the !nuke command!' % (trigger.nick, trigger.host)), u'always')
 
 
 @commands(u'greet_dump')
@@ -200,9 +209,9 @@ def greet_dump(bot, trigger):
     with bot.memory['greet_lock']:
         bot.say(u'Dumping to logs.')
         for channel in bot.memory['chan_host_hist']:
-            bot.debug(u'greet dump', u'Channel: %s' % channel, u'always')
+            bot.debug(__file__, log.format(u'Channel: %s' % channel), u'always')
             for nick in bot.memory['chan_host_hist'][channel]:
-                bot.debug(u'greet dump', u'Nick: %s | Host: %s' % (nick, nick.hostname), u'always')
+                bot.debug(__file__, log.format(u'Nick: %s | Host: %s' % (nick, nick.hostname)), u'always')
         bot.say(u'Done.')
 
 
@@ -235,19 +244,19 @@ def join_watcher(bot, trigger):
                     cur.close()
                     db.close()
                 channel = trigger.sender.lower()
-                print 'testing if greeting'
+                bot.debug(__file__, log.format('testing if greeting'), 'verbose')
                 if channel in bot.memory['greet']['ings']:
                     # This is where joiners actually get greeted
-                    print 'found greeting testing notice'
-                    print bot.memory['greet']['ings'][channel][0]
+                    bot.debug(__file__, log.format('found greeting testing notice'), 'verbose')
+                    bot.debug(__file__, log.format(bot.memory['greet']['ings'][channel][0]), 'verbose')
                     if bot.memory['greet']['ings'][channel][0] == 'n':
-                        print "MESSAGE send: %s | msg: %s" % (trigger.sender, bot.memory['greet']['ings'][channel][1])
+                        bot.debug(__file__, log.format("MESSAGE send: %s | msg: %s" % (trigger.sender, bot.memory['greet']['ings'][channel][1])), 'verbose')
                         bot.msg(trigger.sender, u'%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
                     else:
-                        print "NOTICE send: %s | msg: %s" % (trigger.nick, bot.memory['greet']['ings'][channel][1])
+                        bot.debug(__file__, log.format("NOTICE send: %s | msg: %s" % (trigger.nick, bot.memory['greet']['ings'][channel][1])), 'verbose')
                         bot.write(['NOTICE', trigger.nick], '%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
         except:
-            bot.debug(logtime(), u'[greeting] Unhandled exception in hostname watcher! %s [%s]' % (sys.exc_info()[0], trigger.bytes), u'always')
+            bot.debug(__file__, log.format(u'[greeting] Unhandled exception in hostname watcher! %s [%s]' % (sys.exc_info()[0], trigger.bytes)), u'always')
 
 
 @commands('greet_add', 'greeting_add')
@@ -257,7 +266,7 @@ def greeting_add(bot, trigger):
         return
     try:
         triggers = trigger.split()[1:]
-        print triggers
+        bot.debug(__file__, log.format(triggers), 'verbose')
         channel = triggers.pop(0).lower()
         notice = triggers.pop(0).lower()
         message = u' '.join(triggers)
@@ -324,7 +333,7 @@ def greeting_list(bot, trigger):
     if not trigger.owner:
         return
     triggers = trigger.split()[1:]
-    print triggers
+    bot.debug(__file__, log.format(triggers), 'verbose')
     if len(triggers) > 1:
         bot.reply(u'Malformed input. Takes only 1 argument: channel')
         return
@@ -345,4 +354,4 @@ def greeting_list(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

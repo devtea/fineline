@@ -6,10 +6,12 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
+
 from HTMLParser import HTMLParseError
 from random import choice
-from socket import timeout
 import re
+from socket import timeout
 
 from bs4 import BeautifulSoup, SoupStrainer
 
@@ -17,6 +19,22 @@ import willie.web as web
 from willie.module import commands, example
 
 base_url = u'http://ponyreference.booru.org/'
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 
 def parse_tags(tags):
@@ -37,7 +55,7 @@ def prbooru_search(bot, tags=None, rand=True):
         try:
             page = web.get(url)
         except timeout:
-            bot.debug(u'prbooru.py', u'Site timed out.', u'warning')
+            bot.debug(__file__, log.format(u'Site timed out.'), u'warning')
             return None
         if page:
             try:
@@ -58,7 +76,7 @@ def prbooru_search(bot, tags=None, rand=True):
         try:
             page = web.get(url)
         except timeout:
-            bot.debug(u'prbooru.py', u'TIMEOUT', u'verbose')
+            bot.debug(__file__, log.format(u'TIMEOUT'), u'verbose')
             return None
         if page:
             try:
@@ -72,36 +90,33 @@ def prbooru_search(bot, tags=None, rand=True):
             soupy_links = soupy.find_all(u'a', id=re.compile(ur'p\d{1,6}'))
             links_list = []
             for i in soupy_links:
-                #bot.debug('prbooru.py', i['href'], 'verbose')
+                # bot.debug(__file__, log.format(i['href']), 'verbose')
                 links_list.append(base_url + i[u'href'])
             next = ''
             next_tag = soupy.find(u'a', alt=u'next', text=u'>')
             if next_tag:
                 next = base_url + str(next_tag['href'])
-            bot.debug(u'prbooru.py', u'"next" is ' + next, u'verbose')
-            bot.debug(u'prbooru.py',
-                      u'returning %i' % len(links_list),
-                      u'verbose'
-                      )
+            bot.debug(__file__, log.format(u'"next" is ', next), u'verbose')
+            bot.debug(u'prbooru.py', u'returning %i' % len(links_list), u'verbose')
             return (links_list, next)
         else:
             return None  # Error so return none
 
-    bot.debug(u'prbooru.py', tags, u'verbose')
+    bot.debug(__file__, log.format(tags), u'verbose')
     if tags:
         tag_blob = u'index.php?page=post&s=list&tags='
         tag_blob = u'%s%s' % (tag_blob, tags.pop(0))
         for tag in tags:
             tag_blob = u'%s+%s' % (tag_blob, tag)
-        bot.debug(u'prbooru.py', base_url + tag_blob, u'verbose')
+        bot.debug(__file__, log.format(base_url, tag_blob), u'verbose')
         next_page = base_url + tag_blob
         links = []
         while next_page:
             newlinks, next_page = get_pr_list(next_page)
             links = links + newlinks
-            bot.debug(u'prbooru.py', u'links %i' % len(links), u'verbose')
-        bot.debug(u'prbooru.py',
-                  u'got back %i links' % len(links),
+            bot.debug(__file__, log.format(u'links %i' % len(links)), u'verbose')
+        bot.debug(__file__,
+                  log.format(u'got back %i links' % len(links)),
                   u'verbose'
                   )
         try:
@@ -111,11 +126,11 @@ def prbooru_search(bot, tags=None, rand=True):
                 link = links[0]
         except IndexError:
             return []  # No results so return empty
-        bot.debug(u'prbooru.py', u'link is %s' % link, u'verbose')
+        bot.debug(__file__, log.format(u'link is %s' % link), u'verbose')
         pic = get_image_from_page(link)
         return pic
     else:
-        bot.debug(u'prbooru.py', u'entered random section', u'verbose')
+        bot.debug(__file__, log.format(u'entered random section'), u'verbose')
         tag_blob = u'index.php?page=post&s=random'
         return get_image_from_page(base_url + tag_blob)
 
@@ -124,19 +139,19 @@ def prbooru_search(bot, tags=None, rand=True):
 @example(u'`!pr random` or `!pr tag1, tag two, three`')
 def prbooru(bot, trigger):
     ''' Pulls images from the Pony Reference Booru at random or by tag'''
-    bot.debug(u'prbooru.py', u'-' * 20, u'verbose')
+    bot.debug(__file__, log.format(u'-' * 20), u'verbose')
     if not trigger.group(2):
         # TODO give help
-        bot.debug(u'prbooru.py', u'No args, assuming random', u'verbose')
+        bot.debug(__file__, log.format(u'No args, assuming random'), u'verbose')
         bot.reply(u'Try `%s: help pr`' % bot.nick)
         return
     tags_list = parse_tags(trigger.group(2))
-    bot.debug(u'prbooru.py', tags_list, u'verbose')
+    bot.debug(__file__, log.format(tags_list), u'verbose')
     if len(tags_list) == 1 and tags_list[0].upper() == u'RANDOM':
-        bot.debug(u'prbooru.py', u'random', u'verbose')
+        bot.debug(__file__, log.format(u'random'), u'verbose')
         link = prbooru_search(bot)  # Request a random image else:
     else:
-        bot.debug(u'prbooru.py', u'tags', u'verbose')
+        bot.debug(__file__, log.format(u'tags'), u'verbose')
         link = prbooru_search(bot, tags=tags_list)  # Get image from tags
     if link:
         bot.reply(link)
@@ -149,4 +164,4 @@ def prbooru(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())
