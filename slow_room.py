@@ -7,19 +7,37 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 
 """
-#todo add boop
+# todo add boop
+from __future__ import print_function
+
 import datetime
 import feedparser
 import random
+from socket import EBADF
 import time
 import threading
-from socket import EBADF
 
 from willie.module import interval, rule, commands
 
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 # Wait time in seconds before the bot will pipe up
 _WAIT_TIME = (random.uniform(23, 42) * 60)
-_INCLUDE = [u'#reddit-mlpds']
+_INCLUDE = [u'# reddit-mlpds']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
@@ -33,7 +51,7 @@ def setup(bot):
         bot.memory["slow_timer"] = {}
     if "slow_timer_lock" not in bot.memory:
         bot.memory["slow_timer_lock"] = threading.Lock()
-    #link to deviant art RSS feed, preferably favorites.
+    # link to deviant art RSS feed, preferably favorites.
     bot.memory["da_faves"] = bot.config.slow_room.deviant_link
 
 
@@ -88,21 +106,21 @@ def fetch_rss(bot, feed_url):
         try:
             feedparser.parse(url)
         except:
-            bot.debug(u"timers:fetch_rss", u"Could not update feed, using cached version.", u"verbose")
+            bot.debug(__file__, log.format(u"Could not update feed, using cached version."), u"verbose")
             return
         bot.memory["fetch_rss"][feed_url] = []
         bot.memory["fetch_rss"][feed_url].append(time.time())
         bot.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
-        bot.debug(u"timers:fetch_rss", u"Updated feed and stored cached version.", u"verbose")
+        bot.debug(__file__, log.format(u"Updated feed and stored cached version."), u"verbose")
     bot.memory["fetch_rss_lock"].acquire()
     try:
         # {feed_url: [time, feed]}
-        bot.debug('fetchrss', 'Checking feed url %s' % feed_url, 'verbose')
+        bot.debug(__file__, log.format('Checking feed url %s' % feed_url), 'verbose')
         if feed_url in bot.memory["fetch_rss"]:
-            bot.debug(u"timers:fetch_rss", u"Found cached RSS feed, checking age.", u"verbose")
-            bot.debug(str(time.time()), bot.memory["fetch_rss"][feed_url][0], 'verbose')
+            bot.debug(__file__, log.format(u"Found cached RSS feed, checking age."), u"verbose")
+            bot.debug(__file__, log.format(bot.memory["fetch_rss"][feed_url][0]), 'verbose')
             if bot.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
-                bot.debug(u"timers:fetch_rss", u"Feed is young, using cached version", u"verbose")
+                bot.debug(__file__, log.format(u"Feed is young, using cached version"), u"verbose")
             else:
                 refresh_feed(bot, feed_url)
         else:  # No cached version, try to get new
@@ -207,15 +225,11 @@ def features(bot, channel):
 @rule(u'.*')
 def last_activity(bot, trigger):
     """Keeps track of the last activity for a room"""
-    if trigger.sender.startswith("#") and \
+    if trigger.sender.startswith("# ") and \
             trigger.sender in _INCLUDE:
-        bot.debug(u"timers:last_activity", trigger.sender, u"verbose")
+        bot.debug(__file__, log.format(trigger.sender), u"verbose")
         if 'slow_timer_lock' not in bot.memory:
-            bot.debug(
-                u'timers_slow:last_activity',
-                u'WTF Devs',
-                u'warning'
-            )
+            bot.debug(__file__, log.format(u'WTF Devs'), u'warning')
             setup(bot)
         bot.memory["slow_timer_lock"].acquire()
         try:
@@ -227,8 +241,8 @@ def last_activity(bot, trigger):
 @commands(u'pony', u'pon[ie]')
 def pony(bot, trigger):
     '''Returns pony pic'''
-    bot.debug(u'pony.py', u'Triggered', u'verbose')
-    bot.debug(u'pony.py', trigger.sender, u'verbose')
+    bot.debug(__file__, log.format(u'Triggered'), u'verbose')
+    bot.debug(__file__, log.format(trigger.sender), u'verbose')
     cute(bot, trigger.sender, is_timer=False)
 
 
@@ -271,4 +285,4 @@ def countdown(bot, trigger):
 """
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

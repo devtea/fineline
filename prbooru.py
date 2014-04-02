@@ -97,7 +97,7 @@ def prbooru_search(bot, tags=None, rand=True):
             if next_tag:
                 next = base_url + str(next_tag['href'])
             bot.debug(__file__, log.format(u'"next" is ', next), u'verbose')
-            bot.debug(u'prbooru.py', u'returning %i' % len(links_list), u'verbose')
+            bot.debug(__file__, log.format(u'returning %i' % len(links_list)), u'verbose')
             return (links_list, next)
         else:
             return None  # Error so return none

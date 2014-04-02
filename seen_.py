@@ -5,27 +5,26 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
 
+from datetime import timedelta, datetime
+import json
+import os
+from pytz import timezone
+import re
 from time import time
 import threading
-import os
-import re
-import json
-from pytz import timezone
-from types import *
-from datetime import timedelta, datetime
-import imp
-import sys
+from types import FloatType, TupleType
 
 from willie.tools import Nick
 from willie.module import commands, example, priority, rule
 
 log_dir = u''
-log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
+log_regex = re.compile(u'^# reddit-mlpds_\d{8}\.log$')
 line_regex = re.compile(u'^\[(\d\d:\d\d:\d\d)\] <([^>]+)> (.*)$')
 chan_regex = re.compile(u'^(.*?)_\d{8}$')
 cen = timezone(u"US/Central")  # log timezone
-_EXCLUDE = ['#reddit-mlpds-spoilers']
+_EXCLUDE = ['# reddit-mlpds-spoilers']
 
 
 def escape(ucode):
@@ -42,14 +41,29 @@ def unescape(ucode):
     return unescaped
 
 # Bot framework is stupid about importing, so we need to override so that
-# the colors module is always available for import.
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 try:
     import colors
 except:
+    import imp
+    import sys
     try:
-        fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("Trying manual import of colors.")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -61,7 +75,7 @@ def setup(bot):
     global log_dir
     if bot.config.has_option('seen', 'log_dir'):
         log_dir = bot.config.seen.log_dir
-        bot.debug(u'seen:logdir', u'found dir %s' % log_dir, u'verbose')
+        bot.debug(__file__, log.format(u'found dir %s' % log_dir), u'verbose')
     if 'seen_lock' not in bot.memory:
         bot.memory['seen_lock'] = threading.Lock()
     if bot.db and not bot.db.check_table('seen',
@@ -112,20 +126,20 @@ def seen_insert(bot, nick, data):
     dict['message'] = data[2]
 
     bot.memory['seen'][nn] = data
-    #bot.debug('to insert', '%s, %r' % (nn.lower(), dict) ,'verbose')
+    # bot.debug(__file__, log.format('%s, %r' % (nn.lower(), dict)), 'verbose')
     bot.db.seen.update(nn.lower(), {'data': escape(json.dumps(dict))})
 
 
 '''
 # TODO
-#def seen_delete()
+# def seen_delete()
     bot.memory['seen_lock'].acquire()
     try:
     finally:
         bot.memory['seen_lock'].release()
 
 # TODO
-#def seen_ignore()
+# def seen_ignore()
     bot.memory['seen_lock'].acquire()
     try:
     finally:
@@ -141,50 +155,29 @@ def load_from_logs(bot, trigger):
                   )
         bot.memory['seen_lock'].acquire()
         try:
-            bot.debug(u'load_from_logs', u'=' * 25, u'verbose')
-            bot.debug(u'load_from_logs', u'Starting', u'verbose')
+            bot.debug(__file__, log.format(u'=' * 25), u'verbose')
+            bot.debug(__file__, log.format(u'Starting'), u'verbose')
             filelist = []
             for f in os.listdir(log_dir):
                 if log_regex.match(f) and os.path.isfile(log_dir + f):
                     filelist.append(log_dir + f)
             filelist.sort()
             for log in filelist:
-                bot.debug(u'%f load_from_logs' % time(),
-                          u'opening %s' % log,
-                          u'verbose'
-                          )
+                bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
                 with open(log, 'r') as file:
                     file_list = []
                     for l in file:
                         # omfg took me way too long to figure out 'replace'
                         file_list.append(l.decode('utf-8', 'replace'))
-                    bot.debug(u'%f' % time(),
-                              u'finished loading file',
-                              u'verbose'
-                              )
+                    bot.debug(__file__, log.format(u'finished loading file'), u'verbose')
                     for line in file_list:
-                        #line = line.decode('utf-8', 'replace')
-                        #bot.debug('load_from_logs: line', line,'verbose')
-                        bot.debug(u'%f' % time(),
-                                  u'checking line',
-                                  u'verbose'
-                                  )
+                        # line = line.decode('utf-8', 'replace')
+                        # bot.debug(__file__, log.format(line), 'verbose')
+                        bot.debug(__file__, log.format(u'checking line'), u'verbose')
                         m = line_regex.search(line)
                         if m:
-                            '''bot.debug(
-                                    'load_from_logs',
-                                    'line is message',
-                                    'verbose'
-                                    )'''
-                            '''bot.debug(
-                                    'line',
-                                    '%s %s %s' % (
-                                        m.group(1),
-                                        m.group(2),
-                                        m.group(3)
-                                        ),
-                                    'verbose'
-                                    )'''
+                            '''bot.debug(__file__, log.format('line is message'), 'verbose')'''
+                            '''bot.debug(__file__, log.format('%s %s %s' % ( m.group(1), m.group(2), m.group(3))), 'verbose')'''
                             nn = Nick(m.group(2))
                             msg = m.group(3)
                             log_name = os.path.splitext(
@@ -204,16 +197,12 @@ def load_from_logs(bot, trigger):
                             )
                             utc_dt = cen.normalize(cen.localize(dt))
                             timestamp = float(utc_dt.strftime(u'%s'))
-                            '''bot.debug(
-                                    'logname',
-                                    'utc timestamp is %f' % timestamp,
-                                    'verbose'
-                                    )'''
+                            '''bot.debug(__file__, log.format('utc timestamp is %f' % timestamp), 'verbose')'''
                             data = (timestamp, chan, msg)
                             seen_insert(bot, nn.lower(), data)
         finally:
             bot.memory['seen_lock'].release()
-        bot.debug(u'', u'done', u'verbose')
+        bot.debug(__file__, log.format(u'done'), u'verbose')
         bot.reply(u"Okay, I'm done reading the logs!")
 
 
@@ -232,17 +221,13 @@ def seen_nuke(bot, trigger):
         finally:
             bot.memory['seen_lock'].release()
     else:
-        bot.debug(
-            u'seen.py:nuke',
-            u'%s just tried to use the !nuke command!' % trigger.nick,
-            u'always'
-        )
+        bot.debug(__file__, log.format(u'%s just tried to use the !nuke command!' % trigger.nick), u'always')
 
 
 @priority(u'low')
 @rule(u'.*')
 def seen_recorder(bot, trigger):
-    if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
+    if not trigger.args[0].startswith(u'# ') or trigger.sender in _EXCLUDE:
         return  # ignore priv msg and excepted rooms
     nn = Nick(trigger.nick)
     now = time()
@@ -262,7 +247,7 @@ def seen_recorder(bot, trigger):
 @example(u'!seen tdreyer1')
 def seen(bot, trigger):
     '''Reports the last time a nick was seen.'''
-    bot.debug(u'seen:seen', u'triggered custom module', u'verbose')
+    bot.debug(__file__, log.format(u'triggered custom module'), u'verbose')
     if len(trigger.args[1].split()) == 1:
         bot.reply(u"Seen who?")
         return
@@ -324,4 +309,4 @@ def seen(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

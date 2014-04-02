@@ -5,21 +5,38 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
+
+from collections import deque
 import os
 import random
 import re
+from string import Template
 import subprocess
 import textwrap
 import time
-from datetime import datetime
-from collections import deque
-from string import Template
 
 from willie.module import commands, example, interval
 
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 _CHAN_EXC = []
 
-#TODO Config section to set up config options
+# TODO Config section to set up config options
 
 
 def setup(bot):
@@ -43,7 +60,7 @@ def setup(bot):
     try:
         file_list = os.listdir(bot.memory['streaming']['source_dir'])
     except OSError:
-        bot.debug('streamer.py', 'Unable to load list of files.', 'warning')
+        bot.debug(__file__, log.format('Unable to load list of files.'), 'warning')
         raise
     else:
         file_list.sort()
@@ -52,9 +69,7 @@ def setup(bot):
         try:
             bot.memory['streaming']['listTemplate'] = Template(f.read())
         except:
-            bot.debug(u'streamer.py',
-                      u'Unable to load template.',
-                      u'always')
+            bot.debug(__file__, log.format(u'Unable to load template.'), u'always')
             raise
     publish_list(bot)
 
@@ -78,10 +93,7 @@ def start_stream(bot, ep):
                 bot.memory['streaming']['loc']
             )
         )
-    bot.debug(
-        str(datetime.now()),
-        'streamer.py Starting stream of %s' % ep,
-        'always')
+    bot.debug(__file__, log.format('streamer.py Starting stream of %s' % ep), 'always')
     bot.memory['streaming']['live'] = True
     bot.memory['streaming']['title'] = ep
     try:
@@ -141,16 +153,16 @@ def stream(bot, trigger):
         elif arg_1 == u'DEL':
             dequeue(bot, process(arg_2))
         else:
-            bot.debug(u"episodes.py:episode", u"insane args", u"verbose")
+            bot.debug(__file__, log.format(u"insane args"), u"verbose")
             bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                       u"stream'")
     elif len(trigger.args[1].split()) > 3:
-        bot.debug(u"episodes.py:episode", u"too many args", u"verbose")
+        bot.debug(__file__, log.format(u"too many args"), u"verbose")
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                   u"stream'")
     else:
         bot.reply(u'Stream what?! Try !help stream for details.')
-        bot.debug(u"episodes.py:episode", u"Not enough args", u"verbose")
+        bot.debug(__file__, log.format(u"Not enough args"), u"verbose")
 
 
 def enqueue(bot, ep):
@@ -197,7 +209,7 @@ def get_queue(bot):
 
 
 def list_media(bot, trigger):
-    print bot.memory['streaming']['use_html']
+    bot.debug(__file__, log.format(log.format(bot.memory['streaming']['use_html'])), 'verbose')
     if bot.memory['streaming']['use_html']:
         bot.reply(u'The list of available videos is up at %s' %
                   bot.memory['streaming']['url'])
@@ -226,20 +238,18 @@ def streaming(bot, trigger):
 def publish_list(bot):
     if not bot.memory['streaming']['use_html']:
         return
-    print bot.memory['streaming']['dest']
+    bot.debug(__file__, log.format(log.format(bot.memory['streaming']['dest'])), 'verbose')
     try:
         with open(bot.memory['streaming']['dest'], 'r') as f:
             previous_full_list = ''.join(f.readlines())
     except IOError:
         previous_full_list = ''
         bot.debug(
-            u'streams.py',
-            u'IO error grabbing "list_main_dest_path" file contents. ' +
-            u'File may not exist yet',
-            u'warning'
-        )
+            __file__,
+            log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'),
+            u'warning')
 
-    #Generate full list HTML
+    # Generate full list HTML
     contents = bot.memory['streaming']['listTemplate'].substitute(
         ulist='\n'.join(
             ['<li>%s</li>' % os.path.splitext(i)[0] for i in bot.memory['streaming']['ep_list']]
@@ -249,11 +259,7 @@ def publish_list(bot):
         with open(bot.memory['streaming']['dest'], 'w') as f:
             f.write(contents)
     else:
-        bot.debug(
-            u'streamer.py',
-            u'No chage in list html file, skipping.',
-            u'verbose'
-        )
+        bot.debug(__file__, log.format(u'No chage in list html file, skipping.'), u'verbose')
     return
 
 
@@ -265,4 +271,4 @@ def random_video(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

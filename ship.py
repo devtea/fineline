@@ -5,11 +5,29 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-import random
+from __future__ import print_function
+
 import bisect
+import random
 import threading
 
 from willie.module import commands
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 _reply_list = [u'%s x %s',
                u'%s and %s didn\'t choose the huglife, the huglife chose them.',
@@ -79,14 +97,14 @@ def delname(bot, trigger):
     if not trigger.admin:
         return
     name = ' '.join(trigger.split(u' ')[1:]).lower()
-    print name
+    bot.debug(__file__, log.format(name), 'verbose')
     with bot.memory['pony_list_lock']:
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
         try:
             cur.execute('select name, weight from prompt_ponies where lower(name) = ?', (name,))
             rows = cur.fetchall()
-            bot.debug(u'ship', u'%s' % rows, u'verbose')
+            bot.debug(__file__, log.format(u'%s' % rows), u'verbose')
             if rows:
                 cur.execute('delete from prompt_ponies where lower(name) = ?', (name,))
                 dbcon.commit()
@@ -115,7 +133,7 @@ def addname(bot, trigger):
         return
     command.pop(0)
     name = ' '.join(command)
-    print 'name: "%s", weight: "%i"' % (name, weight)
+    bot.debug(__file__, log.format('name: "%s", weight: "%i"' % (name, weight)), 'verbose')
     with bot.memory['pony_list_lock']:
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -131,4 +149,4 @@ def addname(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

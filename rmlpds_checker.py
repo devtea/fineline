@@ -6,12 +6,12 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
+
 from datetime import datetime
-import imp
 import random
 import re
 from socket import timeout
-import sys
 import threading
 import time
 
@@ -24,8 +24,8 @@ from willie.module import interval, commands, rate
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
-_channels = [u'#reddit-mlpds', u'#fineline_testing']
-_INCLUDE = ['#reddit-mlpds', '#fineline_testing']
+_channels = [u'# reddit-mlpds', u'#fineline_testing']
+_INCLUDE = ['# reddit-mlpds', '#fineline_testing']
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
@@ -36,14 +36,29 @@ praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 
 # Bot framework is stupid about importing, so we need to override so that
-# the colors module is always available for import.
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
 try:
     import colors
 except:
+    import imp
+    import sys
     try:
-        fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("Trying manual import of colors.")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -80,7 +95,7 @@ def filter_posts(posts):
                 flags=re.IGNORECASE
         ):
             links = re.findall(
-                #ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+                # ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
                 r'(?u)(%s?(?:http|https|ftp)(?:://[^\[\]\(\)\{\}\<\>,!\s]+))',
                 post.selftext,
                 flags=re.IGNORECASE
@@ -146,7 +161,7 @@ def rmlpds(bot):
             bot.memory["rmlpds_timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            bot.debug(u'rmlpds_checker.py', u"Sub exists.", u"verbose")
+            bot.debug(__file__, log.format(u"Sub exists."), u"verbose")
             new_posts = mlpds.get_new(limit=50)
             uncommented = []
             for post in new_posts:
@@ -154,19 +169,11 @@ def rmlpds(bot):
                 if post.num_comments == 0 and \
                     post.created_utc > (time.time() - (48 * 60 * 60)) and \
                         post.created_utc < (time.time() - (8 * 60 * 60)):
-                    bot.debug(
-                        u'rmlpds_checker.py',
-                        u"Adding post to list.",
-                        u"verbose"
-                    )
+                    bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
                     uncommented.append(post)
             uncommented = filter_posts(uncommented)
             if uncommented:
-                bot.debug(
-                    u'rmlpds_checker.py',
-                    u"There are %i uncommented posts." % len(uncommented),
-                    u"verbose"
-                )
+                bot.debug(__file__, log.format(u"There are %i uncommented posts." % len(uncommented)), u"verbose")
                 # There were posts, so set full timer
                 bot.memory["rmlpds_timer"] = time.time()
                 post = random.choice(uncommented)
@@ -199,13 +206,9 @@ def rmlpds(bot):
                 # There were no posts, so set a short timer
                 bot.memory["rmlpds_timer"] = time.time() - \
                     (_check_interval * 3 / 4)
-                bot.debug(
-                    u"rmlpds_checker",
-                    u"No uncommented posts found.",
-                    u"verbose"
-                )
+                bot.debug(__file__, log.format(u"No uncommented posts found."), u"verbose")
         else:
-            bot.debug(u"rmlpds_checker", u"Cannot check posts.", u"warning")
+            bot.debug(__file__, log.format(u"Cannot check posts."), u"warning")
     finally:
         bot.memory["rmlpds_timer_lock"].release()
 
@@ -228,7 +231,7 @@ def mlpds_check(bot, trigger):
         bot.say(_timeout_message)
         return
     new_posts = mlpds.get_new(limit=50)
-    #bot.debug("reddit:mlpds_check", pprint(dir(new_posts)), "verbose")
+    # bot.debug(__file__, log.format(pprint(dir(new_posts))), "verbose")
     uncommented = []
     for post in new_posts:
         if post.num_comments < 2 and \
@@ -284,4 +287,4 @@ def mlpds_check(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

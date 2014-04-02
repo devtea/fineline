@@ -8,17 +8,17 @@ http://bitbucket.org/tdreyer/fineline
 
 Depends on PRAW: https://github.com/praw-dev/praw
 """
-#TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
-#TODO add recency filter for announced reddit posts
-import re
-import traceback
+# TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
+# TODO add recency filter for announced reddit posts
+from __future__ import print_function
+
 from datetime import datetime
 import HTMLParser
+import re
 from socket import timeout
-import imp
-import sys
 import threading
 import time
+import traceback
 
 import praw
 import praw.errors
@@ -43,33 +43,48 @@ _fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
 _announce_interval = 300  # Seconds between announcing found posts
 
-#Use multiprocess handler for multiple bots on same server
+# Use multiprocess handler for multiple bots on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
 try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+
+try:
     import colors
 except:
+    import imp
+    import sys
     try:
-        print "trying manual import of colors"
-        fp, pathname, description = imp.find_module('colors',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("trying manual import of colors")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
         if fp:
             fp.close()
+
 try:
     import nicks
 except:
+    import imp
+    import sys
     try:
-        print "trying manual import of nicks"
-        fp, pathname, description = imp.find_module('nicks',
-                                                    ['./.willie/modules/']
-                                                    )
+        print("trying manual import of nicks")
+        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
@@ -104,10 +119,10 @@ def setup(bot):
                 bot.memory['reddit_msg_queue'][c] = []
             bot.memory['reddit-announce'][c][s] = []
         # Prepopulate list of channels
-        #for d in reddits_to_fetch:
-        #    bot.memory['reddit-announce'][d] = {}
-        #    for s in reddits_to_fetch[d]:
-        #        bot.memory['reddit-announce'][d][s] = []
+        # for d in reddits_to_fetch:
+        #     bot.memory['reddit-announce'][d] = {}
+        # for s in reddits_to_fetch[d]:
+        #     bot.memory['reddit-announce'][d][s] = []
 
 
 @commands('reddit_dump')
@@ -116,16 +131,28 @@ def reddit_dump(bot, trigger):
     if not trigger.owner:
         return
     with bot.memory['reddit_lock']:
-        bot.debug(u'>', u'reddit-announce length: %i' % len(bot.memory['reddit-announce']), u'always')
+        bot.debug(
+            __file__,
+            log.format(u'reddit-announce length: %i' % len(bot.memory['reddit-announce'])),
+            u'always')
         for channel in bot.memory['reddit-announce']:
-            bot.debug(u'>>>', u'Channel: %s' % channel, u'always')
-            bot.debug(u'>>>', u'Channel length: %i' % len(bot.memory['reddit-announce'][channel]), u'always')
+            bot.debug(__file__, log.format(u'Channel: %s' % channel), u'always')
+            bot.debug(
+                __file__,
+                log.format(u'Channel length: %i' % len(bot.memory['reddit-announce'][channel])),
+                u'always')
             for sub in bot.memory['reddit-announce'][channel]:
-                bot.debug(u'>>>>>>', u'Subreddit: %s' % sub, u'always')
-                bot.debug(u'>>>>>>', u'Channel length: %i' % len(bot.memory['reddit-announce'][channel][sub]), u'always')
+                bot.debug(
+                    __file__,
+                    log.format(u'Subreddit: %s' % sub),
+                    u'always')
+                bot.debug(
+                    __file__,
+                    log.format(u'Channel length: %i' % len(bot.memory['reddit-announce'][channel][sub])),
+                    u'always')
                 for id in bot.memory['reddit-announce'][channel][sub]:
-                    bot.debug(u'>>>>>>>>>', id, u'always')
-    #bot.debug(u'>>>', u'', u'always')
+                    bot.debug(__file__, log.format(id), u'always')
+    # bot.debug(__file__, log.format(u''), u'always')
     bot.reply(u"done")
 
 
@@ -145,7 +172,7 @@ def reddit_list(bot, trigger):
 
 @commands('reddit_add')
 def reddit_add(bot, trigger):
-    '''ADMIN: Add watched subreddit. Syntax = #Channel subredditname'''
+    '''ADMIN: Add watched subreddit. Syntax = # Channel subredditname'''
     if not trigger.owner:
         return
     try:
@@ -179,7 +206,7 @@ def reddit_add(bot, trigger):
 
 @commands('reddit_del')
 def reddit_del(bot, trigger):
-    '''ADMIN: Remove watched subreddit. Syntax = #Channel subredditname'''
+    '''ADMIN: Remove watched subreddit. Syntax = # Channel subredditname'''
     if not trigger.owner:
         return
     try:
@@ -231,8 +258,11 @@ def announce_posts(bot, trigger=None):
                 if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
                     bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
         except:
-            bot.debug(u'reddit:interval', u'Unhandled exception announcing new reddit posts: %s' % sys.exc_info()[0], u'always')
-            print traceback.format_exc()
+            bot.debug(
+                __file__,
+                log.format(u'Unhandled exception announcing new reddit posts: %s' % sys.exc_info()[0]),
+                u'always')
+            print(traceback.format_exc())
             return
 
 
@@ -255,8 +285,12 @@ def fetch_reddits(bot, trigger=None):
                 except timeout:
                     continue
                 except:
-                    bot.debug(u"reddit:fetch", u'Unhandled exception when fetching posts: %s [%s]' % (sys.exc_info()[0], trigger.bytes), u"verbose")
-                    print traceback.format_exc()
+                    bot.debug(
+                        __file__,
+                        log.format(u'Unhandled exception when fetching posts: %s [%s]' % (
+                            sys.exc_info()[0], trigger.bytes)),
+                        u"verbose")
+                    print(traceback.format_exc())
                     continue
                 posts.reverse()
                 if not bot.memory['reddit-announce'][channel][sub]:
@@ -266,10 +300,10 @@ def fetch_reddits(bot, trigger=None):
                     continue
                 for p in posts:
                     if p.id in bot.memory['reddit-announce'][channel][sub]:
-                        bot.debug(u'reddit.fetch', u'found id %s in history' % p.id, 'verbose')
+                        bot.debug(__file__, log.format(u'found id %s in history' % p.id), 'verbose')
                         continue
                     elif p.created_utc < time.time() - (10 * 60 * 60):
-                        bot.debug(u'reddit.fetch', u'found id %s too old' % p.id, 'verbose')
+                        bot.debug(__file__, log.format(u'found id %s too old' % p.id), 'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
@@ -277,13 +311,19 @@ def fetch_reddits(bot, trigger=None):
                     else:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
-                        bot.debug(u'reddit.fetch', u'%s %s %s' % (_util_html.unescape(p.title), p.author, p.url), 'verbose')
+                        bot.debug(
+                            __file__,
+                            log.format(u'%s %s %s' % (_util_html.unescape(p.title), p.author, p.url)),
+                            'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
     except:
-        bot.debug(u'reddit:fetch', u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0], u'always')
-        print traceback.format_exc()
+        bot.debug(
+            __file__,
+            log.format(u'Unhandled exception fetching new reddit posts: %s' % sys.exc_info()[0]),
+            u'always')
+        print(traceback.format_exc())
         return
 
 
@@ -332,7 +372,7 @@ def link_parser(subm, url=False, new=False):
 @rule(u'(.*?%s)|(.*?%s)' % (_url, _partial))
 def reddit_post(bot, trigger):
     """Posts basic info on reddit links"""
-    #If you change these, you're going to have to update others too
+    # If you change these, you're going to have to update others too
     user = ur'(^|\s|reddit.com)/u(ser)?/[^/\s)"\'\}\]]{3,20}'
     subm = (u'%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
             u'(/[^/\s)]{4,}/?))') % _url
@@ -352,7 +392,7 @@ def reddit_post(bot, trigger):
         return short
 
     def date_aniv(aniv, day=datetime.now()):
-        bot.debug(u'reddit.py:date_aniv', aniv, u'verbose')
+        bot.debug(__file__, log.format(aniv), u'verbose')
 
         def set_date(year, month, day):
             try:
@@ -374,7 +414,7 @@ def reddit_post(bot, trigger):
         if m1 == m2 and d1 == d2:
             diff = 0
         else:
-            #Assume neither year is leap year
+            # Assume neither year is leap year
             if m1 < m2 or (m1 == m2 and d1 < d2):
                 y1 = y2 + 1
             else:
@@ -393,23 +433,17 @@ def reddit_post(bot, trigger):
 
         # User Section
         if re.match(u'.*?%s' % user, trigger.bytes):
-            bot.debug(u"reddit:reddit_post", u"URL is user", u"verbose")
+            bot.debug(__file__, log.format(u"URL is user"), u"verbose")
             full_url = re.search(
                 ur'(https?://)?(www\.)?%s?%s' % (_url, user),
                 trigger.bytes
             ).group(0)
             if re.match(u'^/u', full_url):
                 full_url = u'http://reddit.com%s' % full_url
-            bot.debug(u"reddit:reddit_post",
-                      u'URL is %s' % full_url,
-                      u"verbose"
-                      )
+            bot.debug(__file__, log.format(u'URL is %s' % full_url), u"verbose")
             # If you change these, you're going to have to update others too
             username = re.split(u"u(ser)?/", full_url)[2].strip(u'/')
-            bot.debug(u"reddit:reddit_post",
-                      u'Username is %s' % username,
-                      u"verbose"
-                      )
+            bot.debug(__file__, log.format(u'Username is %s' % username), u"verbose")
             try:
                 redditor = rc.get_redditor(username)
             except (InvalidUser):
@@ -431,10 +465,7 @@ def reddit_post(bot, trigger):
             else:
                 # oh shit, something went wrong
                 cake_message = u""
-                bot.debug('reddit:reddit_post',
-                          'Date parsing broke!',
-                          'warning'
-                          )
+                bot.debug(__file__, log.format('Date parsing broke!'), 'warning')
             bot.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
                 colors.colorize(redditor.name, [u'purple']),
                 redditor.link_karma,
@@ -443,14 +474,14 @@ def reddit_post(bot, trigger):
 
         # Comment Section
         elif re.match(u'.*?%s' % cmnt, trigger.bytes):
-            bot.debug(u"reddit:reddit_post", u"URL is comment", u"verbose")
+            bot.debug(__file__, log.format(u"URL is comment"), u"verbose")
             try:
                 full_url = u''.join(
                     re.search(ur'(https?://)?(www\.)?%s' % cmnt,
                               trigger.bytes
                               ).groups())
             except TypeError:
-                #no match
+                # no match
                 return
             if not re.match(u'^http', full_url):
                 full_url = u'http://%s' % full_url
@@ -486,27 +517,20 @@ def reddit_post(bot, trigger):
             for n in _ignore:
                 if re.match(u'%s.*?' % n, trigger.nick):
                     return
-            bot.debug(u"reddit:reddit_post", u"URL is submission", u"verbose")
+            bot.debug(__file__, log.format(u"URL is submission"), u"verbose")
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
                                  trigger.bytes
                                  ).group(0)
             if not re.match(u'^http', full_url):
                 full_url = u'http://%s' % full_url
-            bot.debug(u"reddit:reddit_post",
-                      u"matched is %s" % full_url,
-                      u"verbose"
-                      )
+            bot.debug(__file__, log.format(u"matched is %s" % full_url), u"verbose")
             results = _re_shorturl.search(full_url)
             if results:
-                bot.debug(u"reddit:reddit_post", u"URL is short", u'verbose')
+                bot.debug(__file__, log.format(u"URL is short"), u'verbose')
                 post_id = results.groups()[0]
-                bot.debug(u'reddit:reddit_post',
-                          u'ID is %s' % post_id,
-                          u'verbose')
+                bot.debug(__file__, log.format(u'ID is %s' % post_id), u'verbose')
             else:
-                bot.debug(u"reddit:reddit_post",
-                          u'URL is %s' % full_url,
-                          u"verbose")
+                bot.debug(__file__, log.format(u'URL is %s' % full_url), u"verbose")
             try:
                 if results:
                     page = rc.get_submission(submission_id=post_id)
@@ -523,44 +547,41 @@ def reddit_post(bot, trigger):
 
         # Subreddit Section
         elif re.match(u'.*?%s' % subr, trigger.bytes):
-            bot.debug(u"reddit:reddit_post", u"URL is subreddit", u"verbose")
+            bot.debug(__file__, log.format(u"URL is subreddit"), u"verbose")
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
                                  trigger.bytes
                                  ).group(0)
-            bot.debug(u"reddit:reddit_post",
-                      u'URL is %s' % full_url,
-                      u"verbose"
-                      )
+            bot.debug(__file__, log.format(u'URL is %s' % full_url), u"verbose")
             # TODO pull back and display appropriate information for this.
             # I honestly don't know what useful info there is here!
             # So here's a stub
             sub_name = full_url.strip(u'/').rpartition(u'/')[2]
-            bot.debug(u"reddit:reddit_post", sub_name, u"verbose")
+            bot.debug(__file__, log.format(sub_name), u"verbose")
             try:
-                #sub = rc.get_subreddit(sub_name)
+                # sub = rc.get_subreddit(sub_name)
                 pass
             except InvalidSubreddit:
-                #bot.say(_bad_reddit_msg)
+                # bot.say(_bad_reddit_msg)
                 return
             except HTTPError:
-                #bot.say(_error_msg)
+                # bot.say(_error_msg)
                 return
             except timeout:
-                #bot.say(_timeout_message)
+                # bot.say(_timeout_message)
                 return
-            #do stuff?
+            # do stuff?
         # Invalid URL Section
         else:
-            bot.debug(u"reddit:reddit_post",
-                      u"Matched URL is invalid",
-                      u"warning"
-                      )
-            #fail silently
+            bot.debug(__file__, log.format(u"Matched URL is invalid"), u"warning")
+            # fail silently
     except:
-        bot.debug(u'reddit', u'Unhandled exception parsing reddit link: %s' % sys.exc_info()[0], u'always')
-        print traceback.format_exc()
+        bot.debug(
+            __file__,
+            log.format(u'Unhandled exception parsing reddit link: %s' % sys.exc_info()[0]),
+            u'always')
+        print(traceback.format_exc())
         return
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

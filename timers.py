@@ -6,6 +6,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 
 """
+from __future__ import print_function
 
 from datetime import timedelta
 import re
@@ -14,6 +15,22 @@ from time import time
 from types import IntType, FloatType, BooleanType
 
 from willie.module import commands, event, example, interval, rule
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 _rtime = re.compile(ur'^((\d{1,2}:){1,2})?\d{1,2}$')
 _rquiet = re.compile(ur'(^q$)|(^quiet$)|(^p$)|(^private$)', flags=re.I)
@@ -107,9 +124,9 @@ def new_timer(bot, trigger):
             return
         else:
             now = time()
-            bot.debug(u'timers_timer.py', u'now = %f' % now, u'verbose')
+            bot.debug(__file__, log.format(u'now = %f' % now), u'verbose')
             possible_timer = trigger.args[1].split()
-            bot.debug(u'timers_timer.py', possible_timer, u'verbose')
+            bot.debug(__file__, log.format(possible_timer), u'verbose')
             if len(possible_timer) > 4:
                 bot.reply(
                     (u"Too many arguments! Try `%s: help timer` " +
@@ -117,9 +134,9 @@ def new_timer(bot, trigger):
                 )
                 return
             else:
-                bot.debug(u'timers_timer.py', u'POP!', u'verbose')
+                bot.debug(__file__, log.format(u'POP!'), u'verbose')
                 possible_timer.pop(0)
-                bot.debug(u'timers_timer.py', possible_timer, u'verbose')
+                bot.debug(__file__, log.format(possible_timer), u'verbose')
                 # ["00:00:00", "00:00:00", "quiet"]
                 # ["00:00:00", "quiet", "00:00:00"]
                 # ["00:00:00", "00:00:00"]
@@ -256,18 +273,10 @@ def timer_check(bot):
     bot.memory['user_timers_lock'].acquire()
     try:
         for chan in bot.memory['user_timers']:
-            bot.debug(
-                u'timers_timer:timer_check',
-                u"found channel %s" % chan,
-                u'verbose'
-            )
+            bot.debug(__file__, log.format(u"found channel %s" % chan), u'verbose')
             for user in bot.memory['user_timers'][chan]:
                 n, q, e, r = bot.memory['user_timers'][chan][user]
-                bot.debug(
-                    u'timers_timer:timer_check',
-                    u'nick=%s  quiet=%r, time=%f, remind=%r' % (n, q, e, r),
-                    u'verbose'
-                )
+                bot.debug(__file__, log.format(u'nick=%s  quiet=%r, time=%f, remind=%r' % (n, q, e, r)), u'verbose')
                 if e < now:
                     del bot.memory['user_timers'][chan][user]
                     if q:
@@ -295,7 +304,7 @@ def timer_del(bot, trigger):
     # this will be called from new_timer,  assume it is a correct call
     if trigger.admin:
         cmd = trigger.args[1].split()
-        bot.debug(u'', cmd, u'verbose')
+        bot.debug(__file__, log.format(cmd), u'verbose')
         if len(cmd) == 2:
             if trigger.nick.lower() in bot.memory['user_timers'][
                     trigger.args[0]]:
@@ -321,11 +330,11 @@ def timer_status(bot, trigger):
     if trigger.nick.lower() in bot.memory['user_timers'][trigger.args[0]]:
         n, q, e, r = bot.memory['user_timers'][trigger.args[0]][
             trigger.nick.lower()]
-        bot.debug('', e - time(), 'verbose')
+        bot.debug(__file__, log.format(e - time()), 'verbose')
         bot.reply("You have %s remaining." % format_sec(e - time()))
     else:
         bot.reply("You don't have a timer.")
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())
