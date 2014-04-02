@@ -125,6 +125,9 @@ def ytget(bot, trigger, uri):
 @example('.yt how to be a nerdfighter FAQ')
 def ytsearch(bot, trigger):
     """Search YouTube"""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     #modified from ytinfo: Copyright 2010-2011, Michael Yanovich, yanovich.net, Kenneth Sham.
     if not trigger.group(2):
         return
@@ -188,6 +191,9 @@ def ytlast(bot, trigger):
     '''
     Get latest video of a specified user.
     '''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if not trigger.group(2):
         return
     uri = 'https://gdata.youtube.com/feeds/api/users/' + trigger.group(2).encode('utf-8') + '/uploads?max-results=1&alt=json&v=2'

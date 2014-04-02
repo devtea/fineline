@@ -60,6 +60,9 @@ def mlfw_search(bot, terms):
 @example(u"!mlfw tag one, tag two, tag three")
 def mlfw(bot, trigger):
     """Searches mlfw and returns the top result with all tags specified."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u"Triggered =============="), u"verbose")
     bot.debug(__file__, log.format(trigger.groups()[1]), u"verbose")
     list = trigger.groups()[1]

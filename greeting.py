@@ -227,6 +227,9 @@ def join_watcher(bot, trigger):
         return
     if 'greet_lock' not in bot.memory:
         return
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     with bot.memory['greet_lock']:
         try:
             nick = nicks.NickPlus(trigger.nick, trigger.host.lstrip('~'))

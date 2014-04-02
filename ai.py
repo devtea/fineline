@@ -43,6 +43,9 @@ random.seed()
 @rule(r'^.*?\bderp\b')
 def derp(bot, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if trigger.owner:
         prob = 1
     else:
@@ -69,6 +72,9 @@ def derp(bot, trigger):
 )
 def ty(bot, trigger):
     '''Politely replies to thank you's.'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if not set(trigger.args[1].lower().split()).intersection(set([u'not',
                                                                   u'no',
                                                                   u'at'])):
@@ -88,6 +94,9 @@ def ty(bot, trigger):
 @rule(u'^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)' % basic_woo)
 def woo(bot, trigger):
     '''Sometimes replies to a woo with an emote'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if trigger.owner:
         prob = 1
     else:
@@ -120,6 +129,9 @@ def woo(bot, trigger):
 )
 def badbot(bot, trigger):
     '''Appropriate replies to chastening'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     time.sleep(random.uniform(1, 3))
     if trigger.owner:
         bot.say(random.choice([
@@ -156,6 +168,9 @@ def badbot(bot, trigger):
 
 @rule(u"^!swo[o]+sh")
 def swish(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
         bot.debug(__file__, log.format(trigger.group(0)), u"verbose")
@@ -171,6 +186,9 @@ def swish(bot, trigger):
     u"[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
 )
 def slapped(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     time.sleep(random.uniform(1, 3))
     bot.reply(random.choice([
         u'Stop that!',
@@ -193,6 +211,9 @@ hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
 @rate(300)
 def hi(bot, trigger):
     """Replies to greetings."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     message = random.choice([u"Hi", u"Hello", u"Yo", u"Hey", u"Ahoy"])
     punctuation = random.choice([u".", u"", u"!"])
     time.sleep(random.uniform(0, 3))
@@ -206,6 +227,9 @@ def hi(bot, trigger):
 @rate(300)
 def isbot(bot, trigger):
     """Replies to queries about fineline being a bot"""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     time.sleep(random.uniform(1, 2))
     bot.say(random.choice(
         [u"Nope, I'm just fast.",
@@ -247,6 +271,9 @@ night_universal = ur".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
 @rate(1000)
 def night(bot, trigger):
     """Responds to people saying good night"""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if re.match(u'.*?night', trigger.bytes):
         message = random.choice([u"Goodnight", u"'Night", u"Later", u"Bye"])
     else:
@@ -280,6 +307,9 @@ smart_action.priority = 'medium'
 
 @rule(ur'^$nickname\s?[!\.]\s?$')
 def nick(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     message = trigger.nick
     if re.match(bot.nick.upper(), trigger.bytes):
         message = message.upper()
@@ -291,6 +321,9 @@ def nick(bot, trigger):
 
 @rule(u'^\001ACTION awkwardly tries to flirt with Fineline.')
 def flirt(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if trigger.nick != Nick('hushmachine'):
         return
     time.sleep(random.uniform(2, 5))

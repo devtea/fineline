@@ -35,6 +35,9 @@ except:
 def choose(bot, trigger):
     """Returns a random selection of comma separated items provided to it.
     Chooses a subset if the first argument is an integer."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
 
     bot.debug(__file__, log.format(u"=============="), u"verbose")
     bot.debug(__file__, log.format(u"Module called."), u"verbose")

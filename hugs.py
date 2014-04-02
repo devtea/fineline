@@ -37,6 +37,9 @@ except:
 @rate(90)
 def hugback(bot, trigger):
     """Returns a 'hug' action directed at the bot."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.action(random.choice([
         u'hugs %s back' % trigger.nick,
         u'returns the hug',
@@ -56,6 +59,9 @@ def hugback(bot, trigger):
       )
 def hug_intercept(bot, trigger):
     """Intercepts hugs from another bot"""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u"Caught hug."), u"verbose")
     # First make sure we're intercepting the proper user's actions
     if re.match("hushmachine", trigger.nick):

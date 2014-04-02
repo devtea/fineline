@@ -59,6 +59,9 @@ def setup(bot):
 
 def get_ep(bot, se):
     """Accepts a list containing season and episode"""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if len(se) == 2 and se[0] in bot.memory['episodes'] and se[1] in bot.memory['episodes'][se[0]]:
             title = bot.memory['episodes'][se[0]][se[1]]
             return u"The episode is season %i, episode %i, %s." % (
@@ -166,6 +169,9 @@ def add_ep(bot, trigger):
 @example(u'!episode S02E11')
 def episode(bot, trigger):
     """Returns a specified episode by season and episode."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u"Triggered"), u"verbose")
     # test the arguments returned, e.g. ['.episode', 'S01E03']
     if len(trigger.args[1].split()) == 2:
@@ -192,6 +198,9 @@ def episode(bot, trigger):
 @commands(u'randep', u'rep', u'randomep')
 def randep(bot, trigger):
     """Returns a random episode."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u"Triggered"), u"verbose")
     season = random.randint(1, len(bot.memory['episodes']))
     episode = random.randint(1, len(bot.memory['episodes'][season]))

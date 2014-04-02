@@ -841,6 +841,9 @@ def more_help(bot, trigger):
 
 @commands('streams')
 def streams_alias(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     list_streams(bot, 'live')
 
 
@@ -849,6 +852,9 @@ def sceencasting(bot, trigger):
     '''Manage various livestreams from multiple services.
  Usage: !live [list/add/del/[un]alias/[un]nsfw/[un]subscribe/]
  [options] | See '!live help' for detailed usage.'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if len(trigger.args[1].split()) == 1:  # E.G. "!live"
         list_streams(bot, 'live')
         return
@@ -1437,6 +1443,10 @@ def announcer(bot):
             bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.alias, strm.url))
         else:
             bot.msg(chan, 'Hey everyone, %s has started streaming at %s' % (strm.name, strm.url))
+
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u'Announcer waking up'), u'verbose')
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval

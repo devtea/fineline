@@ -26,7 +26,7 @@ def setup(bot):
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
         try:
-            #if our tables don't exist, create them
+            # if our tables don't exist, create them
             cur.execute('''CREATE TABLE IF NOT EXISTS karma
                            (tag text, score int)''')
             dbcon.commit()
@@ -44,6 +44,9 @@ def setup(bot):
 @priority(u'low')
 @rule(u'[^!]*(\+\+|--)$')
 def karmaRule(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     if trigger.sender[0] != '#':
         return
     if trigger.nick in _ignore:
@@ -53,7 +56,7 @@ def karmaRule(bot, trigger):
         return
     shortobj = obj[:-2].lower().strip()
 
-    #don't let users karma themselves
+    # don't let users karma themselves
     if shortobj.lower() == trigger.nick.lower().strip('_`'):
         return
 
@@ -82,6 +85,9 @@ def timecheck(bot, trigger):
 @commands('karma')
 @example(u'!karma fzoo')
 def karma(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     obj = trigger.bytes[7:].lower().strip()
     if not obj:
         return

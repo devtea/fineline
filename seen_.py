@@ -247,6 +247,9 @@ def seen_recorder(bot, trigger):
 @example(u'!seen tdreyer1')
 def seen(bot, trigger):
     '''Reports the last time a nick was seen.'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u'triggered custom module'), u'verbose')
     if len(trigger.args[1].split()) == 1:
         bot.reply(u"Seen who?")

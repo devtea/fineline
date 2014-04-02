@@ -39,6 +39,9 @@ def setup(bot):
 
 @commands('uptime')
 def uptime(bot, trigger):
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     now = int(time.time())
     then = bot.memory["uptime"]
     diff = str(timedelta(seconds=now - then))

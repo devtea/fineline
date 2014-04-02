@@ -61,6 +61,9 @@ def slow_room(bot):
     period of time.
 
     """
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
 
     bot.memory["slow_timer_lock"].acquire()
     try:
@@ -241,6 +244,9 @@ def last_activity(bot, trigger):
 @commands(u'pony', u'pon[ie]')
 def pony(bot, trigger):
     '''Returns pony pic'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u'Triggered'), u'verbose')
     bot.debug(__file__, log.format(trigger.sender), u'verbose')
     cute(bot, trigger.sender, is_timer=False)

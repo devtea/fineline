@@ -139,6 +139,9 @@ def prbooru_search(bot, tags=None, rand=True):
 @example(u'`!pr random` or `!pr tag1, tag two, three`')
 def prbooru(bot, trigger):
     ''' Pulls images from the Pony Reference Booru at random or by tag'''
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     bot.debug(__file__, log.format(u'-' * 20), u'verbose')
     if not trigger.group(2):
         # TODO give help

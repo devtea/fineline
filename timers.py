@@ -100,6 +100,9 @@ def new_timer(bot, trigger):
             reminder
         )
 
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     source = trigger.args[0]  # e.g. '#fineline_testing'
     bot.memory['user_timers_lock'].acquire()
     try:

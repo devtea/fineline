@@ -73,6 +73,9 @@ def weighted_choice(weighted):
 @commands(u'prompt')
 def prompt(bot, trigger):
     """Gives a short drawing prompt using ponies from the show."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
 
     bot.debug(__file__, log.format(u"=============="), u"verbose")
     bot.debug(__file__, log.format(u"Module started"), u"verbose")

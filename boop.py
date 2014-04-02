@@ -123,6 +123,9 @@ def setup(bot):
 @commands(u'boop')
 def boop(bot, trigger):
     """Boops."""
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
     try:
         target = nicks.NickPlus(trigger.args[1].split()[1])
     except IndexError:
