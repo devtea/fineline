@@ -12,11 +12,14 @@ http://bitbucket.org/tdreyer/fineline
 # comparison.
 from __future__ import print_function
 
-from willie.tools import Nick
-from willie.module import rule, event, commands, unblockable, thread, priority
+import re
 import threading
 import time
-import re
+import traceback
+
+
+from willie.tools import Nick
+from willie.module import rule, event, commands, unblockable, thread, priority
 
 re_hostname = re.compile(r':\S+\s311\s\S+\s(\S+)\s\S+\s(\S+)\s\*')
 
@@ -129,10 +132,11 @@ def names(bot, trigger):
     bot.debug(__file__, log.format(u'Caught NAMES response'), u'verbose')
     try:
         with bot.memory['nick_lock']:
+            bot.debug(__file__, log.format('trigger:', trigger), 'verbose')
             unprocessed_nicks = re.split(' ', trigger)
             stripped_nicks = [i.lstrip('+%@&~') for i in unprocessed_nicks]
             nicks = [NickPlus(i, None) for i in stripped_nicks]
-            channel = re.findall('# \S*', buf)[0]
+            channel = re.findall('#\S*', buf)[0]
             if not channel:
                 return
             bot.memory['chan_nicks'][channel] = nicks
@@ -147,10 +151,8 @@ def names(bot, trigger):
             # time.sleep(3)  # Wait a bit for other threads to spam whoissses too
         bot.debug(__file__, log.format(u'Done refeshing hosts for ', channel), 'verbose')
     except:
-        bot.debug(__file__,
-                  log.format(u'ERROR: Unprocessable NAMES response: ', buf),
-                  u'always'
-                  )
+        bot.debug(__file__, log.format(u'ERROR: Unprocessable NAMES response: ', buf), u'always')
+        print(traceback.format_exc())
 
 
 @rule(u'.*')
@@ -173,6 +175,7 @@ def join(bot, trigger):
     # list_nicks(bot, trigger)
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
+        print(traceback.format_exc())
         refresh_nicks(bot)
 
 
@@ -196,8 +199,8 @@ def nick(bot, trigger):
                     [new_nick if old_nick.lower() == i.lower() else i for i in bot.memory['chan_nicks'][chan]]
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
+        print(traceback.format_exc())
         refresh_nicks(bot)
-    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -220,8 +223,8 @@ def quit(bot, trigger):
                     bot.debug(__file__, log.format(u'Didn\'t find %s in %s to remove.' % (name, chan)), 'verbose')
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
+        print(traceback.format_exc())
         refresh_nicks(bot)
-    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -244,8 +247,8 @@ def kick(bot, trigger):
                     bot.memory['chan_nicks'][trigger.sender].remove(Nick(name.lower()))
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
+        print(traceback.format_exc())
         refresh_nicks(bot)
-    # list_nicks(bot, trigger)
 
 
 @rule(u'.*')
@@ -268,8 +271,8 @@ def part(bot, trigger):
                     bot.memory['chan_nicks'][trigger.sender].remove(Nick(name.lower()))
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'always')
+        print(traceback.format_exc())
         refresh_nicks(bot)
-    # list_nicks(bot, trigger)
 
 
 if __name__ == "__main__":
