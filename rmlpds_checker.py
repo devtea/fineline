@@ -24,8 +24,8 @@ from willie.module import interval, commands, rate
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
-_channels = [u'# reddit-mlpds', u'#fineline_testing']
-_INCLUDE = ['# reddit-mlpds', '#fineline_testing']
+_channels = [u'#reddit-mlpds', u'#fineline_testing']
+_INCLUDE = ['#reddit-mlpds', '#fineline_testing']
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."

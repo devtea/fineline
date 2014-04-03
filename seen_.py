@@ -20,11 +20,11 @@ from willie.tools import Nick
 from willie.module import commands, example, priority, rule
 
 log_dir = u''
-log_regex = re.compile(u'^# reddit-mlpds_\d{8}\.log$')
+log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
 line_regex = re.compile(u'^\[(\d\d:\d\d:\d\d)\] <([^>]+)> (.*)$')
 chan_regex = re.compile(u'^(.*?)_\d{8}$')
 cen = timezone(u"US/Central")  # log timezone
-_EXCLUDE = ['# reddit-mlpds-spoilers']
+_EXCLUDE = ['#reddit-mlpds-spoilers']
 
 
 def escape(ucode):

@@ -237,7 +237,7 @@ def kick(bot, trigger):
     bot.debug(__file__, log.format(u'Caught KICK by ', trigger.nick), u'verbose')
     try:
         name = Nick(trigger)  # Trigger comes in as trigger==kicked, trigger.nick==kicker
-        if not trigger.sender.startswith('# '):
+        if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
                 if trigger == bot.nick:

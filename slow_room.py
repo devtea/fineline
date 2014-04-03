@@ -37,7 +37,7 @@ except:
 
 # Wait time in seconds before the bot will pipe up
 _WAIT_TIME = (random.uniform(23, 42) * 60)
-_INCLUDE = [u'# reddit-mlpds']
+_INCLUDE = [u'#reddit-mlpds']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
@@ -228,7 +228,7 @@ def features(bot, channel):
 @rule(u'.*')
 def last_activity(bot, trigger):
     """Keeps track of the last activity for a room"""
-    if trigger.sender.startswith("# ") and \
+    if trigger.sender.startswith("#") and \
             trigger.sender in _INCLUDE:
         bot.debug(__file__, log.format(trigger.sender), u"verbose")
         if 'slow_timer_lock' not in bot.memory:

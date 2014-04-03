@@ -172,7 +172,7 @@ def reddit_list(bot, trigger):
 
 @commands('reddit_add')
 def reddit_add(bot, trigger):
-    '''ADMIN: Add watched subreddit. Syntax = # Channel subredditname'''
+    '''ADMIN: Add watched subreddit. Syntax = #Channel subredditname'''
     if not trigger.owner:
         return
     try:
@@ -206,7 +206,7 @@ def reddit_add(bot, trigger):
 
 @commands('reddit_del')
 def reddit_del(bot, trigger):
-    '''ADMIN: Remove watched subreddit. Syntax = # Channel subredditname'''
+    '''ADMIN: Remove watched subreddit. Syntax = #Channel subredditname'''
     if not trigger.owner:
         return
     try:
