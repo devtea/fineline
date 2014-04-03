@@ -227,7 +227,7 @@ def seen_nuke(bot, trigger):
 @priority(u'low')
 @rule(u'.*')
 def seen_recorder(bot, trigger):
-    if not trigger.args[0].startswith(u'# ') or trigger.sender in _EXCLUDE:
+    if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
         return  # ignore priv msg and excepted rooms
     nn = Nick(trigger.nick)
     now = time()
