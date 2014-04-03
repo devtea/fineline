@@ -165,7 +165,7 @@ def join(bot, trigger):
     bot.debug(__file__, log.format(u'Caught JOIN by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
-        if not trigger.sender.startswith('# '):
+        if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
             # Coretasks should take care of adding channel and NAMES so we take
@@ -261,7 +261,7 @@ def part(bot, trigger):
     bot.debug(__file__, log.format(u'Caught PART by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
-        if not trigger.sender.startswith('# '):
+        if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
                 if trigger.nick == bot.nick:
