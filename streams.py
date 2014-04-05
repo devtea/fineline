@@ -68,7 +68,7 @@ _services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
              'ustream.tv']
 _SUB = ('?',)  # This will be replaced in setup()
 # TODO move this to memory
-_exclude = ['#reddit-mlpds-bots', '#fineline_testing', '#reddit-mlpds-spoilers']
+_include = ['#reddit-mlpds', '#fineline_testing']
 
 
 class stream(object):
@@ -1479,9 +1479,7 @@ def announcer(bot):
                     pass
         for s in [a for a in bot.memory['feat_streams']
                   if a.live and a.updated > time.time() - _announce_interval]:
-            for n in bot.channels:
-                if n.lower() in [c.lower for c in _exclude]:
-                    continue
+            for n in [x for x in bot.channels if x in _include]:
                 if n not in bot.memory['streamMsg']:
                     bot.memory['streamMsg'][n] = {}
                 if s not in bot.memory['streamMsg'][n]:
