@@ -164,11 +164,14 @@ def reddit_list(bot, trigger):
         return
     with bot.memory['reddit_lock']:
         subs = []
-        for c in bot.memory['reddit-announce']:
-            for s in bot.memory['reddit-announce'][c]:
-                subs.append(s)
-            bot.reply(u'Channel: %s Subs: %s' % (c, u', '.join(subs)))
-            subs = []
+        if bot.memory['reddit-announce']:
+            for c in bot.memory['reddit-announce']:
+                for s in bot.memory['reddit-announce'][c]:
+                    subs.append(s)
+                bot.reply(u'Channel: %s Subs: %s' % (c, u', '.join(subs)))
+                subs = []
+        else:
+            bot.reply(u'Not watching any subreddits.')
 
 
 @commands('reddit_add')
@@ -320,13 +323,13 @@ def fetch_reddits(bot, trigger=None):
                     else:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
-                        bot.debug(
-                            __file__,
-                            log.format(u'%s %s %s' % (_util_html.unescape(p.title), p.author, p.url)),
-                            'verbose')
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        bot.debug(
+                            __file__,
+                            log.format(u'%s %s %s' % (_util_html.unescape(p.title.encode('utf-8')), p.author, p.url)),
+                            'verbose')
     except:
         bot.debug(
             __file__,
