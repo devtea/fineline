@@ -274,7 +274,7 @@ def announce_posts(bot, trigger=None):
 @commands('reddit_fetch')
 def fetch_reddits(bot, trigger=None):
     '''ADMIN: Manual fetching of the auto-announce posts'''
-    if not trigger.owner and not trigger.admin and not trigger.isop:
+    if trigger and not trigger.owner and not trigger.admin and not trigger.isop:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
     try:
