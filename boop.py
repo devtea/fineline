@@ -135,9 +135,9 @@ def boop(bot, trigger):
             bot.action(random.choice(_boop) % trigger.nick)
         elif target == bot.nick or target.lower() in ['yourself', 'you']:
             bot.action(random.choice(_self))
-        elif target in _everyone:
+        elif target.lower() in _everyone:
             bot.action(random.choice(_all))
-        elif target in _anyone:
+        elif target.lower() in _anyone:
             target = bot.nick
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
