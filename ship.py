@@ -10,6 +10,7 @@ from __future__ import print_function
 import bisect
 import random
 import threading
+from types import IntType
 
 from willie.module import commands
 
@@ -29,6 +30,23 @@ except:
         if fp:
             fp.close()
 
+try:
+    import nicks
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of nicks")
+        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
+        nicks = imp.load_source('nicks', pathname, fp)
+        sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
+
+_front = ['any', 'some']
+_back = ['one', 'body', 'pony', 'poni', 'pone']
+_anyone = [a + b for a in _front for b in _back]
 _reply_list = [u'%s x %s',
                u'%s and %s didn\'t choose the huglife, the huglife chose them.',
                u'%s and %s can\'t keep their hooves off each other',
@@ -81,14 +99,55 @@ def weighted_choice(weighted):
 @commands(u'ship')
 def ship(bot, trigger):
     """Returns a somewhat random shipping pair."""
-    i1 = weighted_choice(bot.memory['pony_list'])
+    # Don't do anything if the bot has been shushed
+    if bot.memory['shush']:
+        return
+    include_nicks = False
+    try:
+        target = nicks.NickPlus(trigger.args[1].split()[1])
+    except IndexError:
+        target = None
+    else:
+        if target.lower() in ['me', 'myself']:
+            target = trigger.nick
+            include_nicks = True
+        elif target.lower() in ['yourself', 'you']:
+            target = bot.nick
+            include_nicks = True
+        elif target.lower() in _anyone:
+            target = random.choice(nicks.in_chan(bot, trigger.sender))
+            include_nicks = True
+        elif nicks.in_chan(bot, trigger.sender, target):
+            # Get properly formatted nick from channel nick list
+            nick_list = []
+            nick_list.extend(nicks.in_chan(bot, trigger.sender))
+            i = nicks.in_chan(bot, trigger.sender).index(target)
+            target = nick_list.pop(i)
+
+            bot.debug(__file__, log.format("target is: ", target), 'verbose')
+            include_nicks = True
+        else:
+            bot.debug(__file__, log.format('Target not found in room.'), 'verbose')
+            target = None
+
+    if target or include_nicks:
+        i1 = target
+    else:
+        i1 = weighted_choice(bot.memory['pony_list'])
     i2 = i1
-    while i2 == i1:
-        i2 = weighted_choice(bot.memory['pony_list'])
-    pair = (bot.memory['pony_list'][i1][0],
-            bot.memory['pony_list'][i2][0]
-            )
-    bot.reply(random.choice(_reply_list) % pair)
+    if include_nicks and random.uniform(0, 1) > 0.5:
+        while i2 == i1:
+            i2 = random.choice(nicks.in_chan(bot, trigger.sender))
+        pair = [i1, i2]
+    else:
+        while unicode(i2) == unicode(i1):
+            i2 = weighted_choice(bot.memory['pony_list'])
+        if not isinstance(i1, IntType):
+            pair = [i1, bot.memory['pony_list'][i2][0]]
+        else:
+            pair = [bot.memory['pony_list'][i1][0], bot.memory['pony_list'][i2][0]]
+    random.shuffle(pair)
+    bot.reply(random.choice(_reply_list) % (pair[0], pair[1]))
 
 
 @commands(u'ship_delname')
