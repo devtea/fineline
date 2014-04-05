@@ -184,21 +184,21 @@ def greeting_initialize(bot, trigger):
 @commands('greet_nuke')
 def greet_nuke(bot, trigger):
     '''ADMIN: Nuke the greeting database'''
-    if trigger.owner:
-        bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
-        with bot.memory['greet_lock']:
-            bot.memory['chan_host_hist'] = {}
-            db = bot.db.connect()
-            cur = db.cursor()
-            try:
-                cur.execute('delete from chan_host_hist')
-                db.commit()
-            finally:
-                cur.close()
-                db.close()
-        bot.reply(u"Done!")
-    else:
-        bot.debug(__file__, log.format(u'%s(%s) just tried to use the !nuke command!' % (trigger.nick, trigger.host)), u'always')
+    if not trigger.owner:
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to nuke the greet database!'), 'warning')
+        return
+    bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
+    with bot.memory['greet_lock']:
+        bot.memory['chan_host_hist'] = {}
+        db = bot.db.connect()
+        cur = db.cursor()
+        try:
+            cur.execute('delete from chan_host_hist')
+            db.commit()
+        finally:
+            cur.close()
+            db.close()
+    bot.reply(u"Done!")
 
 
 @commands(u'greet_dump')
@@ -265,7 +265,7 @@ def join_watcher(bot, trigger):
 @commands('greet_add', 'greeting_add')
 def greeting_add(bot, trigger):
     '''ADMIN: Add greetings for channels. Syntax: Channel Notice(y/n) Greeting to say'''
-    if not trigger.owner:
+    if not trigger.admin and not trigger.owner and not trigger.isop:
         return
     try:
         triggers = trigger.split()[1:]
@@ -304,7 +304,7 @@ def greeting_add(bot, trigger):
 @commands('greet_del', 'greeting_del')
 def greeting_del(bot, trigger):
     '''ADMIN: Removes greetings for channels. Syntax = #Channel'''
-    if not trigger.owner:
+    if not trigger.admin and not trigger.owner and not trigger.isop:
         return
     triggers = trigger.split()[1:]
     if len(triggers) > 1:
@@ -333,7 +333,7 @@ def greeting_del(bot, trigger):
 @commands('greet_list', 'greeting_list')
 def greeting_list(bot, trigger):
     '''ADMIN: Lists greeting for a channel.'''
-    if not trigger.owner:
+    if not trigger.admin and not trigger.owner and not trigger.isop:
         return
     triggers = trigger.split()[1:]
     bot.debug(__file__, log.format(triggers), 'verbose')

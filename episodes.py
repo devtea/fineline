@@ -73,6 +73,9 @@ def get_ep(bot, se):
 def ep_del(bot, trigger):
     """ADMIN: Deletes a specified episode from the database."""
     # test the arguments returned, e.g. ['.episode', 'S01E03']
+    if not trigger.owner:
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to delete an episode!'), 'warning')
+        return
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
         if re.match(ur'^S\d{1,2}E\d{1,2}$',
@@ -114,6 +117,9 @@ def ep_del(bot, trigger):
 @example(u'!ep-add S00E00 This is not a title')
 def add_ep(bot, trigger):
     """ADMIN: Adds an episode to the database."""
+    if not trigger.owner:
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to add an episode!'), 'warning')
+        return
     bot.debug(__file__, log.format(u"add_ep triggered"), u"verbose")
     if not trigger.admin:
         bot.debug(__file__, log.format(trigger.nick, u" just tried to add an episode..."), u"always")

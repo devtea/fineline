@@ -650,7 +650,8 @@ def setup(bot):
 
 @commands('live_reload')
 def load_from_db(bot, trigger=None):
-    if trigger and not trigger.admin:
+    """ADMIN: Reload live streams from database"""
+    if trigger and not trigger.owner:
         return
     bot.debug(__file__, log.format(u'Reloading from DB'), 'verbose')
     bot.memory['streams'] = []
@@ -1136,10 +1137,10 @@ def publish_lists(bot, trigger=None):
         previous_full_list = ''
         bot.debug(
             __file__,
-            log.format(u'IO error grabbing "list_main_dest_path" file contents. ',
+            log.format(
+                u'IO error grabbing "list_main_dest_path" file contents. ',
                 u'File may not exist yet'),
-            u'warning'
-        )
+            u'warning')
 
     try:
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'r') as f:
@@ -1148,10 +1149,10 @@ def publish_lists(bot, trigger=None):
         previous_feat_list = ''
         bot.debug(
             __file__,
-            log.format(u'IO error grabbing "list_feat_dest_path" file contents. ',
+            log.format(
+                u'IO error grabbing "list_feat_dest_path" file contents. ',
                 u'File may not exist yet'),
-            u'warning'
-        )
+            u'warning')
 
     # Generate full list HTML
     live_list = []
@@ -1256,6 +1257,8 @@ def remove_stream(bot, user):
 
 @commands('update', 'reload', 'refresh')
 def update_streams(bot, trigger):
+    if not trigger.owner:
+        return
     with bot.memory['streamLock']:
         bot.reply(u'updating streams')
         for i in bot.memory['streams']:
@@ -1627,7 +1630,7 @@ def stats(bot):
 
 @commands('db_maint')
 def update_database_tables(bot, trigger):
-    if not trigger.admin:
+    if not trigger.owner:
         return
     with bot.memory['streamLock']:
         dbcon = bot.db.connect()  # sqlite3 connection

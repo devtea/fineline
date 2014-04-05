@@ -91,6 +91,8 @@ def refresh_nicks(bot):
 
 @commands('list')
 def list_nicks(bot, trigger):
+    if not trigger.owner and not trigger.admin and not trigger.isop:
+        return
     for i in bot.memory['chan_nicks']:
         try:
             print('%s: %r' % (i, [(n, n.hostname) for n in bot.memory['chan_nicks'][i]]))
@@ -115,11 +117,6 @@ def whois_catcher(bot, trigger):
             # gets processed and getting the new nick overwritten with the old.
             bot.memory['chan_nicks'][chan] = \
                 [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['chan_nicks'][chan]]
-
-
-@commands('whois')
-def whois(bot, trigger):
-    bot.write(['WHOIS', 'FineLine'])
 
 
 @rule('.*')

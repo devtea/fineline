@@ -149,79 +149,81 @@ def seen_insert(bot, nick, data):
 
 @commands(u'seen_load_logs')
 def load_from_logs(bot, trigger):
-    if trigger.owner:
-        bot.reply(u"Alright, I'll start looking through the logs, " +
-                  u"but this is going to take a while..."
-                  )
-        bot.memory['seen_lock'].acquire()
-        try:
-            bot.debug(__file__, log.format(u'=' * 25), u'verbose')
-            bot.debug(__file__, log.format(u'Starting'), u'verbose')
-            filelist = []
-            for f in os.listdir(log_dir):
-                if log_regex.match(f) and os.path.isfile(log_dir + f):
-                    filelist.append(log_dir + f)
-            filelist.sort()
-            for log in filelist:
-                bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
-                with open(log, 'r') as file:
-                    file_list = []
-                    for l in file:
-                        # omfg took me way too long to figure out 'replace'
-                        file_list.append(l.decode('utf-8', 'replace'))
-                    bot.debug(__file__, log.format(u'finished loading file'), u'verbose')
-                    for line in file_list:
-                        # line = line.decode('utf-8', 'replace')
-                        # bot.debug(__file__, log.format(line), 'verbose')
-                        bot.debug(__file__, log.format(u'checking line'), u'verbose')
-                        m = line_regex.search(line)
-                        if m:
-                            '''bot.debug(__file__, log.format('line is message'), 'verbose')'''
-                            '''bot.debug(__file__, log.format('%s %s %s' % ( m.group(1), m.group(2), m.group(3))), 'verbose')'''
-                            nn = Nick(m.group(2))
-                            msg = m.group(3)
-                            log_name = os.path.splitext(
-                                os.path.basename(log)
-                            )
-                            chan = chan_regex.search(log_name[0]).group(1)
-                            chan = chan.decode('utf-8', 'replace')
-                            last = m.group(1)  # 00:00:00
-                            date = log_name[0][-8:]  # 20001212
-                            dt = datetime(
-                                int(date[:4]),
-                                int(date[4:6]),
-                                int(date[6:]),
-                                int(last[:2]),
-                                int(last[3:5]),
-                                int(last[6:])
-                            )
-                            utc_dt = cen.normalize(cen.localize(dt))
-                            timestamp = float(utc_dt.strftime(u'%s'))
-                            '''bot.debug(__file__, log.format('utc timestamp is %f' % timestamp), 'verbose')'''
-                            data = (timestamp, chan, msg)
-                            seen_insert(bot, nn.lower(), data)
-        finally:
-            bot.memory['seen_lock'].release()
-        bot.debug(__file__, log.format(u'done'), u'verbose')
-        bot.reply(u"Okay, I'm done reading the logs!")
+    """ADMIN: Initializes seen database from log files."""
+    if not trigger.owner:
+        return
+    bot.reply(u"Alright, I'll start looking through the logs, " +
+                u"but this is going to take a while..."
+                )
+    bot.memory['seen_lock'].acquire()
+    try:
+        bot.debug(__file__, log.format(u'=' * 25), u'verbose')
+        bot.debug(__file__, log.format(u'Starting'), u'verbose')
+        filelist = []
+        for f in os.listdir(log_dir):
+            if log_regex.match(f) and os.path.isfile(log_dir + f):
+                filelist.append(log_dir + f)
+        filelist.sort()
+        for log in filelist:
+            bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
+            with open(log, 'r') as file:
+                file_list = []
+                for l in file:
+                    # omfg took me way too long to figure out 'replace'
+                    file_list.append(l.decode('utf-8', 'replace'))
+                bot.debug(__file__, log.format(u'finished loading file'), u'verbose')
+                for line in file_list:
+                    # line = line.decode('utf-8', 'replace')
+                    # bot.debug(__file__, log.format(line), 'verbose')
+                    bot.debug(__file__, log.format(u'checking line'), u'verbose')
+                    m = line_regex.search(line)
+                    if m:
+                        '''bot.debug(__file__, log.format('line is message'), 'verbose')'''
+                        '''bot.debug(__file__, log.format('%s %s %s' % ( m.group(1), m.group(2), m.group(3))), 'verbose')'''
+                        nn = Nick(m.group(2))
+                        msg = m.group(3)
+                        log_name = os.path.splitext(
+                            os.path.basename(log)
+                        )
+                        chan = chan_regex.search(log_name[0]).group(1)
+                        chan = chan.decode('utf-8', 'replace')
+                        last = m.group(1)  # 00:00:00
+                        date = log_name[0][-8:]  # 20001212
+                        dt = datetime(
+                            int(date[:4]),
+                            int(date[4:6]),
+                            int(date[6:]),
+                            int(last[:2]),
+                            int(last[3:5]),
+                            int(last[6:])
+                        )
+                        utc_dt = cen.normalize(cen.localize(dt))
+                        timestamp = float(utc_dt.strftime(u'%s'))
+                        '''bot.debug(__file__, log.format('utc timestamp is %f' % timestamp), 'verbose')'''
+                        data = (timestamp, chan, msg)
+                        seen_insert(bot, nn.lower(), data)
+    finally:
+        bot.memory['seen_lock'].release()
+    bot.debug(__file__, log.format(u'done'), u'verbose')
+    bot.reply(u"Okay, I'm done reading the logs!")
 
 
-@commands('nuke')
+@commands('seen_nuke')
 @priority('low')
 def seen_nuke(bot, trigger):
     '''ADMIN: Nuke the seen database'''
-    if trigger.owner:
-        bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
-        bot.memory['seen_lock'].acquire()
-        try:
-            bot.memory['seen'] = {}  # NUKE IT FROM ORBIT
-            for row in bot.db.seen.keys('nick'):
-                bot.db.seen.delete(row[0], 'nick')
-            bot.reply(u"Done!")
-        finally:
-            bot.memory['seen_lock'].release()
-    else:
-        bot.debug(__file__, log.format(u'%s just tried to use the !nuke command!' % trigger.nick), u'always')
+    if not trigger.owner:
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
+        return
+    bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
+    bot.memory['seen_lock'].acquire()
+    try:
+        bot.memory['seen'] = {}  # NUKE IT FROM ORBIT
+        for row in bot.db.seen.keys('nick'):
+            bot.db.seen.delete(row[0], 'nick')
+        bot.reply(u"Done!")
+    finally:
+        bot.memory['seen_lock'].release()
 
 
 @priority(u'low')
