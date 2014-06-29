@@ -9,6 +9,7 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 from datetime import datetime
+import HTMLParser
 import random
 import re
 from socket import timeout
@@ -30,6 +31,7 @@ _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _timeout_message = u'Sorry, reddit is unavailable right now.'
+_util_html = HTMLParser.HTMLParser()
 # Bots to be ignored go here
 _excluded_commenters = []
 SUB_LIMIT = 50
@@ -200,7 +202,7 @@ def rmlpds(bot):
                     continue
                 if filter_comments(post, 0) > 0:
                     continue
-                #bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
+                # bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
                 uncommented.append(post)
             uncommented = filter_posts(uncommented)
             if uncommented:
@@ -229,7 +231,7 @@ def rmlpds(bot):
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
                                 t,
-                                colors.colorize(post.title, ['blue']),
+                                colors.colorize(_util_html.unescape(post.title), ['blue']),
                                 post.short_link
                             )
                         )
@@ -304,7 +306,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(post.title, [u'blue'])
+                        colors.colorize(_util_html.unescape(post.title), [u'blue'])
                     )
                 )
             else:
@@ -315,7 +317,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(post.title, [u'blue'])
+                        colors.colorize(_util_html.unescape(post.title), [u'blue'])
                     )
                 )
     else:
