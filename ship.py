@@ -58,7 +58,21 @@ _reply_list = [u'%s x %s',
                u'%s and %s will deny it, but everypony knows...',
                u'%s writes a self-insert fanfic about %s.',
                u'%s and %s take the midnight train going anywhere.',
-               u'%s and %s "accidentally" find themselves together in a hotel room... Alone...'
+               u'%s and %s "accidentally" find themselves together in a hotel room... Alone...',
+               u'That\'s right, %s and %s...',
+               u'%s and %s find some creative ways to entertain themselves.',
+               u'%s and %s forgot to leave room for Jesus!',
+               u'%s and %s have a party of two.',
+               u'%s and %s have more in common than they thought!',
+               u'%s sets aside some "special hugging" time for %s',
+               u'%s brings the duct tape, %s brings the WD40...',
+               u'%s could not get any closer to %s right now.',
+               u'%s stares at %s, lost forever in their dreamy eyes.',
+               u'%s blushes as %s leans in for a peck.',
+               u'%s nearly faints when %s senpai finally notices them~',
+               u'%s isn\'t the only one chasing after %s',
+               u'%s only has eyes for %s',
+               u'It\'s hard to tell where %s ends and %s begins.'
                ]
 
 
