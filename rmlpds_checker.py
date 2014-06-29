@@ -25,11 +25,14 @@ from willie.module import interval, commands, rate
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
 _channels = [u'#reddit-mlpds', u'#fineline_testing']
-_INCLUDE = ['#reddit-mlpds', '#fineline_testing']
+_INCLUDE = ['#reddit-mlpds', '#fineline_testing', '#reddit-mlpds-bots']
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _timeout_message = u'Sorry, reddit is unavailable right now.'
+# Bots to be ignored go here
+_excluded_commenters = []
+SUB_LIMIT = 50
 
 # Use multiprocess handler for multiple bots/threads on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -82,6 +85,7 @@ def filter_posts(posts):
             u'justin.tv',
             u'youtube.com',
             u'ustream.tv',
+            u'picarto.tv',
             u'nicovideo.jp'
         ]
         for s in livestreams:
@@ -107,40 +111,63 @@ def filter_posts(posts):
         return False
 
     def is_lounge(post):
-        if post.title and re.search(
-            ur'\blounge\b',
-            post.title,
-            re.IGNORECASE
-        ):
+        if post.title and re.search(ur'\blounge\b', post.title, re.I):
             return True
         return False
 
     def is_theme(post):
-        if post.title and post.is_self and re.match(
-            ur'weekly (drawing )?theme',
-            post.title,
-            flags=re.IGNORECASE
-        ):
+        if post.title and post.is_self and re.match(ur'weekly (drawing )?theme', post.title, flags=re.I):
             return True
         return False
 
     def is_biweekly(post):
-        if post.title and post.is_self and re.search(
-            ur'(st|rd|nd|th) bi-weekly( drawing)? challenge',
-            post.title,
-            flags=re.IGNORECASE
-        ):
+        if post.title and post.is_self and re.search(ur'(st|rd|nd|th) bi-weekly( drawing)? challenge', post.title, flags=re.I):
+            return True
+        return False
+
+    def is_train(post):
+        if post.title and post.is_self and re.search(ur'\bsketch train\b', post.title, flags=re.I):
+            return True
+        return False
+
+    def is_excludable(post):
+        if is_livestream(post):
+            return True
+        if is_lounge(post):
+            return True
+        if is_theme(post):
+            return True
+        if is_biweekly(post):
+            return True
+        if is_train(post):
             return True
         return False
 
     criticable = []
     if posts:
         for p in posts:
-            if is_livestream(p) or is_lounge(p) or is_theme(p) \
-                    or is_biweekly(p):
+            if is_excludable(p):
                 continue
             criticable.append(p)
     return criticable
+
+
+def filter_comments(post, limit):
+    '''Returns squishy number of 'good' comments'''
+    if post.num_comments <= limit:
+        return post.num_comments
+    # Grab flattened list of comments and remove author's posts
+    flat_comments = [i for i in praw.helpers.flatten_tree(post.comments) if i.author != post.author]
+    if len(flat_comments) <= limit:
+        return len(flat_comments)
+    # Filter excluded commenters like bots
+    if _excluded_commenters:
+        flat_comments = [i for i in flat_comments if i.author.name.lower() not in _excluded_commenters]
+        if len(flat_comments) <= limit:
+            return len(flat_comments)
+    # Filter comments that are too short and probably not good critique.
+    flat_comments = [i for i in flat_comments if len(i.body) > 200]
+    return len(flat_comments)
 
 
 @interval(23)
@@ -162,15 +189,19 @@ def rmlpds(bot):
                 (5 * 60)
         if sub_exists:
             bot.debug(__file__, log.format(u"Sub exists."), u"verbose")
-            new_posts = mlpds.get_new(limit=50)
+            new_posts = mlpds.get_new(limit=SUB_LIMIT)
             uncommented = []
             for post in new_posts:
-                # No comments, and between 8 and 48 hrs old
-                if post.num_comments == 0 and \
-                    post.created_utc > (time.time() - (48 * 60 * 60)) and \
-                        post.created_utc < (time.time() - (8 * 60 * 60)):
-                    bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
-                    uncommented.append(post)
+                # Filter old posts
+                if post.created_utc < (time.time() - (48 * 60 * 60)):
+                    continue
+                # Filter new posts
+                if post.created_utc > (time.time() - (8 * 60 * 60)):
+                    continue
+                if filter_comments(post, 0) > 0:
+                    continue
+                #bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
+                uncommented.append(post)
             uncommented = filter_posts(uncommented)
             if uncommented:
                 bot.debug(__file__, log.format(u"There are %i uncommented posts." % len(uncommented)), u"verbose")
@@ -216,9 +247,12 @@ def rmlpds(bot):
 @commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')
 @rate(120)
 def mlpds_check(bot, trigger):
-    '''Checks for posts within the last 48h with fewer than 2 comments'''
+    '''Checks for posts within the last 48h with fewer than 2 appropriate comments. Filters short comments and comments made by OP.'''
+    bot.debug(__file__, log.format('triggered'), 'verbose')
+    now = time.time()
     if trigger.sender not in _INCLUDE:
         return
+    bot.reply("Okay, let me look. This may take a couple minutes.")
     try:
         mlpds = rc.get_subreddit(u'MLPDrawingSchool')
     except InvalidSubreddit:
@@ -230,26 +264,39 @@ def mlpds_check(bot, trigger):
     except timeout:
         bot.say(_timeout_message)
         return
-    new_posts = mlpds.get_new(limit=50)
-    # bot.debug(__file__, log.format(pprint(dir(new_posts))), "verbose")
+    new_posts = mlpds.get_new(limit=SUB_LIMIT)
+    new_posts = filter_posts(list(new_posts))
     uncommented = []
     for post in new_posts:
-        if post.num_comments < 2 and \
-                post.created_utc > (time.time() - (48 * 60 * 60)):
-            uncommented.append(post)
+        # Filter old posts
+        if post.created_utc < (time.time() - (48 * 60 * 60)):
+            continue
+        # Filter posts with more than 2 good comments
+        good_comments = filter_comments(post, 1)
+        bot.debug(__file__, log.format('%s had %s good comments' % (post.title, good_comments)), 'verbose')
+        if good_comments >= 2:
+            continue
+        '''
+        if filter_comments(post) > 1:
+            continue
+        '''
+        bot.debug(__file__, log.format('appending %s to uncommented' % post.title), 'verbose')
+        uncommented.append(post)
     if uncommented:
         uncommented.reverse()  # Reverse so list is old to new
         post_count = len(uncommented)
         spammy = False
-        if post_count > 2:
+        if post_count > 4:
             spammy = True
         if spammy:
             bot.reply(u"There are a few, I'll send them in pm.")
         for post in uncommented:
             if post.num_comments == 0:
                 num_com = u"There are no comments"
-            else:
+            elif post.num_comments == 1:
                 num_com = u"There is only 1 comment"
+            else:
+                num_com = u"There are %i comments" % post.num_comments
             if post.author.name.lower()[len(post.author.name) - 1] == u's':
                 apos = u"'"
             else:
@@ -284,6 +331,7 @@ def mlpds_check(bot, trigger):
                   u"posts that need critiquing, though: "
                   u"http://mlpdrawingschool.reddit.com/"
                   )
+    bot.say("Completed in %s seconds." % (time.time() - now))
 
 
 if __name__ == "__main__":
