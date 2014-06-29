@@ -248,8 +248,6 @@ def rmlpds(bot):
 @rate(120)
 def mlpds_check(bot, trigger):
     '''Checks for posts within the last 48h with fewer than 2 appropriate comments. Filters short comments and comments made by OP.'''
-    bot.debug(__file__, log.format('triggered'), 'verbose')
-    now = time.time()
     if trigger.sender not in _INCLUDE:
         return
     bot.reply("Okay, let me look. This may take a couple minutes.")
@@ -272,14 +270,8 @@ def mlpds_check(bot, trigger):
         if post.created_utc < (time.time() - (48 * 60 * 60)):
             continue
         # Filter posts with more than 2 good comments
-        good_comments = filter_comments(post, 1)
-        bot.debug(__file__, log.format('%s had %s good comments' % (post.title, good_comments)), 'verbose')
-        if good_comments >= 2:
+        if filter_comments(post, 1) > 2:
             continue
-        '''
-        if filter_comments(post) > 1:
-            continue
-        '''
         bot.debug(__file__, log.format('appending %s to uncommented' % post.title), 'verbose')
         uncommented.append(post)
     if uncommented:
@@ -331,7 +323,6 @@ def mlpds_check(bot, trigger):
                   u"posts that need critiquing, though: "
                   u"http://mlpdrawingschool.reddit.com/"
                   )
-    bot.say("Completed in %s seconds." % (time.time() - now))
 
 
 if __name__ == "__main__":
