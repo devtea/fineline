@@ -11,19 +11,21 @@ Add ~/.cabal/bin to $PATH so it is accessible from python's subprocess.check_out
 (for example, adding "export PATH=$HOME/.cabal/bin:$PATH" to ~/.bashrc and logging out/in)
 
 """
+from __future__ import print_function
+
 from willie.module import commands
 import subprocess
 
-
-maxchars = 100
+MAX_CHARS = 100
 
 
 def stopspam(value):
     # trim up the result to stop spam
     value = value.replace('\r', ' ').replace('\n', ' ')
-    if len(value) > maxchars:
-        value = value[:maxchars] + "..."
+    if len(value) > MAX_CHARS:
+        value = value[:MAX_CHARS] + "..."
     return value
+
 
 # this is really kind of unnecessary, could just
 # return ' '.join(arglist.split(' ')[1:])
@@ -44,7 +46,7 @@ def getargs(arglist):
     return args, ' '.join(split)
 
 
-@commands(u'haskell')
+@commands(u'haskell', u'h')
 def haskell(bot, trigger):
     args, expression = getargs(trigger.args[1])
 
@@ -62,4 +64,4 @@ def haskell(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())
