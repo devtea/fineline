@@ -354,9 +354,8 @@ def link_parser(subm, url=False, new=False):
     pname = u'[deleted]'
     if subm.author:
         pname = colors.colorize(subm.author.name, [u'purple'])
-    score = u'(%s|%s|%sc) ' % (
+    score = u'(%s|%sc) ' % (
         colors.colorize(u'↑%s' % str(subm.ups), [u'orange']),
-        colors.colorize(u'↓%s' % str(subm.downs), [u'navy']),
         subm.num_comments
     )
     short_url = u''
