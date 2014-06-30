@@ -443,12 +443,19 @@ def reddit_post(bot, trigger):
             if i == trigger_nick:
                 return
 
+        # Update pay.reddit.com links to work with praw
+        link = re.sub('pay\.reddit', 'reddit', trigger.bytes, flags=re.I)
+        link = re.sub('https', 'http', link, flags=re.I)
+
+        # Fix links that are missing the www. Could be from typo or SSL link
+        link = re.sub('://r', '://www.r', link, flags=re.I)
+
         # User Section
-        if re.match(u'.*?%s' % user, trigger.bytes):
+        if re.match(u'.*?%s' % user, link):
             bot.debug(__file__, log.format(u"URL is user"), u"verbose")
             full_url = re.search(
                 ur'(https?://)?(www\.)?%s?%s' % (_url, user),
-                trigger.bytes
+                link
             ).group(0)
             if re.match(u'^/u', full_url):
                 full_url = u'http://reddit.com%s' % full_url
@@ -485,12 +492,12 @@ def reddit_post(bot, trigger):
             )
 
         # Comment Section
-        elif re.match(u'.*?%s' % cmnt, trigger.bytes):
+        elif re.match(u'.*?%s' % cmnt, link):
             bot.debug(__file__, log.format(u"URL is comment"), u"verbose")
             try:
                 full_url = u''.join(
                     re.search(ur'(https?://)?(www\.)?%s' % cmnt,
-                              trigger.bytes
+                              link
                               ).groups())
             except TypeError:
                 # no match
@@ -525,13 +532,13 @@ def reddit_post(bot, trigger):
             )
 
         # Submission Section
-        elif re.match(u'.*?%s' % subm, trigger.bytes):
+        elif re.match(u'.*?%s' % subm, link):
             for n in _ignore:
                 if re.match(u'%s.*?' % n, trigger.nick):
                     return
             bot.debug(__file__, log.format(u"URL is submission"), u"verbose")
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
-                                 trigger.bytes
+                                 link
                                  ).group(0)
             if not re.match(u'^http', full_url):
                 full_url = u'http://%s' % full_url
@@ -558,10 +565,10 @@ def reddit_post(bot, trigger):
             bot.say(msg)
 
         # Subreddit Section
-        elif re.match(u'.*?%s' % subr, trigger.bytes):
+        elif re.match(u'.*?%s' % subr, link):
             bot.debug(__file__, log.format(u"URL is subreddit"), u"verbose")
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
-                                 trigger.bytes
+                                 link
                                  ).group(0)
             bot.debug(__file__, log.format(u'URL is %s' % full_url), u"verbose")
             # TODO pull back and display appropriate information for this.
