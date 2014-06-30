@@ -170,16 +170,19 @@ def boop(bot, trigger):
                         # first nick matches and is popped from the list.
                         pass
             msg = msg.strip(',')
-            msg = "%s %s" % (msg, '[%s]' % colors.colorize(target, [u'orange']))
+            if msg != 'boops':
+                msg = "%s %s" % (msg, '[%s]' % colors.colorize(target, [u'orange']))
 
-            # TODO account for really long messages
-            if message:
-                msg = "%s %s" % (msg, '| <%s> %s')
-                bot.action(msg % (colors.colorize(trigger.nick, [u'purple']),
-                                  colors.colorize(message, [u'blue'])
-                                  ))
+                # TODO account for really long messages
+                if message:
+                    msg = "%s %s" % (msg, '| <%s> %s')
+                    bot.action(msg % (colors.colorize(trigger.nick, [u'purple']),
+                                      colors.colorize(message, [u'blue'])
+                                      ))
+                else:
+                    bot.action(msg)
             else:
-                bot.action(msg)
+                bot.reply("Sorry, I don't see anyone from that list here right now.")
         else:
             bot.reply(u'Sorry, I don\'t see %s around here.' % target)
 
