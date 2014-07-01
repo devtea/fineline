@@ -215,7 +215,7 @@ def rmlpds(bot):
                 hr = td.total_seconds() / 60 / 60
                 t = u'%i hours ago' % hr
                 msg = u'Hey everyone, there is at least 1 post that might ' + \
-                      u'need critique!'
+                      u'need critique! Use !queue to see them all.'
                 if len(uncommented) > 1:
                     msg = u'Hey everyone, there are at least %i ' % len(uncommented) + \
                           u'posts that might need critique! Here is a random one:'
