@@ -29,6 +29,7 @@ from willie.tools import Nick
 from willie.module import commands, rule, interval
 
 _url = u'(reddit\.com|redd\.it)'
+_reurl = re.compile(_url, flags=re.I)
 _partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
 _util_html = HTMLParser.HTMLParser()
 _TIMEOUT = 20
@@ -117,6 +118,7 @@ def setup(bot):
             if c not in bot.memory['reddit-announce']:
                 bot.memory['reddit-announce'][c] = {}
                 bot.memory['reddit_msg_queue'][c] = []
+                bot.memory['reddit_link_history'] = []
             bot.memory['reddit-announce'][c][s] = []
         # Prepopulate list of channels
         # for d in reddits_to_fetch:
@@ -316,16 +318,31 @@ def fetch_reddits(bot, trigger=None):
                         continue
                     elif p.created_utc < time.time() - (10 * 60 * 60):
                         bot.debug(__file__, log.format(u'found id %s too old' % p.id), 'verbose')
-                        bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
+                        continue
+                    elif p.url in bot.memory['reddit_link_history']:
+                        bot.debug(__file__, log.format(u'found matching url for %s, probable crosspost or repost.' % p.id), 'verbose')
+                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                            bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
+                        continue
+                    elif _reurl.search(p.url):
+                        bot.debug(__file__, log.format(u'found reddit url for %s, probably a crosspost.' % p.id), 'verbose')
+                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                            bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     else:
                         msg = link_parser(p, url=True, new=True)
                         bot.memory['reddit_msg_queue'][channel].append(msg)
-                        bot.memory['reddit-announce'][channel][sub].append(p.id)
                         if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
+                        bot.memory['reddit-announce'][channel][sub].append(p.id)
+                        if len(bot.memory['reddit_link_history']) > 1000:
+                            bot.memory['reddit_link_history'].pop(0)
+                        bot.memory['reddit_link_history'].append(p.url)
                         bot.debug(
                             __file__,
                             log.format(u'%s %s %s' % (_util_html.unescape(p.title.encode('utf-8')), p.author, p.url)),
