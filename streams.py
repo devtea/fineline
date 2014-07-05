@@ -63,9 +63,11 @@ _re_us = re.compile('((?<=ustream\.tv/channel/)|(?<=ustream\.tv/))([^/(){}[\]]+)
 _exc_regex.append(re.compile('ustream\.tv/'))
 _re_yt = re.compile('((youtube\.com/user/)|(youtube\.com/))([^\?/(){}[\]\s]+)')
 _exc_regex.append(re.compile('youtube\.com/'))
+_re_pic = re.compile('(?<=picarto\.tv/live/channel.php\?watch=)[^/(){}[\]]+')
+_exc_regex.append(re.compile('picarto\.tv/'))
 # _url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
-             'ustream.tv']
+             'ustream.tv', 'picarto.tv']
 _SUB = ('?',)  # This will be replaced in setup()
 # TODO move this to memory
 _include = ['#reddit-mlpds', '#fineline_testing']
@@ -371,6 +373,40 @@ class ustream(stream):
             self._last_update = time.time()
 
 
+class picarto(stream):
+    _user_url = 'https://www.picarto.tv/live/channel.php?watch=%s'
+    _live_url = 'https://www.picarto.tv/live/onlinecheck.php?channel=%s'
+    _service = 'picarto.tv'
+
+    _last_update = time.time()
+
+    def __init__(self, name, alias=None):
+        super(picarto, self).__init__(name, alias)
+        self._name = self.verify_user(self._name)
+        self._url = self._user_url % self._name
+        self.update()
+
+    def verify_user(self, channel):
+        '''Try to hit user's page. Site will correct miscapitalizations.'''
+        self._results = web.get(self._user_url % self._name)
+        # Valid users will have a number of "watch=username" pairs. Invalid
+        # users will have empty "watch=" attributes.
+        self._corrected = re.findall(r'watch=([^"\']*)', self._results, flags=re.I)[0]
+        if self._corrected:
+            return self._corrected
+        raise ValueError("Invalid username")
+
+    def update(self):
+        self._results = web.get(self._live_url % self._name)
+        try:
+            self._watchers = int(self._results)
+        except ValueError:
+            self._watchers = 0
+            self._live = False
+        else:
+            self._live = True
+
+
 class youtube(stream):
     _base_url = 'https://gdata.youtube.com/feeds/api/'
     _user_url = 'users/%s?alt=json'
@@ -514,6 +550,8 @@ class StreamFactory(object):
             return youtube(channel, alias)
         elif service == 'ustream.tv':
             return ustream(channel, alias)
+        elif service == 'picarto.tv':
+            return picarto(channel, alias)
         else:
             return None
 
@@ -973,6 +1011,8 @@ def parse_service(service):
             return (_re_yt.findall(service)[0][-1], 'youtube.com')
         elif _re_us.search(service):
             return (_re_us.findall(service)[-1][-1], 'ustream.tv')
+        elif _re_pic.search(service):
+            return (_re_pic.findall(service)[0], 'picarto.tv')
         else:
             return None
 
@@ -1205,8 +1245,8 @@ def publish_lists(bot, trigger=None):
 def services(bot, trigger):
     '''Propert input includes a URL by itself (e.g. http://justin.tv/tdreyer1)
  or a channel name / service name pair (e.g. tdreyer1 justin.tv). Accepted
- service names are justin.tv, livestream.com, twitch.tv, ustream.tv, and
- youtube.com'''
+ service names are justin.tv, livestream.com, twitch.tv, ustream.tv,
+ picarto.tv, and youtube.com'''
     bot.say(__doc__.strip())
     return
 
@@ -1553,7 +1593,6 @@ def youtube_updater(bot):
     bot.debug(__file__, log.format(u'Starting youtube.com updater.'), u'verbose')
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
-        # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
     bot.debug(
@@ -1592,6 +1631,17 @@ def ustream_updater(bot):
     )
 
 
+@interval(161)
+def picarto_updater(bot):
+    bot.debug(__file__, log.format(u'Starting picarto.tv updater.'), u'verbose')
+    now = time.time()
+    for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
+        # TODO handle timeout, misc exceptions
+        s.update()
+        time.sleep(0.25)
+    bot.debug(__file__, log.format(u'picarto.tv updater complete in %s seconds.' % (time.time() - now)), u'verbose')
+
+
 def info():
     # TODO
     return
@@ -1608,9 +1658,9 @@ def stats(bot):
     # number of featured, number of subs, steams by service
     bot.say('I am tracking %s streams, %s of which are featured.' %
             (len(bot.memory['streams']), len(bot.memory['feat_streams'])))
-    bot.say((u'There are %s from livestream.com, %s from justin.tv, ' +
-             u'%s from twitch.tv, %s from youtube.com, and %s ' +
-             u'from ustream.tv.') % (
+    bot.say((u'There are %s from livestream.com, %s from justin.tv, '
+             u'%s from twitch.tv, %s from youtube.com, %s '
+             u'from ustream.tv, and %s from picarto.tv.') % (
             len([i for i in bot.memory['streams']
                 if i.service == 'livestream.com']),
             len([i for i in bot.memory['streams']
@@ -1620,7 +1670,9 @@ def stats(bot):
             len([i for i in bot.memory['streams']
                 if i.service == 'youtube.com']),
             len([i for i in bot.memory['streams']
-                if i.service == 'ustream.tv'])
+                if i.service == 'ustream.tv']),
+            len([i for i in bot.memory['streams']
+                if i.service == 'picarto.tv'])
             ))
     bot.say(u'There are %s individual subscriptions.' %
             len(bot.memory['streamSubs']))
