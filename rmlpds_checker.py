@@ -218,7 +218,7 @@ def rmlpds(bot):
                       u'need critique! Use !queue to see them all.'
                 if len(uncommented) > 1:
                     msg = u'Hey everyone, there are at least %i ' % len(uncommented) + \
-                          u'posts that might need critique! Here is a random one:'
+                          u'posts that might need critique! Use !queue to see them all, but here is a random one:'
                 for chan in _channels:
                     if chan in bot.channels:
                         nsfw = u''
