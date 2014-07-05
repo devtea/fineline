@@ -1263,16 +1263,16 @@ def remove_stream(bot, user):
     cur = dbcon.cursor()
     with bot.memory['streamLock']:
         for i in [a for a in bot.memory['streams']
-                  if a.name == u and a.service == s]:
+                  if a.name.lower() == u.lower() and a.service == s]:
             try:
                 cur.execute('''DELETE FROM feat_streams
-                               WHERE channel = %s
+                               WHERE lower(channel) = lower(%s)
                                AND service = %s''' % (_SUB * 2), (u, s))
                 cur.execute('''DELETE FROM streams
-                               WHERE channel = %s
+                               WHERE lower(channel) = lower(%s)
                                AND service = %s''' % (_SUB * 2), (u, s))
                 cur.execute('''DELETE FROM sub_streams
-                               WHERE channel = %s
+                               WHERE lower(channel) = lower(%s)
                                and service = %s''' % (_SUB * 2), (u, s))
                 dbcon.commit()
             finally:
@@ -1323,7 +1323,7 @@ def feature(bot, switch, channel, quiet=False):
     with bot.memory['streamLock']:
         if switch == 'feature':
             for i in [a for a in bot.memory['streams']
-                      if a.name == u and a.service == s]:
+                      if a.name.lower() == u.lower() and a.service == s]:
                 if i in bot.memory['feat_streams']:
                     msg = u"That's already featured!"
                     if not quiet:
@@ -1334,7 +1334,7 @@ def feature(bot, switch, channel, quiet=False):
                 else:
                     try:
                         cur.execute('''SELECT COUNT(*) FROM feat_streams
-                                       WHERE channel = %s
+                                       WHERE lower(channel) = lower(%s)
                                        AND service = %s''' % (_SUB * 2),
                                     (u, s))
                         if cur.fetchone()[0] == 0:
@@ -1361,10 +1361,10 @@ def feature(bot, switch, channel, quiet=False):
             return
         elif switch == 'unfeature':
             for i in [a for a in bot.memory['feat_streams']
-                      if a.name == u and a.service == s]:
+                      if a.name.lower() == u.lower() and a.service == s]:
                 try:
                     cur.execute('''DELETE FROM feat_streams
-                                   WHERE channel = %s
+                                   WHERE lower(channel) = lower(%s)
                                    AND service = %s''' % (_SUB * 2), (u, s))
                     dbcon.commit()
                 finally:
@@ -1408,14 +1408,14 @@ def subscribe(bot, switch, channel, nick, quiet=False):
     cur = dbcon.cursor()
     with bot.memory['streamLock']:
         for i in [a for a in bot.memory['streams']
-                  if a.name == u and a.service == s]:
+                  if a.name.lower() == u.lower() and a.service == s]:
             if switch == 'subscribe':
                 if i not in bot.memory['streamSubs']:
                     bot.memory['streamSubs'][i] = []
                 if nick not in bot.memory['streamSubs'][i]:
                     try:
                         cur.execute('''SELECT COUNT(*) FROM sub_streams
-                                    WHERE channel = %s
+                                    WHERE lower(channel) = lower(%s)
                                     AND service = %s''' % (_SUB * 2),
                                     (u, s))
                         if cur.fetchone()[0] == 0:
@@ -1445,7 +1445,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     if nick in bot.memory['streamSubs'][i]:
                         try:
                             cur.execute('''DELETE FROM sub_streams
-                                           WHERE channel = %s
+                                           WHERE lower(channel) = lower(%s)
                                            AND service = %s
                                            AND nick = %s''' % (_SUB * 3),
                                         (u, s, nick))
