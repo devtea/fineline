@@ -15,7 +15,7 @@ from willie.module import commands, example
 
 random.seed()
 
-TIME_LIMIT = 300
+TIME_LIMIT = 500
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -122,7 +122,7 @@ def unweighted_choice(unweighted, choices):
         return None
 
 
-@commands(u'choose')
+@commands(u'choose', 'pick', 'select')
 @example(ur"!choose 2, The Hobbit, Ender's Game, The Golden Compass")
 def choose(bot, trigger):
     """Returns a random selection of comma separated items provided to it.
