@@ -201,7 +201,7 @@ def slapped(bot, trigger):
 
 hi_prefix = ur"($nickname[:,]?\s+)"
 hi_meat = ur"(hello|hi|ahoy|sup|hey|yo|afternoon|morning)"
-hi_all = ur"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+hi_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     ur"folks|guys|peoples?|$nickname)"
 hi_to_fineline = hi_prefix + hi_meat + u'([.!\s]?$)'
 hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
