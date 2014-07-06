@@ -252,7 +252,7 @@ def isbot(bot, trigger):
 
 night_prefix = ur"($nickname\:?,?\s+)"
 night_meat = ur"((good|g)?\s?'?(night|bye)|(later(s?)))"
-night_all = ur"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+night_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     u"folks|guys|peoples?|$nickname)"
 night_to_fineline = night_prefix + night_meat
 night_to_all = ur".*?" + night_meat + ur",?\s+" + night_all
