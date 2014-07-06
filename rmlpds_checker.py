@@ -156,16 +156,23 @@ def filter_posts(posts):
 
 def filter_comments(post, limit):
     '''Returns squishy number of 'good' comments'''
-    if post.num_comments <= limit:
+    def auth_comp(comment, post):
+        try:
+            return i.author != post.author
+        except AttributeError:
+            return False
+
+    if post.num_comments < limit:
         return post.num_comments
     # Grab flattened list of comments and remove author's posts
-    flat_comments = [i for i in praw.helpers.flatten_tree(post.comments) if i.author != post.author]
-    if len(flat_comments) <= limit:
+    flat_comments = [i for i in praw.helpers.flatten_tree(post.comments) if auth_comp(i, post)]
+
+    if len(flat_comments) < limit:
         return len(flat_comments)
     # Filter excluded commenters like bots
     if _excluded_commenters:
         flat_comments = [i for i in flat_comments if i.author.name.lower() not in _excluded_commenters]
-        if len(flat_comments) <= limit:
+        if len(flat_comments) < limit:
             return len(flat_comments)
     # Filter comments that are too short and probably not good critique.
     flat_comments = [i for i in flat_comments if len(i.body) > 200]
@@ -271,8 +278,11 @@ def mlpds_check(bot, trigger):
         # Filter old posts
         if post.created_utc < (time.time() - (48 * 60 * 60)):
             continue
+        # Filter posts with many comments
+        if post.num_comments >= 8:
+            continue
         # Filter posts with more than 2 good comments
-        if filter_comments(post, 1) > 2:
+        if filter_comments(post, 2) >= 2:  # If we have at least 2 good comments...
             continue
         bot.debug(__file__, log.format('appending %s to uncommented' % post.title), 'verbose')
         uncommented.append(post)
