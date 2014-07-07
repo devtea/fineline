@@ -201,7 +201,7 @@ def slapped(bot, trigger):
 
 hi_prefix = ur"($nickname[:,]?\s+)"
 hi_meat = ur"(hello|hi|ahoy|sup|hey|yo|afternoon|morning)"
-hi_all = ur"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+hi_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     ur"folks|guys|peoples?|$nickname)"
 hi_to_fineline = hi_prefix + hi_meat + u'([.!\s]?$)'
 hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
@@ -252,7 +252,7 @@ def isbot(bot, trigger):
 
 night_prefix = ur"($nickname\:?,?\s+)"
 night_meat = ur"((good|g)?\s?'?(night|bye)|(later(s?)))"
-night_all = ur"(all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+night_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     u"folks|guys|peoples?|$nickname)"
 night_to_fineline = night_prefix + night_meat
 night_to_all = ur".*?" + night_meat + ur",?\s+" + night_all

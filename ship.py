@@ -10,9 +10,11 @@ from __future__ import print_function
 import bisect
 import random
 import threading
+from datetime import datetime
 from types import IntType
 
 from willie.module import commands
+from willie.tools import Nick
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -129,8 +131,25 @@ def ship(bot, trigger):
             target = bot.nick
             include_nicks = True
         elif target.lower() in _anyone:
-            target = random.choice(nicks.in_chan(bot, trigger.sender))
-            include_nicks = True
+            # select a random nick from the channel
+            # don't match lurkers
+
+            # seen_.py:203/128:
+            #     data = (timestamp, chan, msg)
+            #     bot.memory['seen'][nn] = data
+            #     where nn is Nick(nick)
+            #     timestamp is a float
+            target = None
+            target_list = nicks.in_chan(bot, trigger.sender)
+            random.shuffle(target_list)
+            now = datetime.now()
+            for nick in target_list:
+                timedelta = now - last_seen(bot, nick)
+                if timedelta.days <= 7: # magic numbers are magic
+                    target = nick
+                    include_nicks = True
+                    break
+            
         elif nicks.in_chan(bot, trigger.sender, target):
             # Get properly formatted nick from channel nick list
             nick_list = []
@@ -150,10 +169,20 @@ def ship(bot, trigger):
         i1 = weighted_choice(bot.memory['pony_list'])
     i2 = i1
     if include_nicks and random.uniform(0, 1) > 0.5:
-        while i2 == i1:
-            i2 = random.choice(nicks.in_chan(bot, trigger.sender))
+        # match target with nick in channel
+        # don't match lurkers
+        target_list = nicks.in_chan(bot, trigger.sender)
+        random.shuffle(target_list)
+        now = datetime.now()
+        for nick in target_list:
+            timedelta = now - last_seen(bot, nick)
+            if nick != i1 and timedelta.days <= 7: # magic numbers are magic
+                i2 = nick
+                break
+
         pair = [i1, i2]
     else:
+        # match nick with pony!
         while unicode(i2) == unicode(i1):
             i2 = weighted_choice(bot.memory['pony_list'])
         if not isinstance(i1, IntType):
@@ -219,6 +248,15 @@ def addname(bot, trigger):
         finally:
             cur.close()
             dbcon.close()
+
+def last_seen(bot, nick):
+    '''returns the last time the nick was seen as a datetime object'''
+    nn = Nick(nick)
+    try:
+        tm, channel, message = bot.memory['seen'][nn]
+        return datetime.fromtimestamp(float(tm))
+    except:
+        return datetime.fromtimestamp(0)
 
 
 if __name__ == "__main__":
