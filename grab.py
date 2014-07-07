@@ -19,7 +19,7 @@ def setup(bot):
 
 
 @example(u'!grab tdreyer1')
-@commands('grab')
+@commands('grab', 'grabart', 'grabarttip', 'grabtip')
 def grab(bot, trigger):
     '''Grabs the last line from a user and !addquotes it.'''
     try:
@@ -36,8 +36,10 @@ def grab(bot, trigger):
             elif target in _excludes:
                 bot.say(u"I'm not grabbing that.")
             elif target in bot.memory['grab']:
-                bot.say(u'!addquote <%s> %s' % (target,
-                                                bot.memory['grab'][target]))
+                if len(trigger.bytes.split()[0]) == len('!grab'):
+                    bot.say(u'!addquote <%s> %s' % (target, bot.memory['grab'][target]))
+                else:
+                    bot.say(u'!addarttip <%s> %s' % (target, bot.memory['grab'][target]))
             else:
                 bot.say(u'Sorry, nothing to grab!')
         finally:
