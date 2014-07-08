@@ -226,9 +226,9 @@ def slapped(bot, trigger):
 
 
 hi_prefix = ur"($nickname[:,]?\s+)"
-hi_meat = ur"(hello|hi|ahoy|sup|hey|yo|afternoon|morning)"
+hi_meat = ur"(hello|hi|ahoy|sup|hey|yo|afternoon|holla|g?'?morning?)"
 hi_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
-    ur"folks|guys|peoples?|$nickname)"
+    ur"folks|guys|peoples?|mulpdrong|$nickname)"
 hi_to_fineline = hi_prefix + hi_meat + u'([.!\s]?$)'
 hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
 
@@ -279,7 +279,7 @@ def isbot(bot, trigger):
 night_prefix = ur"($nickname\:?,?\s+)"
 night_meat = ur"((good|g)?\s?'?(night|bye)|(later(s?)))"
 night_all = ur"((y'?)?all|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
-    u"folks|guys|peoples?|$nickname)"
+    u"folks|guys|peoples?|mulpdrong|$nickname)"
 night_to_fineline = night_prefix + night_meat
 night_to_all = ur".*?" + night_meat + ur",?\s+" + night_all
 night_universal = ur".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
@@ -308,7 +308,7 @@ def night(bot, trigger):
     # Test statment to filter negetive statements
     bot.debug(__file__, log.format(trigger.bytes), u"verbose")
     # Use a set intersection to filter triggering lines by keyword
-    if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at'])):
+    if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at', u'almost', u'soon'])):
         time.sleep(1)
         if random.uniform(0, 1) > 0.5:
             bot.reply(message + punctuation)
