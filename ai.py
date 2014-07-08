@@ -35,7 +35,7 @@ basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
 basic_badbot = (u"bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +
                 u"(fuck[s]?\s?(sake|off)?)")
 n_text = u"[A-Za-z0-9,.'!\s]"
-basic_slap = u"slap[p]?[s]?|hit[s]?|smack[s]?\b"
+basic_slap = u"slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?\b"
 random.seed()
 
 
@@ -189,14 +189,40 @@ def slapped(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
+
+    if trigger.owner and not trigger.bytes.startswith('!'):
+            badbot(bot, trigger)
+            return
     time.sleep(random.uniform(1, 3))
-    bot.reply(random.choice([
-        u'Stop that!',
-        u'Hey!',
-        u'Violence is not the answer!',
-        u"Didn't your mother teach you not to hit?"
-    ]))
-    bot.reply(u"[](/pinkieslap)")
+
+    match = re.search(r'^[^!]*\swith\sa\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', trigger.bytes, re.I)
+    if match:
+        plural = False
+        if match.groups()[-1].endswith('s'):
+            plural = True
+
+        plu = 'it'
+        if plural:
+            plu = 'them'
+
+        object = match.groups()[-1]
+
+        bot.action(random.choice([
+            'takes the %s and throws %s off the cliff.' % (object, plu),
+            'grabs the %s and smacks %s with %s.' % (object, trigger.nick, plu),
+            'takes the %s and flings %s back at %s.' % (object, plu, trigger.nick),
+            'confiscates the %s.' % object,
+            'wrestles the %s away from %s and eats %s.' % (object, trigger.nick, plu),
+            'takes the %s and sits on %s until they calm down.' % (object, trigger.nick)
+        ]))
+    else:
+        bot.reply(random.choice([
+            u'Stop that!',
+            u'Hey!',
+            u'Violence is not the answer!',
+            u"Didn't your mother teach you not to hit?"
+        ]))
+        bot.reply(u"[](/pinkieslap)")
 
 
 hi_prefix = ur"($nickname[:,]?\s+)"
