@@ -36,13 +36,13 @@ except:
             fp.close()
 
 # Wait time in seconds before the bot will pipe up
-_WAIT_TIME = (random.uniform(23, 42) * 60)
 _INCLUDE = [u'#reddit-mlpds']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
 
 def setup(bot):
+    bot.memory['slow_wait'] = (random.uniform(23, 33) * 60)
     if "fetch_rss" not in bot.memory:
         bot.memory["fetch_rss"] = {}
     if "fetch_rss_lock" not in bot.memory:
@@ -65,11 +65,13 @@ def slow_room(bot):
     if bot.memory['shush']:
         return
 
+    bot.memory['slow_wait'] = (random.uniform(23, 33) * 60)
+
     bot.memory["slow_timer_lock"].acquire()
     try:
         for key in bot.memory["slow_timer"].keys():
             try:
-                if bot.memory["slow_timer"][key] < time.time() - _WAIT_TIME \
+                if bot.memory["slow_timer"][key] < time.time() - bot.memory['slow_wait'] \
                         and key in bot.channels:
                     function = random.randint(0, 11)
                     if function == 0:
