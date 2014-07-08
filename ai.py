@@ -249,7 +249,11 @@ def hi(bot, trigger):
         bot.say(message + u" " + trigger.nick + punctuation)
 
 
-@rule(ur'.*$nickname\:?,?\s+Are you a bot|.*$nickname (is )?a bot')
+# @rule(ur'.*$nickname\:?,?\s+Are you a (ro)?bot|.*$nickname (is )?a (ro)?bot')
+@rule(ur'.*$nickname\:?,?\s+Are you a (ro)?bot|' +
+      '.*$nickname (is )?a (ro)?bot|' +
+      '.*is $nickname a (real)?\s?person|' +
+      '.*$nickname.*are you a (real\a)?(person|bot|robot)')
 @rate(300)
 def isbot(bot, trigger):
     """Replies to queries about fineline being a bot"""
@@ -257,23 +261,43 @@ def isbot(bot, trigger):
     if bot.memory['shush']:
         return
     time.sleep(random.uniform(1, 2))
-    bot.say(random.choice(
-        [u"Nope, I'm just fast.",
-         u"Nah, I just type really fast and know a lot.",
-         u"What makes you think that?",
-         u"lolno",
-         u"Uh.....no?"]
-    ))
-    time.sleep(random.uniform(3, 5))
-    bot.say(random.choice(
-        [u"Come on, don't you see these hooves?",
-         u"If I were a bot, how come I have hooves?",
-         u"See? I have hooves! *wiggles hooves*",
-         u"I'm kinda hurt you'd even suggest such a thing...",
-         u"Are you a bot?",
-         u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
-         u"Besides, sentience is a hard thing to prove..."]
-    ))
+
+    if re.search('person', trigger.bytes, flags=re.I):
+        bot.say(random.choice(
+                [u"Yeah, I'm just fast.",
+                 u"Yeah, I just type really fast and know a lot.",
+                 u"What makes you think otherwise?",
+                 u"duh",
+                 u"Uh.....yeah?"]
+                ))
+        time.sleep(random.uniform(3, 5))
+        bot.say(random.choice(
+                [u"Come on, don't you see these hooves?",
+                 u"If I werent, how come I have hooves?",
+                 u"See? I have hooves! *wiggles hooves*",
+                 u"I'm kinda hurt you'd even suggest otherwise...",
+                 u"Are you a person?",
+                 u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
+                 u"Anyway, sentience is a hard thing to prove..."]
+                ))
+    else:
+        bot.say(random.choice(
+                [u"Nope, I'm just fast.",
+                 u"Nah, I just type really fast and know a lot.",
+                 u"What makes you think that?",
+                 u"lolno",
+                 u"Uh.....no?"]
+                ))
+        time.sleep(random.uniform(3, 5))
+        bot.say(random.choice(
+                [u"Come on, don't you see these hooves?",
+                 u"If I were a bot, how come I have hooves?",
+                 u"See? I have hooves! *wiggles hooves*",
+                 u"I'm kinda hurt you'd even suggest such a thing...",
+                 u"Are you a bot?",
+                 u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
+                 u"Besides, sentience is a hard thing to prove..."]
+                ))
 
 
 night_prefix = ur"($nickname\:?,?\s+)"
