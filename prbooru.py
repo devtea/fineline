@@ -12,13 +12,13 @@ from HTMLParser import HTMLParseError
 from random import choice
 import re
 from socket import timeout
+import bisect
+import random
 
 from bs4 import BeautifulSoup, SoupStrainer
 
 import willie.web as web
 from willie.module import commands, example
-
-base_url = u'http://ponyreference.booru.org/'
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -36,6 +36,8 @@ except:
         if fp:
             fp.close()
 
+base_urls = [(u'http://ponyresource.booru.org/', 1557), (u'http://ponyreference.booru.org/', 817)]
+
 
 def parse_tags(tags):
     '''Takes a string, returns a list'''
@@ -49,7 +51,7 @@ def parse_tags(tags):
         return None
 
 
-def prbooru_search(bot, tags=None, rand=True):
+def prbooru_search(bot, booru, tags=None, rand=True):
     def get_image_from_page(url):
         page = ''
         try:
@@ -91,11 +93,11 @@ def prbooru_search(bot, tags=None, rand=True):
             links_list = []
             for i in soupy_links:
                 # bot.debug(__file__, log.format(i['href']), 'verbose')
-                links_list.append(base_url + i[u'href'])
+                links_list.append(booru + i[u'href'])
             next = ''
             next_tag = soupy.find(u'a', alt=u'next', text=u'>')
             if next_tag:
-                next = base_url + str(next_tag['href'])
+                next = booru + str(next_tag['href'])
             bot.debug(__file__, log.format(u'"next" is ', next), u'verbose')
             bot.debug(__file__, log.format(u'returning %i' % len(links_list)), u'verbose')
             return (links_list, next)
@@ -108,8 +110,8 @@ def prbooru_search(bot, tags=None, rand=True):
         tag_blob = u'%s%s' % (tag_blob, tags.pop(0))
         for tag in tags:
             tag_blob = u'%s+%s' % (tag_blob, tag)
-        bot.debug(__file__, log.format(base_url, tag_blob), u'verbose')
-        next_page = base_url + tag_blob
+        bot.debug(__file__, log.format(booru, tag_blob), u'verbose')
+        next_page = booru + tag_blob
         links = []
         while next_page:
             newlinks, next_page = get_pr_list(next_page)
@@ -132,7 +134,19 @@ def prbooru_search(bot, tags=None, rand=True):
     else:
         bot.debug(__file__, log.format(u'entered random section'), u'verbose')
         tag_blob = u'index.php?page=post&s=random'
-        return get_image_from_page(base_url + tag_blob)
+        return get_image_from_page(booru + tag_blob)
+
+
+def weighted_choice(weighted):
+    """Returns a random index from a list of tuples that contain
+    (something, weight) where weight is the weighted probablity that
+    that item should be chosen. Higher weights are chosen more often"""
+    sum = 0
+    sum_steps = []
+    for item in weighted:
+        sum = sum + int(item[1])
+        sum_steps.append(sum)
+    return bisect.bisect_right(sum_steps, random.uniform(0, sum))
 
 
 @commands(u'pr')
@@ -142,6 +156,9 @@ def prbooru(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
+
+    booru = base_urls[weighted_choice(base_urls)][0]
+
     bot.debug(__file__, log.format(u'-' * 20), u'verbose')
     if not trigger.group(2):
         # TODO give help
@@ -152,10 +169,10 @@ def prbooru(bot, trigger):
     bot.debug(__file__, log.format(tags_list), u'verbose')
     if len(tags_list) == 1 and tags_list[0].upper() == u'RANDOM':
         bot.debug(__file__, log.format(u'random'), u'verbose')
-        link = prbooru_search(bot)  # Request a random image else:
+        link = prbooru_search(bot, booru)  # Request a random image else:
     else:
         bot.debug(__file__, log.format(u'tags'), u'verbose')
-        link = prbooru_search(bot, tags=tags_list)  # Get image from tags
+        link = prbooru_search(bot, booru, tags=tags_list)  # Get image from tags
     if link:
         bot.reply(link)
     elif link is None:
