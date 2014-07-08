@@ -34,8 +34,7 @@ except:
         if fp:
             fp.close()
 
-_CHAN_EXC = []
-
+_include = ['#reddit-mlpds', '#fineline_testing']
 # TODO Config section to set up config options
 
 
@@ -83,9 +82,7 @@ def queue_watcher(bot, trigger=None):
 
 
 def start_stream(bot, ep):
-    for channel in bot.channels:
-        if channel in _CHAN_EXC:
-            continue
+    for channel in [x for x in bot.channels if x in _include]:
         bot.msg(
             channel,
             u'Starting stream of %s at %s' % (
