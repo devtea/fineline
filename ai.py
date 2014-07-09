@@ -35,7 +35,7 @@ basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
 basic_badbot = (u"bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +
                 u"(fuck[s]?\s?(sake|off)?)")
 n_text = u"[A-Za-z0-9,.'!\s]"
-basic_slap = u"slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?\b"
+basic_slap = u"slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?"
 random.seed()
 
 
