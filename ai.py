@@ -195,7 +195,7 @@ def slapped(bot, trigger):
             return
     time.sleep(random.uniform(1, 3))
 
-    match = re.search(r'^[^!]*\swith\sa\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', trigger.bytes, re.I)
+    match = re.search(r'^[^!]*\swith\san?\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', trigger.bytes, re.I)
     if match:
         plural = False
         if match.groups()[-1].endswith('s'):
