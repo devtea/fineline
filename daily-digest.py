@@ -159,7 +159,7 @@ def image_filter(bot, url):
     # Deviant Art / fav.me
     # 500px
     # flickr
-    FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp']
+    FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
     _dom_map = {
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
         'deviantart.com': re.compile('\S+\.deviantart\.com'),
@@ -396,7 +396,6 @@ def build_regularly(bot):
 
 @commands('digest_build_html')
 def build_html(bot, trigger):
-    bot.debug(__file__, log.format(log.format(bot.memory['digest']['destination'])), 'verbose')
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
             previous_html = ''.join(f.readlines())
@@ -405,19 +404,18 @@ def build_html(bot, trigger):
         bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
 
     # Generate HTML
-    simple_header = '<title>Image digest</title>\n        <style type=\'text/css\'>body \{margin:0\}</style>\n'
-    simple_img = '<img src="%s">'
+    simple_header = '<title>Image digest</title>\n        <style type=\'text/css\'>body {margin:0}</style>\n'
+    simple_img = Template('<img src="$url" height="250">')
     html = bot.memory['digest']['templatehtml'].substitute(
         body='\n'.join(
-            [simple_img % i['image'] for i in bot.memory['digest']['digest']]
+            [simple_img.substitute(url=i['image']) for i in bot.memory['digest']['digest']]
             ),
-        head = simple_header
+        head=simple_header
     )
     if previous_html != html:
+        bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
         with open(bot.memory['digest']['destination'], 'w') as f:
             f.write(html)
-    else:
-        bot.debug(__file__, log.format(u'No chage in digest html file, skipping.'), u'verbose')
 
 
 if __name__ == "__main__":
