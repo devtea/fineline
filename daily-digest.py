@@ -50,7 +50,7 @@ except:
             fp.close()
 
 EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
-IGNORE = ['hushmachine', 'hushbot', 'hushrobot']
+IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
 
 
 class ImageParser(HTMLParser):
@@ -439,6 +439,34 @@ def url_dump(bot, trigger):
             bot.debug(__file__, log.format(i['image']), 'always')
         bot.debug(__file__, log.format('=' * 20), 'always')
 
+_style = '''
+    <style>
+    div.img {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid #000000;
+        height: auto;
+        width: auto;
+        float: left;
+        text-align: center;
+    }
+    div.img img {
+        display: inline;
+        margin: 5px;
+        border: 1px solid #ffffff;
+    }
+    div.img a:hover img {
+        border:1px solid #0000ff;
+    }
+    div.desc {
+        text-align: left ;
+        font-weight: normal;
+        width: 300px;
+        margin: 10px;
+    }
+    </style>
+'''
+
 
 @commands('digest_build_html')
 def build_html(bot, trigger):
@@ -450,12 +478,27 @@ def build_html(bot, trigger):
         bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
 
     # Generate HTML
-    simple_header = '<title>Image digest</title>\n        <style type=\'text/css\'>body {margin:0}</style>\n'
+    header = Template('${title}${style}')
+    header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
+    header_style = _style
+    simple_header = header.substitute(title=header_title, style=header_style)
+
+    img_div = Template('<div class = "img">${img}${desc}</div>')
     simple_img = Template('<img src="$url" height="250">')
+    desc_div = Template('<div class="desc"><p><b>Channel:</b> ${channel}<br><b>Message:</b> &lt;${author}&gt; ${message}</p></div>')
+    msg = '\n'.join(
+        [img_div.substitute(
+            img=simple_img.substitute(url=i['image']),
+            desc=desc_div.substitute(
+                author=i['author'],
+                channel=i['channel'],
+                message=i['message']
+            )
+        ) for i in bot.memory['digest']['digest']]
+    )
+
     html = bot.memory['digest']['templatehtml'].substitute(
-        body='\n'.join(
-            [simple_img.substitute(url=i['image']) for i in bot.memory['digest']['digest']]
-            ),
+        body=msg,
         head=simple_header
     )
     if previous_html != html:
