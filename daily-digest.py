@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
+import json
 import re
 import threading
 import time
@@ -153,10 +154,9 @@ def template(bot, trigger):
 
 def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
-    # Image services to Support
-    # Imgur
-    # Sta.sh
-    # Deviant Art / fav.me
+    # TODO Image services to Support
+    # Imgur (mostly just galleries now)
+    # misc boorus
     # 500px
     # flickr
     FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
@@ -168,12 +168,36 @@ def image_filter(bot, url):
     domains = {
         'deviantart.net': (lambda url: deviantart(url)),
         'deviantart.com': (lambda url: deviantart(url)),
+        'sta.sh': (lambda url: deviantart(url)),
+        'fav.me': (lambda url: deviantart(url)),
+        'dropbox.com': (lambda url: dropbox(url)),
+        'www.dropbox.com': (lambda url: dropbox(url)),
         'i.imgur.com': (lambda url: imgur(url)),
         'imgur.com': (lambda url: imgur(url)),
+        'derpiboo.ru': (lambda url: derpibooru(url)),
+        'derpibooru.org': (lambda url: derpibooru(url)),
+        'trixiebooru.org': (lambda url: derpibooru(url)),
         'derpicdn.net': (lambda url: derpibooru(url)),
+        'cdn.derpiboo.ru': (lambda url: derpibooru(url)),
         'static1.e621.net': (lambda url: e621(url)),
         'e621.net': (lambda url: e621(url))
     }
+    temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
+
+    def derpibooru(url):
+        '''derpibooru provides an oembed option at derpiboo.ru/oembed.json'''
+        try:
+            content = urllib2.urlopen(u"http://derpiboo.ru/oembed.json?url=%s" % url)
+            raw_json = content.read().decode('utf-8', 'replace')
+            f_json = json.loads(raw_json)
+            if 'thumbnail_url' in f_json:
+                return f_json['thumbnail_url']
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the derpibooru parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
 
     def deviantart(url):
         parser = DAParser()
@@ -182,8 +206,8 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            print(u'[daily-digest.py] Unhandled exception in the DA parser.')
-            print(traceback.format_exc())
+            bot.debug(__file__, log.format(u'Unhandled exception in the DA parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
         return parser.get_img()
 
@@ -199,8 +223,8 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            print(u'[daily-digest.py] Unhandled exception in the imgur parser.')
-            print(traceback.format_exc())
+            bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
         img = parser.get_img()
         if img:
@@ -210,11 +234,35 @@ def image_filter(bot, url):
             # Else return the original URL for album embedding
             return url
 
-    def derpibooru(url):
-        return url
+    def dropbox(url):
+        # TODO remove this if possible after header check is implemented
+        try:
+            if url.split('.')[-1] in FILELIST:
+                return re.sub('(www)?\.dropbox\.com', 'dl.dropboxusercontent.com', url, flags=re.I)
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the dropbox parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
 
     def e621(url):
-        return url
+        id = re.search('post/show/(\d{5,})', url, flags=re.I)
+        if not id:
+            return None
+        parsed = u'https://e621.net/post/show.json?id=%s' % id.groups()[0]
+        try:
+            content = urllib2.urlopen(parsed)
+            raw_json = content.read().decode('utf-8', 'replace')
+            f_json = json.loads(raw_json)
+            if 'file_url' in f_json:
+                return f_json['file_url']
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the e621 parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
 
     bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
 
@@ -229,8 +277,11 @@ def image_filter(bot, url):
     # TODO Are there urls with shit after the file name? eg.
     # http://example.net/image.png?shit=stuffs
     if url.split('.')[-1] in FILELIST:
-        bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
-        return {'url': url, 'service': domain}
+        # TODO Grab header and see if MIME type is sane before returning the
+        # raw link
+        if domain not in temp_preprocess:
+            bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
+            return {'url': url, 'service': domain}
 
     # Try to get url function for specific domain
     try:
@@ -266,7 +317,7 @@ def image_filter(bot, url):
         try:
             uid = _re_deviantart.search(url).groups()[0]
         except:
-            print(u'[url.py] Unhandled exception in deviantart parser.')
+            bot.debug(__file__, log.format(u'[url.py] Unhandled exception in deviantart parser.')
             return None
         return 'http://fav.me/%s' % uid
     """
@@ -389,11 +440,6 @@ def url_dump(bot, trigger):
         bot.debug(__file__, log.format('=' * 20), 'always')
 
 
-@interval(60)
-def build_regularly(bot):
-    build_html(bot, None)
-
-
 @commands('digest_build_html')
 def build_html(bot, trigger):
     try:
@@ -416,6 +462,11 @@ def build_html(bot, trigger):
         bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
         with open(bot.memory['digest']['destination'], 'w') as f:
             f.write(html)
+
+
+@interval(60)
+def build_regularly(bot):
+    build_html(bot, None)
 
 
 if __name__ == "__main__":
