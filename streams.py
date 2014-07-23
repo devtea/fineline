@@ -1537,7 +1537,7 @@ def announcer(bot):
 
 
 # Justin.tv caches for at least 60 seconds. Updating faster is pointless.
-@interval(211)
+@interval(311)
 def jtv_updater(bot):
     bot.debug(__file__, log.format(u'Starting justin.tv updater.'), u'verbose')
     now = time.time()
