@@ -467,9 +467,26 @@ _style = '''
     </style>
 '''
 
+_desc = '''
+<div class="desc">
+    <p><b>Channel:</b> ${channel}<br>
+       <b>Message:</b> &lt;${author}&gt; ${message}
+       ${nsfw}
+    </p>
+</div>
+'''
+
 
 @commands('digest_build_html')
 def build_html(bot, trigger):
+    def is_nsfw(nsfw):
+        if nsfw is None:
+            return "<br><b>This image may be NSFW</b> (flagged from conversation context)"
+        elif nsfw:
+            return "<br><b>This images was tagged as NSFW</b>"
+        else:
+            return "<br>SFW"
+
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
             previous_html = ''.join(f.readlines())
@@ -480,19 +497,19 @@ def build_html(bot, trigger):
     # Generate HTML
     header = Template('${title}${style}')
     header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
-    header_style = _style
-    simple_header = header.substitute(title=header_title, style=header_style)
+    simple_header = header.substitute(title=header_title, style=_style)
 
     img_div = Template('<div class = "img">${img}${desc}</div>')
     simple_img = Template('<img src="$url" height="250">')
-    desc_div = Template('<div class="desc"><p><b>Channel:</b> ${channel}<br><b>Message:</b> &lt;${author}&gt; ${message}</p></div>')
+    desc_div = Template(_desc)
     msg = '\n'.join(
         [img_div.substitute(
             img=simple_img.substitute(url=i['image']),
             desc=desc_div.substitute(
                 author=i['author'],
                 channel=i['channel'],
-                message=i['message']
+                message=i['message'],
+                nsfw=is_nsfw(i['nsfw'])
             )
         ) for i in bot.memory['digest']['digest']]
     )
