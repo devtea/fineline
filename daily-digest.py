@@ -7,11 +7,16 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
-# import stuff
+import json
 import re
 import threading
 import time
+import traceback
+import urlparse
+import urllib2
 from pprint import pprint as pp
+from HTMLParser import HTMLParser
+from string import Template
 
 from willie.module import commands, rule, interval
 
@@ -44,8 +49,43 @@ except:
         if fp:
             fp.close()
 
-EXPIRATION = 24 * 60 * 60  # 24 hour expiration
-IGNORE = ['hushmachine', 'hushbot', 'hushrobot']
+EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
+IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
+
+
+class ImageParser(HTMLParser):
+    def get_img(self):
+        try:
+            return self.img
+        except:
+            return None
+
+
+class DAParser(ImageParser):
+    def handle_starttag(self, tag, attrs):
+        # Easiest way to grab an image from deviant art is to parse the page
+        # and pull out the (hopefully) only img tag with a class of
+        # 'dev-content-full'
+        if tag == 'img' and attrs:
+            # Attrs are a list of tuples, (name, value)
+            d = {}
+            for attr in attrs:
+                d[attr[0]] = attr[1]
+            if d and 'class' in d and d['class'] == 'dev-content-full':
+                self.img = d['src']
+
+
+class ImgurParser(ImageParser):
+    def handle_starttag(self, tag, attrs):
+        # Imgur pages will either have a single link with a src attribute, or a
+        # buch of links with a data-src attribute
+        if tag == 'img' and attrs:
+            # Attrs are a list of tuples, (name, value)
+            d = {}
+            for attr in attrs:
+                d[attr[0]] = attr[1]
+                if d and 'src' in d and d['src'].startswith('//i.imgur'):
+                    self.img = 'http://%s' % d['src'].strip('/')
 
 
 def configure(config):
@@ -61,17 +101,31 @@ def configure(config):
 
 
 def setup(bot):
-    if 'digest' not in bot.memory:
-        bot.memory['digest'] = []
-    if 'digest_context' not in bot.memory:
-        bot.memory['digest_context'] = []
 
+    if 'digest' not in bot.memory:
+        bot.memory['digest'] = {}
+    if 'digest' not in bot.memory['digest']:
+        bot.memory['digest']['digest'] = []
+    if 'digest_context' not in bot.memory:
+        bot.memory['digest']['context'] = []
     if 'digest_lock' not in bot.memory:
-        bot.memory['digest_lock'] = threading.Lock()
+        bot.memory['digest']['lock'] = threading.Lock()
     if 'digest_context_lock' not in bot.memory:
-        bot.memory['digest_context_lock'] = threading.Lock()
-    with bot.memory['digest_lock']:
-        bot.memory['some_dictionary'] = {}
+        bot.memory['digest']['context_lock'] = threading.Lock()
+
+    # Load config values
+    bot.memory['digest']['template'] = bot.config.dailydigest.template
+    bot.memory['digest']['destination'] = bot.config.dailydigest.destination
+    bot.memory['digest']['url'] = bot.config.dailydigest.url
+    with open(bot.memory['digest']['template'], 'r') as f:
+        try:
+            bot.memory['digest']['templatehtml'] = Template(f.read())
+        except:
+            bot.debug(__file__, log.format(u'Unable to load template.'), u'always')
+            raise
+
+    with bot.memory['digest']['lock']:
+        bot.memory['digest']['some_dictionary'] = {}
 
         db = bot.db.connect()
         cur = db.cursor()
@@ -100,6 +154,146 @@ def template(bot, trigger):
 
 def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
+    # TODO Image services to Support
+    # Imgur (mostly just galleries now)
+    # misc boorus
+    # 500px
+    # flickr
+    FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
+    _dom_map = {
+        'deviantart.net': re.compile('\S+\.deviantart\.net'),
+        'deviantart.com': re.compile('\S+\.deviantart\.com'),
+        'imgur.com': re.compile('i\.imgur\.com')
+    }
+    domains = {
+        'deviantart.net': (lambda url: deviantart(url)),
+        'deviantart.com': (lambda url: deviantart(url)),
+        'sta.sh': (lambda url: deviantart(url)),
+        'fav.me': (lambda url: deviantart(url)),
+        'dropbox.com': (lambda url: dropbox(url)),
+        'www.dropbox.com': (lambda url: dropbox(url)),
+        'i.imgur.com': (lambda url: imgur(url)),
+        'imgur.com': (lambda url: imgur(url)),
+        'derpiboo.ru': (lambda url: derpibooru(url)),
+        'derpibooru.org': (lambda url: derpibooru(url)),
+        'trixiebooru.org': (lambda url: derpibooru(url)),
+        'derpicdn.net': (lambda url: derpibooru(url)),
+        'cdn.derpiboo.ru': (lambda url: derpibooru(url)),
+        'static1.e621.net': (lambda url: e621(url)),
+        'e621.net': (lambda url: e621(url))
+    }
+    temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
+
+    def derpibooru(url):
+        '''derpibooru provides an oembed option at derpiboo.ru/oembed.json'''
+        try:
+            content = urllib2.urlopen(u"http://derpiboo.ru/oembed.json?url=%s" % url)
+            raw_json = content.read().decode('utf-8', 'replace')
+            f_json = json.loads(raw_json)
+            if 'thumbnail_url' in f_json:
+                return f_json['thumbnail_url']
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the derpibooru parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+
+    def deviantart(url):
+        parser = DAParser()
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            parser.feed(html)
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the DA parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        return parser.get_img()
+
+    def imgur(url):
+        # Imgur has a lot of shit urls, filter them first before trying to
+        # parse the html.
+        if re.search('user|\.com/?$|//[^\.\W]{2,}\.imgur.com', url, re.I):
+            return None
+
+        parser = ImgurParser()
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            parser.feed(html)
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        img = parser.get_img()
+        if img:
+            # If we got an image back, return it
+            return img
+        else:
+            # Else return the original URL for album embedding
+            return url
+
+    def dropbox(url):
+        # TODO remove this if possible after header check is implemented
+        try:
+            if url.split('.')[-1] in FILELIST:
+                return re.sub('(www)?\.dropbox\.com', 'dl.dropboxusercontent.com', url, flags=re.I)
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the dropbox parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+
+    def e621(url):
+        id = re.search('post/show/(\d{5,})', url, flags=re.I)
+        if not id:
+            return None
+        parsed = u'https://e621.net/post/show.json?id=%s' % id.groups()[0]
+        try:
+            content = urllib2.urlopen(parsed)
+            raw_json = content.read().decode('utf-8', 'replace')
+            f_json = json.loads(raw_json)
+            if 'file_url' in f_json:
+                return f_json['file_url']
+            else:
+                return None
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the e621 parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+
+    bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
+
+    parsed_url = urlparse.urlparse(url)
+    domain = '{uri.netloc}/'.format(uri=parsed_url).strip('/')
+    # Regex replacements for certain domains
+    bot.debug(__file__, log.format("Unprocessed domain is: %s" % domain), 'verbose')
+    for r in _dom_map:
+        domain = _dom_map[r].sub(r, domain)
+    bot.debug(__file__, log.format("Processed domain is: %s" % domain), 'verbose')
+
+    # TODO Are there urls with shit after the file name? eg.
+    # http://example.net/image.png?shit=stuffs
+    if url.split('.')[-1] in FILELIST:
+        # TODO Grab header and see if MIME type is sane before returning the
+        # raw link
+        if domain not in temp_preprocess:
+            bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
+            return {'url': url, 'service': domain}
+
+    # Try to get url function for specific domain
+    try:
+        check = domains[domain]
+    except KeyError:
+        bot.debug(__file__, log.format("Domain %s not found." % domain), 'verbose')
+        return None
+
+    # If we got a check function, use that to return the image url
+    # TODO try except
+    return {'url': check(url), 'service': domain}
+
     """
     _re_imgur = re.compile('imgur\.com/([^\s]+?)\.\S{3}')
     _re_deviantart = re.compile('/\w+/\w+/\w+/\w+-(\w+)\.\w{3,4}')
@@ -123,17 +317,13 @@ def image_filter(bot, url):
         try:
             uid = _re_deviantart.search(url).groups()[0]
         except:
-            print(u'[url.py] Unhandled exception in deviantart parser.')
+            bot.debug(__file__, log.format(u'[url.py] Unhandled exception in deviantart parser.')
             return None
         return 'http://fav.me/%s' % uid
-"""
-    # TODO
-    service = 'Service Placeholder'
-    return {'url': url, 'service': service}
-
+    """
 
 url = re.compile(r'''(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
-re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|explicit|porn|clop')
+re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|questionable|explicit|porn|clop')
 
 
 @rule(r'''(?i).*\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
@@ -152,12 +342,11 @@ def url_watcher(bot, trigger):
         return
 
     time.sleep(10)  # Wait just a bit to grab post-link nsfw tagging context, but only once per message
-    with bot.memory['digest_context_lock']:
-        local_context = [i for i in bot.memory['digest_context']]
+    with bot.memory['digest']['context_lock']:
+        local_context = [i for i in bot.memory['digest']['context']]
 
     for u in matches:
-        # TODO Filter to include only direct image links and whitelisted image sites
-        # to scrape. Probably can be combined with service checking.
+        original = u
         u = image_filter(bot, u)
         if not u:
             continue
@@ -171,19 +360,21 @@ def url_watcher(bot, trigger):
             for i in [x[1] for x in local_context if x[0] == trigger.sender]:
                 if re_nsfw.search(i):
                     nsfw = None
-
-        t = (
-            now,
-            u,
-            {'message': trigger.bytes,
-             'author': nicks.NickPlus(trigger.nick, trigger.host),
-             'nsfw': nsfw,
-             'service': 'service placeholder',
-             'channel': trigger.sender,
-             'reported': False
-             })
-        with bot.memory['digest_lock']:
-            bot.memory['digest'].append(t)
+        if not u['url']:
+            return
+        t = {
+            'time': now,
+            'message': trigger.bytes,
+            'author': nicks.NickPlus(trigger.nick, trigger.host),
+            'nsfw': nsfw,
+            'url': original,
+            'image': u['url'],
+            'service': u['service'],
+            'channel': trigger.sender,
+            'reported': False
+            }
+        with bot.memory['digest']['lock']:
+            bot.memory['digest']['digest'].append(t)
 
         bot.debug(__file__, log.format(pp(t)), 'verbose')
 
@@ -192,8 +383,8 @@ def url_watcher(bot, trigger):
 def digest_clear(bot, trigger):
     if not trigger.owner:
         return
-    with bot.memory['digest_lock']:
-        bot.memory['digest'] = []
+    with bot.memory['digest']['lock']:
+        bot.memory['digest']['digest'] = []
     bot.reply(u'Cleared.')
 
 
@@ -201,11 +392,11 @@ def digest_clear(bot, trigger):
 def digest_dump(bot, trigger):
     if not trigger.owner:
         return
-    with bot.memory['digest_lock']:
+    with bot.memory['digest']['lock']:
         bot.reply(u'Dumping digest to logs.')
         bot.debug(__file__, log.format('=' * 20), 'always')
         bot.debug(__file__, log.format('time is %s' % time.time()), 'always')
-        for i in bot.memory['digest']:
+        for i in bot.memory['digest']['digest']:
             bot.debug(__file__, log.format(pp(i)), 'always')
         bot.debug(__file__, log.format('=' * 20), 'always')
 
@@ -213,28 +404,129 @@ def digest_dump(bot, trigger):
 @interval(3600)
 def clean_links(bot):
     '''Remove old links from bot memory'''
-    with bot.memory['digest_lock']:
-        bot.memory['digest'] = [i for i in bot.memory['digest'] if i[0] > time.time() - EXPIRATION]
+    with bot.memory['digest']['lock']:
+        bot.memory['digest']['digest'] = [i for i in bot.memory['digest']['digest'] if i['time'] > time.time() - EXPIRATION]
 
 
 @rule('.*')
 def context(bot, trigger):
     '''Function to keep a running context of messages.'''
-    with bot.memory['digest_context_lock']:
-        bot.memory['digest_context'].append((trigger.sender, trigger.bytes))
+    with bot.memory['digest']['context_lock']:
+        bot.memory['digest']['context'].append((trigger.sender, trigger.bytes))
 
         # Trim list to keep it contextual
-        if len(bot.memory['digest_context']) > 20:
-            bot.memory['digest_context'].pop(0)
+        if len(bot.memory['digest']['context']) > 20:
+            bot.memory['digest']['context'].pop(0)
 
 
 @commands('context_clear')
 def context_clear(bot, trigger):
     if not trigger.owner:
         return
-    with bot.memory['digest_context_lock']:
-        bot.memory['digest_context'] = []
+    with bot.memory['digest']['context_lock']:
+        bot.memory['digest']['context'] = []
     bot.reply(u'Cleared.')
+
+
+@commands('digest_url_dump')
+def url_dump(bot, trigger):
+    if not trigger.owner:
+        return
+    with bot.memory['digest']['lock']:
+        bot.reply(u'Dumping digest urls to logs.')
+        bot.debug(__file__, log.format('=' * 20), 'always')
+        for i in bot.memory['digest']['digest']:
+            bot.debug(__file__, log.format(i['image']), 'always')
+        bot.debug(__file__, log.format('=' * 20), 'always')
+
+_style = '''
+    <style>
+    div.img {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid #000000;
+        height: auto;
+        width: auto;
+        float: left;
+        text-align: center;
+    }
+    div.img img {
+        display: inline;
+        margin: 5px;
+        border: 1px solid #ffffff;
+    }
+    div.img a:hover img {
+        border:1px solid #0000ff;
+    }
+    div.desc {
+        text-align: left ;
+        font-weight: normal;
+        width: 300px;
+        margin: 10px;
+    }
+    </style>
+'''
+
+_desc = '''
+<div class="desc">
+    <p><b>Channel:</b> ${channel}<br>
+       <b>Message:</b> &lt;${author}&gt; ${message}
+       ${nsfw}
+    </p>
+</div>
+'''
+
+
+@commands('digest_build_html')
+def build_html(bot, trigger):
+    def is_nsfw(nsfw):
+        if nsfw is None:
+            return "<br><b>This image may be NSFW</b> (flagged from conversation context)"
+        elif nsfw:
+            return "<br><b>This images was tagged as NSFW</b>"
+        else:
+            return "<br>SFW"
+
+    try:
+        with open(bot.memory['digest']['destination'], 'r') as f:
+            previous_html = ''.join(f.readlines())
+    except IOError:
+        previous_html = ''
+        bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
+
+    # Generate HTML
+    header = Template('${title}${style}')
+    header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
+    simple_header = header.substitute(title=header_title, style=_style)
+
+    img_div = Template('<div class = "img">${img}${desc}</div>')
+    simple_img = Template('<img src="$url" height="250">')
+    desc_div = Template(_desc)
+    msg = '\n'.join(
+        [img_div.substitute(
+            img=simple_img.substitute(url=i['image']),
+            desc=desc_div.substitute(
+                author=i['author'],
+                channel=i['channel'],
+                message=i['message'],
+                nsfw=is_nsfw(i['nsfw'])
+            )
+        ) for i in bot.memory['digest']['digest']]
+    )
+
+    html = bot.memory['digest']['templatehtml'].substitute(
+        body=msg,
+        head=simple_header
+    )
+    if previous_html != html:
+        bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
+        with open(bot.memory['digest']['destination'], 'w') as f:
+            f.write(html)
+
+
+@interval(60)
+def build_regularly(bot):
+    build_html(bot, None)
 
 
 if __name__ == "__main__":

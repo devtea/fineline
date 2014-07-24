@@ -74,7 +74,8 @@ _reply_list = [u'%s x %s',
                u'%s nearly faints when %s senpai finally notices them~',
                u'%s isn\'t the only one chasing after %s',
                u'%s only has eyes for %s',
-               u'It\'s hard to tell where %s ends and %s begins.'
+               u'It\'s hard to tell where %s ends and %s begins.',
+               u'%s has a super secret diary just filled with pictures of %s.'
                ]
 
 
@@ -149,7 +150,7 @@ def ship(bot, trigger):
                     target = nick
                     include_nicks = True
                     break
-            
+
         elif nicks.in_chan(bot, trigger.sender, target):
             # Get properly formatted nick from channel nick list
             nick_list = []
