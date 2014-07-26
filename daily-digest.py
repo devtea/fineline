@@ -516,6 +516,8 @@ def build_html(bot, trigger):
                         'time': link['time'],
                         'message': link['message'],
                         'channel': link['channel']})
+                    # Sort to ensure element 0 is oldest message
+                    parsed_links[link['image'].lower()]['messages'].sort(key=lambda t: t['time'])
                 else:
                     parsed_links[link['image'].lower()] = {
                         'image': link['image'],
@@ -547,10 +549,20 @@ def build_html(bot, trigger):
     img_div = Template('<div class = "img">${img}${desc}</div>')
     simple_img = Template('<img src="$url" height="250">')
     desc_div = Template(_desc)
+    # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
-    bot.debug(__file__, log.format('Dedupe dictionary:'), 'verbose')
-    print(pp(dedupe))
     if dedupe:
+        # Next make into a list for sorting
+        # TODO move this into the dedupe function
+        dedupe_list = [{'image': dedupe[i]['image'],
+                        'nsfw': is_nsfw(dedupe[i]['nsfw']),
+                        'author': dedupe[i]['messages'][0]['author'],
+                        'channel': dedupe[i]['messages'][0]['channel'],
+                        'message': dedupe[i]['messages'][0]['message'],
+                        'time': dedupe[i]['messages'][0]['time']
+                        } for i in dedupe]
+        dedupe_list.sort(key=lambda t: t['time'])
+
         msg = '\n'.join(
             [img_div.substitute(
                 img=simple_img.substitute(url=dedupe[i]['image']),
