@@ -101,16 +101,15 @@ def configure(config):
 
 
 def setup(bot):
-
     if 'digest' not in bot.memory:
         bot.memory['digest'] = {}
     if 'digest' not in bot.memory['digest']:
         bot.memory['digest']['digest'] = []
-    if 'digest_context' not in bot.memory:
+    if 'context' not in bot.memory['digest']:
         bot.memory['digest']['context'] = []
-    if 'digest_lock' not in bot.memory:
+    if 'lock' not in bot.memory['digest']:
         bot.memory['digest']['lock'] = threading.Lock()
-    if 'digest_context_lock' not in bot.memory:
+    if 'context_lock' not in bot.memory['digest']:
         bot.memory['digest']['context_lock'] = threading.Lock()
 
     # Load config values
@@ -155,7 +154,9 @@ def template(bot, trigger):
 def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
     # TODO Image services to Support
-    # Imgur (mostly just galleries now)
+    # Imgur (mostly just gallery embedding now)
+    # Grab.by ?
+    # Steam
     # misc boorus
     # 500px
     # flickr
@@ -353,6 +354,7 @@ def url_watcher(bot, trigger):
 
         # NSFW checking. If the message line contains keywords, mark as NSFW. If
         # the context contains keywords, mark as unknown/maybe.
+        # TODO catch SFW tags to override context
         nsfw = False
         if re_nsfw.search(trigger.bytes):
             nsfw = True
@@ -466,14 +468,13 @@ _style = '''
     }
     </style>
 '''
-
 _desc = '''
-<div class="desc">
-    <p><b>Channel:</b> ${channel}<br>
-       <b>Message:</b> &lt;${author}&gt; ${message}
-       ${nsfw}
-    </p>
-</div>
+    <div class="desc">
+        <p><b>Channel:</b> ${channel}<br>
+        <b>Message:</b> &lt;${author}&gt; ${message}
+        ${nsfw}
+        </p>
+    </div>
 '''
 
 
@@ -487,6 +488,48 @@ def build_html(bot, trigger):
         else:
             return "<br>SFW"
 
+    def build_links(link_list):
+        ''' Returns a dictionary like so
+        {'http://example.com/image.png':
+            {'url': 'http://example.com/images/1899691',
+             'nsfw': False,
+             'service': 'fav.me',
+             'reported': False,
+             'messages':
+                 [{'author': 'eytosh',
+                   'time': '187273918392.187',
+                   'message': 'Here\'s something neat: http://example.com/images/1899691'},
+                  {'author': 'beerpony',
+                   'time': '162734282347.234',
+                   'message': "wtf http://example.com/images/1899691"}]
+            },
+         '\\example2.png': {...}
+        }
+        '''
+
+        with bot.memory['digest']['lock']:
+            parsed_links = {}
+            for link in link_list:
+                if link['image'].lower() in parsed_links:
+                    parsed_links[link['image'].lower()]['messages'].append({
+                        'author': link['author'],
+                        'time': link['time'],
+                        'message': link['message'],
+                        'channel': link['channel']})
+                else:
+                    parsed_links[link['image'].lower()] = {
+                        'image': link['image'],
+                        'nsfw': link['nsfw'],
+                        'url': link['url'],
+                        'service': link['service'],
+                        'reported': link['reported'],
+                        'messages': [{
+                            'author': link['author'],
+                            'time': link['time'],
+                            'message': link['message'],
+                            'channel': link['channel']}]}
+            return parsed_links
+
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
             previous_html = ''.join(f.readlines())
@@ -495,6 +538,8 @@ def build_html(bot, trigger):
         bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
 
     # Generate HTML
+    # TODO Add check to see if the image is still available and remove those
+    # that aren't
     header = Template('${title}${style}')
     header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
     simple_header = header.substitute(title=header_title, style=_style)
@@ -502,17 +547,23 @@ def build_html(bot, trigger):
     img_div = Template('<div class = "img">${img}${desc}</div>')
     simple_img = Template('<img src="$url" height="250">')
     desc_div = Template(_desc)
-    msg = '\n'.join(
-        [img_div.substitute(
-            img=simple_img.substitute(url=i['image']),
-            desc=desc_div.substitute(
-                author=i['author'],
-                channel=i['channel'],
-                message=i['message'],
-                nsfw=is_nsfw(i['nsfw'])
-            )
-        ) for i in bot.memory['digest']['digest']]
-    )
+    dedupe = build_links(bot.memory['digest']['digest'])
+    bot.debug(__file__, log.format('Dedupe dictionary:'), 'verbose')
+    print(pp(dedupe))
+    if dedupe:
+        msg = '\n'.join(
+            [img_div.substitute(
+                img=simple_img.substitute(url=dedupe[i]['image']),
+                desc=desc_div.substitute(
+                    author=dedupe[i]['messages'][0]['author'],
+                    channel=dedupe[i]['messages'][0]['channel'],
+                    message=dedupe[i]['messages'][0]['message'],
+                    nsfw=is_nsfw(dedupe[i]['nsfw'])
+                )
+            ) for i in dedupe]
+        )
+    else:
+        msg = ''
 
     html = bot.memory['digest']['templatehtml'].substitute(
         body=msg,
