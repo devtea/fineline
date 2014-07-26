@@ -5,6 +5,11 @@ Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
+
+Requires the following in the config:
+[imgur]
+client_id = ______
+client_secret = _____
 """
 from __future__ import print_function
 
@@ -30,10 +35,9 @@ except:
 
 def setup(bot):
     bot.memory["imgur_client"] = bot.config.imgur.client_id
+    update_poon(bot)
 
 imgur_api_url = 'https://api.imgur.com/3/'
-
-sparkles = u'.｡.:*･☆ ･*:.｡. .｡ .:*･゜ﾟ･ POON ･゜ﾟ･ *: .｡..｡.:*･☆･*:.｡. '
 poon_album = 'YZmbK'
 
 def imgur_anonymous_request(client_id, endpoint):
@@ -47,27 +51,23 @@ def imgur_album_data(client_id, album_id):
     endpoint = 'album/' + album_id
     return imgur_anonymous_request(client_id, endpoint)
 
-def imgur_album_random_image(client_id, album_id):
-    """Returns a random image from the specified imgur album"""
-    data = imgur_album_data(client_id, album_id)['data']
-    images_count = data['images_count']
-    choice = random.randint(0, images_count-1)
-    url = data['images'][choice]['link']
-    return unicode(url)
+def update_poon(bot):
+    bot.memory['poon_images'] = []
+    data = imgur_album_data(bot.memory['imgur_client'], poon_album)
+    for image in data['data']['images']:
+        bot.memory['poon_images'].append(unicode(image['link']))
 
 @commands(u'poon')
 def poon(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if not bot.memory['imgur_client']:
+    # if we don't have any images then do nothing
+    if not bot.memory['poon_images'] or len(bot.memory['poon_images']) == 0:
         return
 
-    if random.random() < 0.01:
-        bot.say(sparkles)
-    else:
-        url = imgur_album_random_image(bot.memory['imgur_client'], poon_album)
-        bot.say(url)
+    url = random.choice(bot.memory['poon_images'])
+    bot.say(url)
 
 
 if __name__ == "__main__":
