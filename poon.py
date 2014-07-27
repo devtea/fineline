@@ -13,7 +13,7 @@ import urllib2
 import random
 import traceback
 
-from willie.module import commands
+from willie.module import commands, interval
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -62,11 +62,11 @@ def imgur_album_data(client_id, album_id):
     return imgur_anonymous_request(client_id, endpoint)
 
 
+@interval(2500)
 def update_poon(bot):
     bot.memory['poon_images'] = []
     data = imgur_album_data(bot.memory['imgur_client'], _poon_album)
-    for image in data['data']['images']:
-        bot.memory['poon_images'].append(unicode(image['link']))
+    bot.memory['poon_images'] = [unicode(i['link']) for i in data['data']['images']]
 
 
 @commands(u'poon')
