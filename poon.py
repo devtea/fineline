@@ -11,6 +11,7 @@ from __future__ import print_function
 import json
 import urllib2
 import random
+import traceback
 
 from willie.module import commands
 
@@ -45,11 +46,15 @@ def setup(bot):
 
 
 def imgur_anonymous_request(client_id, endpoint):
-    req = urllib2.Request(_imgur_api_url + endpoint)
-    req.add_header('authorization', 'client-id ' + client_id)
-    res = urllib2.urlopen(req)
-    data = json.loads(res.read().decode('utf-8'))
-    return data
+    try:
+        req = urllib2.Request(_imgur_api_url + endpoint)
+        req.add_header('authorization', 'client-id ' + client_id)
+        res = urllib2.urlopen(req)
+        data = json.loads(res.read().decode('utf-8'))
+        return data
+    except:
+        bot.debug(__file__, log.format('Unhandled exception in imgur_anonymous_request.'), 'warning')
+        bot.debug(__file__, traceback.format_exc(), 'warning')
 
 
 def imgur_album_data(client_id, album_id):
