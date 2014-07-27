@@ -86,7 +86,7 @@ def refresh_nicks(bot):
         with bot.memory['nick_lock']:
             bot.memory['chan_nicks'][chan] = {}
             bot.write(['NAMES', chan])
-        time.sleep(1)
+        time.sleep(0.25)
 
 
 @commands('list')
@@ -144,7 +144,7 @@ def names(bot, trigger):
                 if n not in bot.memory['whois_time'] or bot.memory['whois_time'][n] < time.time() - 600:
                     bot.memory['whois_time'][n] = time.time()
                     bot.write(['WHOIS', n.lower()])
-                    time.sleep(1)  # This keeps our aggregate whois rate reasonable
+                    time.sleep(0.1)  # This keeps our aggregate whois rate reasonable
             # time.sleep(3)  # Wait a bit for other threads to spam whoissses too
         bot.debug(__file__, log.format(u'Done refeshing hosts for ', channel), 'verbose')
     except:
