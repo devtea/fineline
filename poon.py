@@ -45,7 +45,7 @@ def setup(bot):
     update_poon(bot)
 
 
-def imgur_anonymous_request(client_id, endpoint):
+def imgur_anonymous_request(bot, client_id, endpoint):
     try:
         req = urllib2.Request(_imgur_api_url + endpoint)
         req.add_header('authorization', 'client-id ' + client_id)
@@ -57,14 +57,14 @@ def imgur_anonymous_request(client_id, endpoint):
         bot.debug(__file__, traceback.format_exc(), 'warning')
 
 
-def imgur_album_data(client_id, album_id):
+def imgur_album_data(bot, client_id, album_id):
     endpoint = 'album/' + album_id
-    return imgur_anonymous_request(client_id, endpoint)
+    return imgur_anonymous_request(bot, client_id, endpoint)
 
 
 @interval(2500)
 def update_poon(bot):
-    data = imgur_album_data(bot.memory['imgur_client'], _poon_album)
+    data = imgur_album_data(bot, bot.memory['imgur_client_id'], _poon_album)
     bot.memory['poon_images'] = [unicode(i['link']) for i in data['data']['images']]
 
 
