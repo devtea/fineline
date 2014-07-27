@@ -41,7 +41,7 @@ def setup(bot):
     | client_id | k1j3k1lk388 | client_id from a registered imgur appliction |
     | client_secret | skj1831k3j1j31lk31k31j3lk3424514k | client_secret from a registered imgur application |
     """
-    bot.memory["imgur_client"] = bot.config.imgur.client_id
+    bot.memory["imgur_client_id"] = bot.config.imgur.client_id
     update_poon(bot)
 
 
@@ -64,7 +64,6 @@ def imgur_album_data(client_id, album_id):
 
 @interval(2500)
 def update_poon(bot):
-    bot.memory['poon_images'] = []
     data = imgur_album_data(bot.memory['imgur_client'], _poon_album)
     bot.memory['poon_images'] = [unicode(i['link']) for i in data['data']['images']]
 
@@ -75,10 +74,8 @@ def poon(bot, trigger):
     if bot.memory['shush']:
         return
     # If we don't have any images then do nothing
-    if not bot.memory['poon_images'] or len(bot.memory['poon_images']) == 0:
-        return
-    url = random.choice(bot.memory['poon_images'])
-    bot.say(url)
+    if bot.memory['poon_images']:
+        bot.say(random.choice(bot.memory['poon_images']))
 
 
 if __name__ == "__main__":
