@@ -146,9 +146,8 @@ def setup(bot):
 
 @commands(u'dd', u'dailydigest', u'digest')
 def template(bot, trigger):
-    """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis sodales. """
-    bot.debug(__file__, log.format('Log message'), 'verbose')
-    pass
+    """Displays the configured url for the daily digest page."""
+    bot.say(u'The daily image digest page is at %s' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
