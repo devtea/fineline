@@ -14,6 +14,7 @@ import time
 import traceback
 import urlparse
 import urllib2
+from datetime import datetime
 from pprint import pprint as pp
 from HTMLParser import HTMLParser
 from string import Template
@@ -469,9 +470,11 @@ _style = '''
 '''
 _desc = '''
     <div class="desc">
-        <p><b>Channel:</b> ${channel}<br>
-        <b>Message:</b> &lt;${author}&gt; ${message}
-        ${nsfw}
+        <p>
+            <b>Date:</b> ${ftime}<br>
+            <b>Channel:</b> ${channel}<br>
+            <b>Message:</b> &lt;${author}&gt; ${message}<br>
+            ${nsfw}
         </p>
     </div>
 '''
@@ -481,11 +484,11 @@ _desc = '''
 def build_html(bot, trigger):
     def is_nsfw(nsfw):
         if nsfw is None:
-            return "<br><b>This image may be NSFW</b> (flagged from conversation context)"
+            return "<b>This image may be NSFW</b> (flagged from conversation context)"
         elif nsfw:
-            return "<br><b>This images was tagged as NSFW</b>"
+            return "<b>This images was tagged as NSFW</b>"
         else:
-            return "<br>SFW"
+            return "SFW"
 
     def build_links(link_list):
         ''' Returns a dictionary like so
@@ -550,6 +553,8 @@ def build_html(bot, trigger):
     desc_div = Template(_desc)
     # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
+    print('dedupe is ')
+    pp(dedupe)
     if dedupe:
         # Next make into a list for sorting
         # TODO move this into the dedupe function
@@ -560,18 +565,19 @@ def build_html(bot, trigger):
                         'message': dedupe[i]['messages'][0]['message'],
                         'time': dedupe[i]['messages'][0]['time']
                         } for i in dedupe]
-        dedupe_list.sort(key=lambda t: t['time'])
+        dedupe_list.sort(key=lambda t: t['time'], reverse=True)
 
         msg = '\n'.join(
             [img_div.substitute(
-                img=simple_img.substitute(url=dedupe[i]['image']),
+                img=simple_img.substitute(url=i['image']),
                 desc=desc_div.substitute(
-                    author=dedupe[i]['messages'][0]['author'],
-                    channel=dedupe[i]['messages'][0]['channel'],
-                    message=dedupe[i]['messages'][0]['message'],
-                    nsfw=is_nsfw(dedupe[i]['nsfw'])
+                    author=i['author'],
+                    channel=i['channel'],
+                    message=i['message'],
+                    ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
+                    nsfw=is_nsfw(i['nsfw'])
                 )
-            ) for i in dedupe]
+            ) for i in dedupe_list]
         )
     else:
         msg = ''
