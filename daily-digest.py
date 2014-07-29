@@ -549,7 +549,7 @@ def build_html(bot, trigger):
     simple_header = header.substitute(title=header_title, style=_style)
 
     img_div = Template('<div class = "img">${img}${desc}</div>')
-    simple_img = Template('<img src="$url" height="250">')
+    simple_img = Template('<a href="${orig}"><img src="${url}" height="250"></a>')
     desc_div = Template(_desc)
     # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
@@ -559,6 +559,7 @@ def build_html(bot, trigger):
         # Next make into a list for sorting
         # TODO move this into the dedupe function
         dedupe_list = [{'image': dedupe[i]['image'],
+                        'url': dedupe[i]['url'],
                         'nsfw': is_nsfw(dedupe[i]['nsfw']),
                         'author': dedupe[i]['messages'][0]['author'],
                         'channel': dedupe[i]['messages'][0]['channel'],
@@ -569,13 +570,15 @@ def build_html(bot, trigger):
 
         msg = '\n'.join(
             [img_div.substitute(
-                img=simple_img.substitute(url=i['image']),
+                img=simple_img.substitute(
+                    url=i['image'],
+                    orig=i['url']),
                 desc=desc_div.substitute(
                     author=i['author'],
                     channel=i['channel'],
                     message=i['message'],
                     ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
-                    nsfw=is_nsfw(i['nsfw'])
+                    nsfw=i['nsfw']
                 )
             ) for i in dedupe_list]
         )
