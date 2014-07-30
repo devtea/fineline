@@ -14,6 +14,7 @@ import time
 import traceback
 import urlparse
 import urllib2
+from datetime import datetime
 from pprint import pprint as pp
 from HTMLParser import HTMLParser
 from string import Template
@@ -101,16 +102,15 @@ def configure(config):
 
 
 def setup(bot):
-
     if 'digest' not in bot.memory:
         bot.memory['digest'] = {}
     if 'digest' not in bot.memory['digest']:
         bot.memory['digest']['digest'] = []
-    if 'digest_context' not in bot.memory:
+    if 'context' not in bot.memory['digest']:
         bot.memory['digest']['context'] = []
-    if 'digest_lock' not in bot.memory:
+    if 'lock' not in bot.memory['digest']:
         bot.memory['digest']['lock'] = threading.Lock()
-    if 'digest_context_lock' not in bot.memory:
+    if 'context_lock' not in bot.memory['digest']:
         bot.memory['digest']['context_lock'] = threading.Lock()
 
     # Load config values
@@ -147,15 +147,16 @@ def setup(bot):
 
 @commands(u'dd', u'dailydigest', u'digest')
 def template(bot, trigger):
-    """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis sodales. """
-    bot.debug(__file__, log.format('Log message'), 'verbose')
-    pass
+    """Displays the configured url for the daily digest page."""
+    bot.say(u'The daily image digest page is at %s' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
     # TODO Image services to Support
-    # Imgur (mostly just galleries now)
+    # Imgur (mostly just gallery embedding now)
+    # Grab.by ?
+    # Steam
     # misc boorus
     # 500px
     # flickr
@@ -353,6 +354,7 @@ def url_watcher(bot, trigger):
 
         # NSFW checking. If the message line contains keywords, mark as NSFW. If
         # the context contains keywords, mark as unknown/maybe.
+        # TODO catch SFW tags to override context
         nsfw = False
         if re_nsfw.search(trigger.bytes):
             nsfw = True
@@ -466,14 +468,15 @@ _style = '''
     }
     </style>
 '''
-
 _desc = '''
-<div class="desc">
-    <p><b>Channel:</b> ${channel}<br>
-       <b>Message:</b> &lt;${author}&gt; ${message}
-       ${nsfw}
-    </p>
-</div>
+    <div class="desc">
+        <p>
+            <b>Date:</b> ${ftime}<br>
+            <b>Channel:</b> ${channel}<br>
+            <b>Message:</b> &lt;${author}&gt; ${message}<br>
+            ${nsfw}
+        </p>
+    </div>
 '''
 
 
@@ -481,11 +484,55 @@ _desc = '''
 def build_html(bot, trigger):
     def is_nsfw(nsfw):
         if nsfw is None:
-            return "<br><b>This image may be NSFW</b> (flagged from conversation context)"
+            return "<b>This image may be NSFW</b> (flagged from conversation context)"
         elif nsfw:
-            return "<br><b>This images was tagged as NSFW</b>"
+            return "<b>This images was tagged as NSFW</b>"
         else:
-            return "<br>SFW"
+            return "SFW"
+
+    def build_links(link_list):
+        ''' Returns a dictionary like so
+        {'http://example.com/image.png':
+            {'url': 'http://example.com/images/1899691',
+             'nsfw': False,
+             'service': 'fav.me',
+             'reported': False,
+             'messages':
+                 [{'author': 'eytosh',
+                   'time': '187273918392.187',
+                   'message': 'Here\'s something neat: http://example.com/images/1899691'},
+                  {'author': 'beerpony',
+                   'time': '162734282347.234',
+                   'message': "wtf http://example.com/images/1899691"}]
+            },
+         '\\example2.png': {...}
+        }
+        '''
+
+        with bot.memory['digest']['lock']:
+            parsed_links = {}
+            for link in link_list:
+                if link['image'].lower() in parsed_links:
+                    parsed_links[link['image'].lower()]['messages'].append({
+                        'author': link['author'],
+                        'time': link['time'],
+                        'message': link['message'],
+                        'channel': link['channel']})
+                    # Sort to ensure element 0 is oldest message
+                    parsed_links[link['image'].lower()]['messages'].sort(key=lambda t: t['time'])
+                else:
+                    parsed_links[link['image'].lower()] = {
+                        'image': link['image'],
+                        'nsfw': link['nsfw'],
+                        'url': link['url'],
+                        'service': link['service'],
+                        'reported': link['reported'],
+                        'messages': [{
+                            'author': link['author'],
+                            'time': link['time'],
+                            'message': link['message'],
+                            'channel': link['channel']}]}
+            return parsed_links
 
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
@@ -495,24 +542,48 @@ def build_html(bot, trigger):
         bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
 
     # Generate HTML
+    # TODO Add check to see if the image is still available and remove those
+    # that aren't
     header = Template('${title}${style}')
     header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
     simple_header = header.substitute(title=header_title, style=_style)
 
     img_div = Template('<div class = "img">${img}${desc}</div>')
-    simple_img = Template('<img src="$url" height="250">')
+    simple_img = Template('<a href="${orig}"><img src="${url}" height="250"></a>')
     desc_div = Template(_desc)
-    msg = '\n'.join(
-        [img_div.substitute(
-            img=simple_img.substitute(url=i['image']),
-            desc=desc_div.substitute(
-                author=i['author'],
-                channel=i['channel'],
-                message=i['message'],
-                nsfw=is_nsfw(i['nsfw'])
-            )
-        ) for i in bot.memory['digest']['digest']]
-    )
+    # First deduplicate our links
+    dedupe = build_links(bot.memory['digest']['digest'])
+    print('dedupe is ')
+    pp(dedupe)
+    if dedupe:
+        # Next make into a list for sorting
+        # TODO move this into the dedupe function
+        dedupe_list = [{'image': dedupe[i]['image'],
+                        'url': dedupe[i]['url'],
+                        'nsfw': is_nsfw(dedupe[i]['nsfw']),
+                        'author': dedupe[i]['messages'][0]['author'],
+                        'channel': dedupe[i]['messages'][0]['channel'],
+                        'message': dedupe[i]['messages'][0]['message'],
+                        'time': dedupe[i]['messages'][0]['time']
+                        } for i in dedupe]
+        dedupe_list.sort(key=lambda t: t['time'], reverse=True)
+
+        msg = '\n'.join(
+            [img_div.substitute(
+                img=simple_img.substitute(
+                    url=i['image'],
+                    orig=i['url']),
+                desc=desc_div.substitute(
+                    author=i['author'],
+                    channel=i['channel'],
+                    message=i['message'],
+                    ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
+                    nsfw=i['nsfw']
+                )
+            ) for i in dedupe_list]
+        )
+    else:
+        msg = ''
 
     html = bot.memory['digest']['templatehtml'].substitute(
         body=msg,
