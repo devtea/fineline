@@ -36,10 +36,16 @@ def grab(bot, trigger):
             elif target in _excludes:
                 bot.say(u"I'm not grabbing that.")
             elif target in bot.memory['grab']:
-                if len(trigger.bytes.split()[0]) == len('!grab'):
-                    bot.say(u'!addquote <%s> %s' % (target, bot.memory['grab'][target]))
+                # create text for either normal lines or /me
+                if bot.memory['grab'][target][0]:
+                    grab_text = '* %s %s' % (target, bot.memory['grab'][target][1])
                 else:
-                    bot.say(u'!addarttip <%s> %s' % (target, bot.memory['grab'][target]))
+                    grab_text = '<%s> %s' % (target, bot.memory['grab'][target][1])
+
+                if len(trigger.bytes.split()[0]) == len('!grab'):
+                    bot.say(u'!addquote %s' % grab_text)
+                else:
+                    bot.say(u'!addarttip %s' % grab_text)
             else:
                 bot.say(u'Sorry, nothing to grab!')
         finally:
@@ -48,13 +54,14 @@ def grab(bot, trigger):
 
 @rule('.*')
 def recent_watcher(bot, trigger):
+    # bot.memory['grab'][nick] = (is_action, text)
     bot.memory['grablock'].acquire()
     try:
         if trigger.sender.startswith('#'):
             if trigger.bytes.startswith('\001ACTION'):
-                bot.memory['grab'][Nick(trigger.nick)] = '%s%s' % (trigger.nick, trigger.bytes[7:])
+                bot.memory['grab'][Nick(trigger.nick)] = (True, trigger.bytes[8:])
             else:
-                bot.memory['grab'][Nick(trigger.nick)] = trigger.bytes
+                bot.memory['grab'][Nick(trigger.nick)] = (False, trigger.bytes)
     finally:
         bot.memory['grablock'].release()
 
