@@ -146,7 +146,7 @@ def ship(bot, trigger):
             now = datetime.now()
             for nick in target_list:
                 timedelta = now - last_seen(bot, nick)
-                if timedelta.days <= 7: # magic numbers are magic
+                if timedelta.days <= 3: # magic numbers are magic
                     target = nick
                     include_nicks = True
                     break
@@ -177,7 +177,7 @@ def ship(bot, trigger):
         now = datetime.now()
         for nick in target_list:
             timedelta = now - last_seen(bot, nick)
-            if nick != i1 and timedelta.days <= 7: # magic numbers are magic
+            if nick != i1 and timedelta.days <= 3: # magic numbers are magic
                 i2 = nick
                 break
 
