@@ -12,6 +12,7 @@ import re
 import threading
 import time
 import traceback
+import types
 import urlparse
 import urllib2
 from datetime import datetime
@@ -119,7 +120,7 @@ def setup(bot):
     bot.memory['digest']['url'] = bot.config.dailydigest.url
     with open(bot.memory['digest']['template'], 'r') as f:
         try:
-            bot.memory['digest']['templatehtml'] = Template(f.read())
+            bot.memory['digest']['templatehtml'] = Template(f.read().decode('utf-8', 'replace'))
         except:
             bot.debug(__file__, log.format(u'Unable to load template.'), u'always')
             raise
@@ -131,18 +132,51 @@ def setup(bot):
         cur = db.cursor()
         query = None
         try:
-            cur.execute('''CREATE TABLE IF NOT EXISTS template
-                           (name text, score int)''')
+            cur.execute('''CREATE TABLE IF NOT EXISTS digest
+                           (time real,
+                            message text,
+                            author text,
+                            nsfw integer,
+                            url text,
+                            image text,
+                            service text,
+                            channel text,
+                            reported integer)''')
             db.commit()
-            cur.execute('SELECT name, score FROM template')
+            cur.execute('SELECT time, message, author, nsfw, url, image, service, channel, reported FROM digest')
             query = cur.fetchall()
         finally:
             cur.close()
             db.close()
         if query:
-            for t, s in query:
-                # Handle returnedquery
-                pass
+            bot.memory['digest']['digest'] = []
+            for t, m, a, n, u, i, s, c, r in query:
+                item = {
+                    'time': t,
+                    'message': m.decode('utf-8', 'replace'),
+                    'author': nicks.NickPlus(a.decode('utf-8', 'replace')),
+                    'nsfw': parsebool(n),
+                    'url': u.decode('utf-8', 'replace'),
+                    'image': i.decode('utf-8', 'replace'),
+                    'service': s.decode('utf-8', 'replace'),
+                    'channel': c.decode('utf-8', 'replace'),
+                    'reported': parsebool(r)
+                }
+                bot.memory['digest']['digest'].append(item)
+
+
+def parsebool(b):
+    '''Parses bools back and forth from ints for the database'''
+    if isinstance(b, types.BooleanType):
+        if b:
+            return 1
+        else:
+            return 0
+    elif b == 1:
+        return True
+    elif b == 0:
+        return False
+    return None
 
 
 @commands(u'dd', u'dailydigest', u'digest')
@@ -295,34 +329,6 @@ def image_filter(bot, url):
     # TODO try except
     return {'url': check(url), 'service': domain}
 
-    """
-    _re_imgur = re.compile('imgur\.com/([^\s]+?)\.\S{3}')
-    _re_deviantart = re.compile('/\w+/\w+/\w+/\w+-(\w+)\.\w{3,4}')
-    domains = {
-        'deviantart.net': (lambda url: deviantart(url)),
-        'i.imgur.com': (lambda url: imgur(url)),
-        'imgur.com': (lambda url: imgur(url))
-    }
-
-    def imgur(url):
-        '''try:
-            uid = _re_imgur.search(url).groups()[0]
-        except:
-            print u'[url.py] Unhandled exception in imgur parser.'
-            return None
-        return u'http://imgur.com/%s' % uid
-        '''
-        return None
-
-    def deviantart(url):
-        try:
-            uid = _re_deviantart.search(url).groups()[0]
-        except:
-            bot.debug(__file__, log.format(u'[url.py] Unhandled exception in deviantart parser.')
-            return None
-        return 'http://fav.me/%s' % uid
-    """
-
 url = re.compile(r'''(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
 re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|questionable|explicit|porn|clop')
 
@@ -377,8 +383,54 @@ def url_watcher(bot, trigger):
             }
         with bot.memory['digest']['lock']:
             bot.memory['digest']['digest'].append(t)
-
+            write_to_db(bot, t)
         bot.debug(__file__, log.format(pp(t)), 'verbose')
+
+
+@commands('digest_refresh_db')
+def digest_db_refresh(bot, trigger):
+    if not trigger.owner:
+        return
+    with bot.memory['digest']['lock']:
+        db_refresh(bot)
+    bot.reply('Database refresh complete.')
+
+
+def db_refresh(bot):
+    '''Clears and rewrites database entries. Assumes this is being called inside a lock'''
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute('delete from digest')
+        dbcon.commit()
+    except:
+        bot.debug(__file__, log.format(u'Unhandled database exception when clearing table.'), 'warning')
+        bot.debug(__file__, traceback.format_exc(), 'warning')
+    finally:
+        cur.close()
+    # Write every image item to the database
+    for item in bot.memory['digest']['digest']:
+        write_to_db(bot, item)
+
+
+def write_to_db(bot, item):
+    '''Writes a single item passed as a dict to the database. Assumes this is being called inside a lock'''
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute('''
+                    insert into digest (time, message, author, nsfw, url, image, service, channel, reported)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (item['time'], item['message'], item['author'], parsebool(item['nsfw']),
+                            item['url'], item['image'], item['service'], item['channel'],
+                            parsebool(item['reported'])))
+        dbcon.commit()
+    except:
+        bot.debug(__file__, log.format(u'Unhandled database exception when inserting image.'), 'warning')
+        bot.debug(__file__, pp(item), 'warning')
+        bot.debug(__file__, traceback.format_exc(), 'warning')
+    finally:
+        cur.close()
 
 
 @commands('digest_clear')
@@ -408,6 +460,10 @@ def clean_links(bot):
     '''Remove old links from bot memory'''
     with bot.memory['digest']['lock']:
         bot.memory['digest']['digest'] = [i for i in bot.memory['digest']['digest'] if i['time'] > time.time() - EXPIRATION]
+        # Clearing the whole DB every time is inefficient, but simple. Thankfully
+        # this should never be a very large operation.
+        db_refresh(bot)
+
 
 
 @rule('.*')
@@ -440,7 +496,6 @@ def url_dump(bot, trigger):
         for i in bot.memory['digest']['digest']:
             bot.debug(__file__, log.format(i['image']), 'always')
         bot.debug(__file__, log.format('=' * 20), 'always')
-
 _style = '''
     <style>
     div.img {
@@ -553,8 +608,6 @@ def build_html(bot, trigger):
     desc_div = Template(_desc)
     # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
-    print('dedupe is ')
-    pp(dedupe)
     if dedupe:
         # Next make into a list for sorting
         # TODO move this into the dedupe function
@@ -592,7 +645,7 @@ def build_html(bot, trigger):
     if previous_html != html:
         bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
         with open(bot.memory['digest']['destination'], 'w') as f:
-            f.write(html)
+            f.write(html.encode('utf-8'))
 
 
 @interval(60)
