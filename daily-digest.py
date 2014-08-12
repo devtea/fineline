@@ -604,7 +604,7 @@ def build_html(bot, trigger):
     simple_header = header.substitute(title=header_title, style=_style)
 
     img_div = Template('<div class = "img">${img}${desc}</div>')
-    simple_img = Template('<a href="${orig}"><img src="${url}" height="250"></a>')
+    simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" height="250"></a>')
     desc_div = Template(_desc)
     # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
