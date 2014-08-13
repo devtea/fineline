@@ -466,12 +466,12 @@ def digest_dump(bot, trigger):
 @interval(3600)
 def clean_links(bot):
     '''Remove old links from bot memory'''
+    return  # TODO remove this to re-enable the cleaning. Disabled since this is fucking with the db right now
     with bot.memory['digest']['lock']:
         bot.memory['digest']['digest'] = [i for i in bot.memory['digest']['digest'] if i['time'] > time.time() - EXPIRATION]
         # Clearing the whole DB every time is inefficient, but simple. Thankfully
         # this should never be a very large operation.
         db_refresh(bot)
-
 
 
 @rule('.*')
@@ -629,7 +629,7 @@ def build_html(bot, trigger):
                         } for i in dedupe]
         dedupe_list.sort(key=lambda t: t['time'], reverse=True)
 
-        msg = '\n'.join(
+        msg = u'\n'.join(
             [img_div.substitute(
                 img=simple_img.substitute(
                     url=i['image'],
@@ -637,7 +637,7 @@ def build_html(bot, trigger):
                 desc=desc_div.substitute(
                     author=i['author'],
                     channel=i['channel'],
-                    message=i['message'],
+                    message=i['message'].encode('utf-8', 'replace'),
                     ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
                     nsfw=i['nsfw']
                 )
