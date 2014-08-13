@@ -126,8 +126,6 @@ def setup(bot):
             raise
 
     with bot.memory['digest']['lock']:
-        bot.memory['digest']['some_dictionary'] = {}
-
         db = bot.db.connect()
         cur = db.cursor()
         query = None
@@ -149,17 +147,18 @@ def setup(bot):
             cur.close()
             db.close()
         if query:
+            bot.debug(__file__, log.format('Reloading from database'), 'verbose')
             bot.memory['digest']['digest'] = []
             for t, m, a, n, u, i, s, c, r in query:
                 item = {
                     'time': t,
-                    'message': m.encode('utf-8', 'replace'),
+                    'message': m,  # This is loaded from DB as unicode
                     'author': nicks.NickPlus(a.encode('utf-8', 'replace')),
                     'nsfw': parsebool(n),
-                    'url': u.encode('utf-8', 'replace'),
-                    'image': i.encode('utf-8', 'replace'),
-                    'service': s.encode('utf-8', 'replace'),
-                    'channel': c.encode('utf-8', 'replace'),
+                    'url': u,  # This is loaded from DB as unicode
+                    'image': i,  # This is loaded from DB as unicode
+                    'service': s,  # This is loaded from DB as unicode
+                    'channel': c,  # This is loaded from DB as unicode
                     'reported': parsebool(r)
                 }
                 bot.memory['digest']['digest'].append(item)
@@ -635,7 +634,7 @@ def build_html(bot, trigger):
                 desc=desc_div.substitute(
                     author=i['author'],
                     channel=i['channel'],
-                    message=i['message'].decode('utf-8', 'replace'),
+                    message=i['message'],
                     ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
                     nsfw=i['nsfw'])
             ) for i in dedupe_list]
