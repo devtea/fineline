@@ -153,13 +153,13 @@ def setup(bot):
             for t, m, a, n, u, i, s, c, r in query:
                 item = {
                     'time': t,
-                    'message': m.decode('utf-8', 'replace'),
-                    'author': nicks.NickPlus(a.decode('utf-8', 'replace')),
+                    'message': m.encode('utf-8', 'replace'),
+                    'author': nicks.NickPlus(a.encode('utf-8', 'replace')),
                     'nsfw': parsebool(n),
-                    'url': u.decode('utf-8', 'replace'),
-                    'image': i.decode('utf-8', 'replace'),
-                    'service': s.decode('utf-8', 'replace'),
-                    'channel': c.decode('utf-8', 'replace'),
+                    'url': u.encode('utf-8', 'replace'),
+                    'image': i.encode('utf-8', 'replace'),
+                    'service': s.encode('utf-8', 'replace'),
+                    'channel': c.encode('utf-8', 'replace'),
                     'reported': parsebool(r)
                 }
                 bot.memory['digest']['digest'].append(item)
@@ -179,7 +179,7 @@ def parsebool(b):
     return None
 
 
-@commands(u'dd', u'dailydigest', u'digest')
+@commands(u'dd', u'dailydigest', u'daily-digest', u'digest')
 def template(bot, trigger):
     """Displays the configured url for the daily digest page."""
     bot.say(u'The daily image digest page is at %s' % bot.memory['digest']['url'])
@@ -372,12 +372,12 @@ def url_watcher(bot, trigger):
             return
         t = {
             'time': now,
-            'message': trigger.bytes,
+            'message': trigger.bytes.decode('utf-8', 'replace'),
             'author': nicks.NickPlus(trigger.nick, trigger.host),
             'nsfw': nsfw,
-            'url': original,
-            'image': u['url'],
-            'service': u['service'],
+            'url': original.decode('utf-8', 'replace'),
+            'image': u['url'].decode('utf-8', 'replace'),
+            'service': u['service'].decode('utf-8', 'replace'),
             'channel': trigger.sender,
             'reported': False
             }
@@ -391,8 +391,10 @@ def url_watcher(bot, trigger):
 def digest_db_refresh(bot, trigger):
     if not trigger.owner:
         return
+    bot.debug(__file__, log.format('Starting db refresh.'), 'verbose')
     with bot.memory['digest']['lock']:
         db_refresh(bot)
+    bot.debug(__file__, log.format('DB refresh complete.'), 'verbose')
     bot.reply('Database refresh complete.')
 
 
@@ -421,9 +423,15 @@ def write_to_db(bot, item):
         cur.execute('''
                     insert into digest (time, message, author, nsfw, url, image, service, channel, reported)
                     values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (item['time'], item['message'], item['author'], parsebool(item['nsfw']),
-                            item['url'], item['image'], item['service'], item['channel'],
-                            parsebool(item['reported'])))
+                    ''', (item['time'],
+                          item['message'].decode('utf-8', 'replace'),
+                          item['author'].decode('utf-8', 'replace'),
+                          parsebool(item['nsfw']),
+                          item['url'].decode('utf-8', 'replace'),
+                          item['image'].decode('utf-8', 'replace'),
+                          item['service'].decode('utf-8', 'replace'),
+                          item['channel'].decode('utf-8', 'replace'),
+                          parsebool(item['reported'])))
         dbcon.commit()
     except:
         bot.debug(__file__, log.format(u'Unhandled database exception when inserting image.'), 'warning')
@@ -645,7 +653,7 @@ def build_html(bot, trigger):
     if previous_html != html:
         bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
         with open(bot.memory['digest']['destination'], 'w') as f:
-            f.write(html.encode('utf-8'))
+            f.write(html.encode('utf-8', 'replace'))
 
 
 @interval(60)
