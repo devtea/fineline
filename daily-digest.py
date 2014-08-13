@@ -372,11 +372,11 @@ def url_watcher(bot, trigger):
             return
         t = {
             'time': now,
-            'message': trigger.bytes.decode('utf-8', 'replace'),
+            'message': trigger.bytes,  # This is unicode
             'author': nicks.NickPlus(trigger.nick, trigger.host),
             'nsfw': nsfw,
-            'url': original.decode('utf-8', 'replace'),
-            'image': u['url'].decode('utf-8', 'replace'),
+            'url': original,  # This is unicode
+            'image': u['url'],  # This is unicode
             'service': u['service'].decode('utf-8', 'replace'),
             'channel': trigger.sender,
             'reported': False
@@ -424,13 +424,13 @@ def write_to_db(bot, item):
                     insert into digest (time, message, author, nsfw, url, image, service, channel, reported)
                     values (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (item['time'],
-                          item['message'].decode('utf-8', 'replace'),
-                          item['author'].decode('utf-8', 'replace'),
+                          item['message'],  # Should be unicode at this point
+                          item['author'],
                           parsebool(item['nsfw']),
-                          item['url'].decode('utf-8', 'replace'),
-                          item['image'].decode('utf-8', 'replace'),
-                          item['service'].decode('utf-8', 'replace'),
-                          item['channel'].decode('utf-8', 'replace'),
+                          item['url'],  # Should be unicode at this point
+                          item['image'],  # Should be unicode at this poit
+                          item['service'],
+                          item['channel'],
                           parsebool(item['reported'])))
         dbcon.commit()
     except:
@@ -601,7 +601,7 @@ def build_html(bot, trigger):
         with open(bot.memory['digest']['destination'], 'r') as f:
             previous_html = ''.join(f.readlines())
     except IOError:
-        previous_html = ''
+        previous_html = u''
         bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
 
     # Generate HTML
@@ -631,26 +631,20 @@ def build_html(bot, trigger):
 
         msg = u'\n'.join(
             [img_div.substitute(
-                img=simple_img.substitute(
-                    url=i['image'],
-                    orig=i['url']),
+                img=simple_img.substitute(url=i['image'], orig=i['url']),
                 desc=desc_div.substitute(
                     author=i['author'],
                     channel=i['channel'],
-                    message=i['message'].encode('utf-8', 'replace'),
+                    message=i['message'].decode('utf-8', 'replace'),
                     ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
-                    nsfw=i['nsfw']
-                )
+                    nsfw=i['nsfw'])
             ) for i in dedupe_list]
         )
     else:
-        msg = ''
+        msg = u''
 
-    html = bot.memory['digest']['templatehtml'].substitute(
-        body=msg,
-        head=simple_header
-    )
-    if previous_html != html:
+    html = bot.memory['digest']['templatehtml'].substitute(body=msg, head=simple_header)
+    if previous_html.decode('utf-8', 'replace') != html:
         bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
         with open(bot.memory['digest']['destination'], 'w') as f:
             f.write(html.encode('utf-8', 'replace'))
