@@ -87,7 +87,7 @@ class ImgurParser(ImageParser):
             for attr in attrs:
                 d[attr[0]] = attr[1]
                 if d and 'src' in d and d['src'].startswith('//i.imgur'):
-                    self.img = 'http://%s' % d['src'].strip('/')
+                    self.img = u'http://%s' % d['src'].strip('/')
 
 
 def configure(config):
@@ -181,7 +181,7 @@ def parsebool(b):
 @commands(u'dd', u'dailydigest', u'daily-digest', u'digest')
 def template(bot, trigger):
     """Displays the configured url for the daily digest page."""
-    bot.say(u'The daily image digest page is at %s' % bot.memory['digest']['url'])
+    bot.say(u'The daily image digest page is at %s. Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
@@ -272,7 +272,7 @@ def image_filter(bot, url):
         # TODO remove this if possible after header check is implemented
         try:
             if url.split('.')[-1] in FILELIST:
-                return re.sub('(www)?\.dropbox\.com', 'dl.dropboxusercontent.com', url, flags=re.I)
+                return re.sub(u'(www)?\.dropbox\.com', u'dl.dropboxusercontent.com', url, flags=re.I)
             else:
                 return None
         except:
@@ -301,7 +301,7 @@ def image_filter(bot, url):
     bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
 
     parsed_url = urlparse.urlparse(url)
-    domain = '{uri.netloc}/'.format(uri=parsed_url).strip('/')
+    domain = u'{uri.netloc}/'.format(uri=parsed_url).strip('/')
     # Regex replacements for certain domains
     bot.debug(__file__, log.format("Unprocessed domain is: %s" % domain), 'verbose')
     for r in _dom_map:
@@ -595,6 +595,11 @@ def build_html(bot, trigger):
                             'message': link['message'],
                             'channel': link['channel']}]}
             return parsed_links
+
+    if trigger:
+        if not trigger.owner:
+            return
+        bot.debug(__file__, log.format(u'Building HTML on command'), 'warning')
 
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
