@@ -53,6 +53,50 @@ except:
 
 EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
 IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
+# Templates
+_style = '''
+    <style>
+    div.img {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid #000000;
+        height: auto;
+        width: auto;
+        float: left;
+        text-align: center;
+    }
+    div.img img {
+        display: inline;
+        margin: 5px;
+        border: 1px solid #ffffff;
+    }
+    div.img a:hover img {
+        border:1px solid #0000ff;
+    }
+    div.desc {
+        text-align: left ;
+        font-weight: normal;
+        width: 300px;
+        margin: 10px;
+    }
+    </style>
+'''
+_desc = '''
+    <div class="desc">
+        <p>
+            <b>Date:</b> ${ftime}<br>
+            <b>Channel:</b> ${channel}<br>
+            <b>Message:</b> &lt;${author}&gt; ${message}<br>
+            ${nsfw}
+        </p>
+    </div>
+'''
+
+
+_imgur_album = Template('<iframe class="imgur-album" width="100%" height="550" frameborder="0" src="${url}/embed?background=f2f2f2&text=1a1a1a&link=4e76c0"></iframe>')
+_img_div = Template('<div class = "img">${img}${desc}</div>')
+_simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" height="250"></a>')
+_desc_div = Template(_desc)
 
 
 class ImageParser(HTMLParser):
@@ -126,30 +170,37 @@ def setup(bot):
             raise
 
     with bot.memory['digest']['lock']:
-        db = bot.db.connect()
-        cur = db.cursor()
-        query = None
+        # Temporary fix for database upgrade
+        # TODO remove this after the db changes
         try:
-            cur.execute('''CREATE TABLE IF NOT EXISTS digest
-                           (time real,
-                            message text,
-                            author text,
-                            nsfw integer,
-                            url text,
-                            image text,
-                            service text,
-                            channel text,
-                            reported integer)''')
-            db.commit()
-            cur.execute('SELECT time, message, author, nsfw, url, image, service, channel, reported FROM digest')
-            query = cur.fetchall()
-        finally:
-            cur.close()
-            db.close()
+            db = bot.db.connect()
+            cur = db.cursor()
+            query = None
+            try:
+                cur.execute('''CREATE TABLE IF NOT EXISTS digest
+                            (time real,
+                                message text,
+                                author text,
+                                nsfw integer,
+                                url text,
+                                image text,
+                                service text,
+                                channel text,
+                                reported integer,
+                                html text
+                                )''')
+                db.commit()
+                cur.execute('SELECT time, message, author, nsfw, url, image, service, channel, reported, html FROM digest')
+                query = cur.fetchall()
+            finally:
+                cur.close()
+                db.close()
+        except:
+            query = None
         if query:
             bot.debug(__file__, log.format('Reloading from database'), 'verbose')
             bot.memory['digest']['digest'] = []
-            for t, m, a, n, u, i, s, c, r in query:
+            for t, m, a, n, u, i, s, c, r, h in query:
                 item = {
                     'time': t,
                     'message': m,  # This is loaded from DB as unicode
@@ -159,6 +210,7 @@ def setup(bot):
                     'image': i,  # This is loaded from DB as unicode
                     'service': s,  # This is loaded from DB as unicode
                     'channel': c,  # This is loaded from DB as unicode
+                    'html': h,  # This is loaded from DB as unicode
                     'reported': parsebool(r)
                 }
                 bot.memory['digest']['digest'].append(item)
@@ -187,7 +239,6 @@ def template(bot, trigger):
 def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
     # TODO Image services to Support
-    # Imgur (mostly just gallery embedding now)
     # Grab.by ?
     # Steam
     # misc boorus
@@ -225,7 +276,7 @@ def image_filter(bot, url):
             raw_json = content.read().decode('utf-8', 'replace')
             f_json = json.loads(raw_json)
             if 'thumbnail_url' in f_json:
-                return f_json['thumbnail_url']
+                return {'url': f_json['thumbnail_url'], 'format': 'standard'}
             else:
                 return None
         except:
@@ -243,7 +294,7 @@ def image_filter(bot, url):
             bot.debug(__file__, log.format(u'Unhandled exception in the DA parser.'), 'warning')
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
-        return parser.get_img()
+        return {'url': parser.get_img(), 'format': 'standard'}
 
     def imgur(url):
         # Imgur has a lot of shit urls, filter them first before trying to
@@ -263,16 +314,17 @@ def image_filter(bot, url):
         img = parser.get_img()
         if img:
             # If we got an image back, return it
-            return img
+            return {'url': img, 'format': 'standard'}
         else:
-            # Else return the original URL for album embedding
-            return url
+            # Else return the original url for album embedding
+            return {'url': url, 'format': 'imgur-album'}
 
     def dropbox(url):
         # TODO remove this if possible after header check is implemented
         try:
             if url.split('.')[-1] in FILELIST:
-                return re.sub(u'(www)?\.dropbox\.com', u'dl.dropboxusercontent.com', url, flags=re.I)
+                formatted_url = re.sub(u'(www)?\.dropbox\.com', u'dl.dropboxusercontent.com', url, flags=re.I)
+                return _simple_img.substitute(url=formatted_url, orig='url'),
             else:
                 return None
         except:
@@ -290,7 +342,7 @@ def image_filter(bot, url):
             raw_json = content.read().decode('utf-8', 'replace')
             f_json = json.loads(raw_json)
             if 'file_url' in f_json:
-                return f_json['file_url']
+                return {'url': f_json['file_url'], 'format': 'standard'}
             else:
                 return None
         except:
@@ -301,7 +353,7 @@ def image_filter(bot, url):
     bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
 
     parsed_url = urlparse.urlparse(url)
-    domain = u'{uri.netloc}/'.format(uri=parsed_url).strip('/')
+    domain = u'{uri.netloc}/'.format(uri=parsed_url).strip(u'/')
     # Regex replacements for certain domains
     bot.debug(__file__, log.format("Unprocessed domain is: %s" % domain), 'verbose')
     for r in _dom_map:
@@ -325,8 +377,12 @@ def image_filter(bot, url):
         return None
 
     # If we got a check function, use that to return the image url
-    # TODO try except
-    return {'url': check(url), 'service': domain}
+    results = check(url)
+    if results['format'] == 'imgur-album':
+        html = _imgur_album.substitute(url=results['url'])
+    else:  # Generic img
+        html = _simple_img.substitute(url=results['url'], orig=url)  # format the html link or album
+    return {'url': results['url'], 'service': domain, 'html': html}
 
 url = re.compile(r'''(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
 re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|questionable|explicit|porn|clop')
@@ -353,7 +409,7 @@ def url_watcher(bot, trigger):
 
     for u in matches:
         original = u
-        u = image_filter(bot, u)
+        u = image_filter(bot, u)  # returns dictionary with url, service and html
         if not u:
             continue
 
@@ -377,6 +433,7 @@ def url_watcher(bot, trigger):
             'url': original,  # This is unicode
             'image': u['url'],  # This is unicode
             'service': u['service'].decode('utf-8', 'replace'),
+            'html': u['html'],  # this is unicode?
             'channel': trigger.sender,
             'reported': False
             }
@@ -420,8 +477,8 @@ def write_to_db(bot, item):
     cur = dbcon.cursor()
     try:
         cur.execute('''
-                    insert into digest (time, message, author, nsfw, url, image, service, channel, reported)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    insert into digest (time, message, author, nsfw, url, image, service, channel, reported, html)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (item['time'],
                           item['message'],  # Should be unicode at this point
                           item['author'],
@@ -430,7 +487,8 @@ def write_to_db(bot, item):
                           item['image'],  # Should be unicode at this poit
                           item['service'],
                           item['channel'],
-                          parsebool(item['reported'])))
+                          parsebool(item['reported']),
+                          item['html']))
         dbcon.commit()
     except:
         bot.debug(__file__, log.format(u'Unhandled database exception when inserting image.'), 'warning')
@@ -503,43 +561,6 @@ def url_dump(bot, trigger):
         for i in bot.memory['digest']['digest']:
             bot.debug(__file__, log.format(i['image']), 'always')
         bot.debug(__file__, log.format('=' * 20), 'always')
-_style = '''
-    <style>
-    div.img {
-        margin: 5px;
-        padding: 5px;
-        border: 1px solid #000000;
-        height: auto;
-        width: auto;
-        float: left;
-        text-align: center;
-    }
-    div.img img {
-        display: inline;
-        margin: 5px;
-        border: 1px solid #ffffff;
-    }
-    div.img a:hover img {
-        border:1px solid #0000ff;
-    }
-    div.desc {
-        text-align: left ;
-        font-weight: normal;
-        width: 300px;
-        margin: 10px;
-    }
-    </style>
-'''
-_desc = '''
-    <div class="desc">
-        <p>
-            <b>Date:</b> ${ftime}<br>
-            <b>Channel:</b> ${channel}<br>
-            <b>Message:</b> &lt;${author}&gt; ${message}<br>
-            ${nsfw}
-        </p>
-    </div>
-'''
 
 
 @commands('digest_build_html')
@@ -585,6 +606,7 @@ def build_html(bot, trigger):
                 else:
                     parsed_links[link['image'].lower()] = {
                         'image': link['image'],
+                        'html': link['html'],
                         'nsfw': link['nsfw'],
                         'url': link['url'],
                         'service': link['service'],
@@ -615,15 +637,14 @@ def build_html(bot, trigger):
     header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
     simple_header = header.substitute(title=header_title, style=_style)
 
-    img_div = Template('<div class = "img">${img}${desc}</div>')
-    simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" height="250"></a>')
-    desc_div = Template(_desc)
+    # TODO move these
     # First deduplicate our links
     dedupe = build_links(bot.memory['digest']['digest'])
     if dedupe:
         # Next make into a list for sorting
-        # TODO move this into the dedupe function
+        # TODO move this into the dedupe function ?
         dedupe_list = [{'image': dedupe[i]['image'],
+                        'html': dedupe[i]['html'],
                         'url': dedupe[i]['url'],
                         'nsfw': is_nsfw(dedupe[i]['nsfw']),
                         'author': dedupe[i]['messages'][0]['author'],
@@ -631,12 +652,12 @@ def build_html(bot, trigger):
                         'message': dedupe[i]['messages'][0]['message'],
                         'time': dedupe[i]['messages'][0]['time']
                         } for i in dedupe]
-        dedupe_list.sort(key=lambda t: t['time'], reverse=True)
+        dedupe_list.sort(key=lambda t: t['time'], reverse=True)  # Sort the list by post time
 
         msg = u'\n'.join(
-            [img_div.substitute(
-                img=simple_img.substitute(url=i['image'], orig=i['url']),
-                desc=desc_div.substitute(
+            [_img_div.substitute(
+                img=i['html'],
+                desc=_desc_div.substitute(
                     author=i['author'],
                     channel=i['channel'],
                     message=i['message'],
@@ -657,6 +678,48 @@ def build_html(bot, trigger):
 @interval(60)
 def build_regularly(bot):
     build_html(bot, None)
+
+
+# TODO database updates
+@commands('digest_update_database')
+def tmp_update_db(bot, trigger):
+    if not trigger.owner:
+        return
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute('''alter table digest add column html text''')
+        dbcon.commit()
+        cur.execute('''CREATE TABLE IF NOT EXISTS digest_tmp
+                       (time real,
+                       message text,
+                       author text,
+                       nsfw integer,
+                       url text,
+                       image text,
+                       service text,
+                       channel text,
+                       reported integer,
+                       html text
+                       )''')
+        cur.execute('''
+                    insert into digest_tmp
+                    (time, message, author, nsfw, url, image, service, channel, reported, html)
+                    select time, message, author, nsfw, url, image, service, channel, reported,
+                    '<a href="' || url || '" target="_blank"><img src="' || image || '" height="250"></a>'
+                    from digest
+                    ''')
+        cur.execute(''' delete from digest ''')
+        cur.execute('''
+                    insert into digest
+                    (time, message, author, nsfw, url, image, service, channel, reported, html)
+                    select time, message, author, nsfw, url, image, service, channel, reported, html
+                    from digest_tmp
+                    ''')
+        cur.execute('''drop table digest_tmp''')
+    finally:
+        cur.close()
+    bot.reply('done')
 
 
 if __name__ == "__main__":
