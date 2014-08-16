@@ -171,32 +171,28 @@ def setup(bot):
 
     with bot.memory['digest']['lock']:
         # Temporary fix for database upgrade
-        # TODO remove this after the db changes
+        db = bot.db.connect()
+        cur = db.cursor()
+        query = None
         try:
-            db = bot.db.connect()
-            cur = db.cursor()
-            query = None
-            try:
-                cur.execute('''CREATE TABLE IF NOT EXISTS digest
-                            (time real,
-                                message text,
-                                author text,
-                                nsfw integer,
-                                url text,
-                                image text,
-                                service text,
-                                channel text,
-                                reported integer,
-                                html text
-                                )''')
-                db.commit()
-                cur.execute('SELECT time, message, author, nsfw, url, image, service, channel, reported, html FROM digest')
-                query = cur.fetchall()
-            finally:
-                cur.close()
-                db.close()
-        except:
-            query = None
+            cur.execute('''CREATE TABLE IF NOT EXISTS digest
+                        (time real,
+                            message text,
+                            author text,
+                            nsfw integer,
+                            url text,
+                            image text,
+                            service text,
+                            channel text,
+                            reported integer,
+                            html text
+                            )''')
+            db.commit()
+            cur.execute('SELECT time, message, author, nsfw, url, image, service, channel, reported, html FROM digest')
+            query = cur.fetchall()
+        finally:
+            cur.close()
+            db.close()
         if query:
             bot.debug(__file__, log.format('Reloading from database'), 'verbose')
             bot.memory['digest']['digest'] = []
@@ -679,48 +675,6 @@ def build_html(bot, trigger):
 @interval(60)
 def build_regularly(bot):
     build_html(bot, None)
-
-
-# TODO database updates
-@commands('digest_update_database')
-def tmp_update_db(bot, trigger):
-    if not trigger.owner:
-        return
-    dbcon = bot.db.connect()
-    cur = dbcon.cursor()
-    try:
-        cur.execute('''alter table digest add column html text''')
-        dbcon.commit()
-        cur.execute('''CREATE TABLE IF NOT EXISTS digest_tmp
-                       (time real,
-                       message text,
-                       author text,
-                       nsfw integer,
-                       url text,
-                       image text,
-                       service text,
-                       channel text,
-                       reported integer,
-                       html text
-                       )''')
-        cur.execute('''
-                    insert into digest_tmp
-                    (time, message, author, nsfw, url, image, service, channel, reported, html)
-                    select time, message, author, nsfw, url, image, service, channel, reported,
-                    '<a href="' || url || '" target="_blank"><img src="' || image || '" height="250"></a>'
-                    from digest
-                    ''')
-        cur.execute(''' delete from digest ''')
-        cur.execute('''
-                    insert into digest
-                    (time, message, author, nsfw, url, image, service, channel, reported, html)
-                    select time, message, author, nsfw, url, image, service, channel, reported, html
-                    from digest_tmp
-                    ''')
-        cur.execute('''drop table digest_tmp''')
-    finally:
-        cur.close()
-    bot.reply('done')
 
 
 if __name__ == "__main__":
