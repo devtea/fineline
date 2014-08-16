@@ -367,7 +367,8 @@ def image_filter(bot, url):
         # raw link
         if domain not in temp_preprocess:
             bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
-            return {'url': url, 'service': domain}
+            html = _simple_img.substitute(url=url, orig=url)  # format the html link or album
+            return {'url': url, 'service': domain, 'html': html}
 
     # Try to get url function for specific domain
     try:
