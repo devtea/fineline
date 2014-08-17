@@ -403,7 +403,7 @@ def url_watcher(bot, trigger):
         bot.debug(__file__, log.format('Message was: %s' % trigger.bytes), 'warning')
         return
 
-    time.sleep(10)  # Wait just a bit to grab post-link nsfw tagging context, but only once per message
+    time.sleep(20)  # Wait just a bit to grab post-link nsfw tagging context, but only once per message
     with bot.memory['digest']['context_lock']:
         local_context = [i for i in bot.memory['digest']['context']]
 
