@@ -63,6 +63,20 @@ _MINIMUM = 4  # Minimum number of participants
 _excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot', 'oppobot']
 
 
+def configure(config):
+    """
+    | [truthordare] | example | purpose |
+    | ---- | ------- | ------- |
+    | channel | #channel | the channel where the truth or dare plugin will work |
+    """
+    if config.option('Limit the Truth or Dare plugin to a single channel', False):
+        if not config.has_section('truthordare'):
+            config.add_section('truthordare')
+        config.add_list('truthordare',
+                        'channel',
+                        'Enter the channel to limit the T/D game to.',
+                        'Channel:')
+
 def setup(bot):
     if 'tod' not in bot.memory:
         bot.memory['tod'] = {}
@@ -82,6 +96,11 @@ def setup(bot):
         bot.memory['tod']['vote_nick'] = ''
     if 'vote_count' not in bot.memory['tod']:
         bot.memory['tod']['vote_count'] = 0
+    if 'channel' not in bot.memory['tod']:
+        if bot.config.has_option('truthordare', 'channel'):
+            bot.memory['tod']['channel'] = bot.config.truthordare.channel
+        else:
+            bot.memory['tod']['channel'] = None
 
 
 def compile_nick_list(bot):  # to be used inside a with:lock statement
@@ -139,6 +158,9 @@ def join(bot, trigger):
     """This command is used to add yourself to a Truth or Dare session. """
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
+        return
     with bot.memory['tod']['lock']:
         bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
@@ -161,6 +183,9 @@ def join(bot, trigger):
 def leave(bot, trigger):
     """This command is used to remove yourself to a Truth or Dare session. """
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
         return
     with bot.memory['tod']['lock']:
         bot.memory['tod']['lastactivity'] = time.time()
@@ -204,6 +229,9 @@ def spin(bot, trigger):
         return choice[0]
 
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
         return
     with bot.memory['tod']['lock']:
         nick_list = []
@@ -252,6 +280,9 @@ def list(bot, trigger):
     """This command is used to list those participating in Truth or Dare. """
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
+        return
     with bot.memory['tod']['lock']:
         participants = compile_nick_list(bot)
         message = 'The current participants include:'
@@ -287,6 +318,9 @@ def tod(bot, trigger):
 def clear(bot, trigger):
     """Clears the list of participants for a Truth or Dare session."""
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
         return
     if bot.memory['tod']['clear_confirm']:
         with bot.memory['tod']['lock']:
@@ -325,6 +359,9 @@ def template(bot, trigger):
     """Chooses "Truth" or "Dare" randomly."""
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
+        return
     bot.reply(random.choice(['Truth', 'Dare']))
 
 
@@ -332,6 +369,9 @@ def template(bot, trigger):
 def kick(bot, trigger):
     """Used to vote idle people out of a Truth or Dare session."""
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
+    # return if we're not in the configured channel, if configured.
+    if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
         return
     try:
         target = nicks.NickPlus(trigger.args[1].split()[1])
