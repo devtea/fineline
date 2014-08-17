@@ -163,7 +163,7 @@ def spin(bot, trigger):
         if bot.memory['tod']['last'] > time.time() - 15:
             return
         elif len([i[0] for i in bot.memory['tod']['list'] if i[0] in nick_list]) < _MINIMUM:
-            bot.say("Sorry, but we don't have enough participants yet! We need at least %i people to join." % _MINIMUM)
+            bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
         else:
             bot.memory['tod']['last'] = time.time()
 
@@ -253,6 +253,12 @@ def template(bot, trigger):
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
     bot.reply(random.choice(['Truth', 'Dare']))
+
+
+@commands('tod_vote', 'tod_kick')
+def kick(bot, trigger):
+    """Used to vote idle people out of a Truth or Dare session."""
+    pass
 
 
 if __name__ == "__main__":
