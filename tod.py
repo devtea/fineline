@@ -313,6 +313,11 @@ def kick(bot, trigger):
         target = nicks.NickPlus(trigger.args[1].split()[1])
     except IndexError:
         return
+    participant = nicks.NickPlus(trigger.nick, trigger.host)
+    with bot.memory['tod']['lock']:
+        if participant not in compile_nick_list(bot):
+            bot.say("You can't vote if you're not playing!")
+            return
     if bot.memory['tod']['vote_nick']:
         with bot.memory['tod']['lock']:
             if target == bot.memory['tod']['vote_nick']:
@@ -331,7 +336,7 @@ def kick(bot, trigger):
             if target in compile_nick_list(bot):
                 bot.memory['tod']['vote_nick'] = target
                 bot.memory['tod']['vote_count'] += 1
-                bot.say('Vote started for %s. 3 more votes in the next 60 seconds are required.' % target)
+                bot.say('Kick vote started for %s. 3 more votes in the next 60 seconds are required.' % target)
             else:
                 bot.reply("Sorry, I didn't find that.")
         time.sleep(60)
