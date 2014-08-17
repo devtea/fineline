@@ -48,6 +48,7 @@ _EXPIRY = 90 * 60  # 90 minutes for list expiry
 _MINIMUM = 5  # Minimum number of participants
 _excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot', 'oppobot']
 
+
 def setup(bot):
     if 'tod' not in bot.memory:
         bot.memory['tod'] = {}
@@ -123,6 +124,35 @@ def leave(bot, trigger):
 @commands('spin', 'tod_next', 'tod_spin')
 def spin(bot, trigger):
     """This command is used to choose the next target for a Truth or Dare session. """
+    def pick_nick(bot):
+        next_nick = ' '
+        bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
+        bot.debug(__file__, log.format('in_chan returns %s' % nicks.in_chan(bot, trigger.sender, next_nick)), 'verbose')
+
+        while not nicks.in_chan(bot, trigger.sender, next_nick):  # pick people until we get someone in the room.
+            next = weighted_choice(bot.memory['tod']['list'])
+            next_nick = bot.memory['tod']['list'][next][0]
+            bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
+
+        # Check to see if their nick is different and use that
+        nick_list = []
+        nick_list.extend(nicks.in_chan(bot, trigger.sender))
+        nick_list = [i for i in nick_list if i not in _excludes]
+
+        n = nick_list.index(next_nick)
+        next_nick = nick_list.pop(n)  # This is the current and perhaps updated nickname
+
+        # remove the choice from the list and set weight to -2 to prevent
+        # it from being picked on the next two round.
+        choice = bot.memory['tod']['list'].pop(next)  # This is the original and perhaps old nickname tuple
+        choice = (next_nick, -2)
+        bot.memory['tod']['list'].append(choice)
+
+        # Increment all weights
+        bot.memory['tod']['list'] = [(i[0], i[1] + 1) for i in bot.memory['tod']['list']]
+
+        return choice[0]
+
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
     with bot.memory['tod']['lock']:
@@ -137,40 +167,22 @@ def spin(bot, trigger):
         else:
             bot.memory['tod']['last'] = time.time()
 
-            next_nick = ' '
-            bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
-            bot.debug(__file__, log.format('in_chan returns %s' % nicks.in_chan(bot, trigger.sender, next_nick)), 'verbose')
-
-            while not nicks.in_chan(bot, trigger.sender, next_nick):  # pick people until we get someone in the room.
-                next = weighted_choice(bot.memory['tod']['list'])
-                next_nick = bot.memory['tod']['list'][next][0]
-                bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
-
-            # Check to see if their nick is different and use that
-            nick_list = []
-            nick_list.extend(nicks.in_chan(bot, trigger.sender))
-            nick_list = [i for i in nick_list if i not in _excludes]
-
-            n = nick_list.index(next_nick)
-            next_nick = nick_list.pop(n)  # This is the current and perhaps updated nickname
-
-            # remove the choice from the list and set weight to -2 to prevent
-            # it from being picked on the next two round.
-            choice = bot.memory['tod']['list'].pop(next)  # This is the original and perhaps old nickname tuple
-            choice = (next_nick, -2)
-            bot.memory['tod']['list'].append(choice)
-
-            # Increment all weights
-            bot.memory['tod']['list'] = [(i[0], i[1] + 1) for i in bot.memory['tod']['list']]
-
-            # announce choice
-            # TODO variety
-            bot.say(random.choice([
-                '%s is next!' % choice[0],
-                '%s: Truth or dare?' % choice[0],
-                'Your turn, %s!' % choice[0],
-                'Time to choose, %s. Truth or dare?' % choice[0],
-                "%s, you're up!" % choice[0]]))
+            if bot.memory['tod']['last'] is None:  # pick two nicks if we haven't started a session
+                choice1 = pick_nick(bot)
+                choice2 = pick_nick(bot)
+                bot.say(random.choice[
+                    '%s will start by asking %s.' % (choice1, choice2),
+                    '%s asks %s.' % (choice1, choice2),
+                    'To start, %s will ask %s.' % (choice1, choice2),
+                    ])
+            else:  # Pick one if we are in the middle of a session
+                choice = pick_nick(bot)
+                bot.say(random.choice([
+                    '%s is next!' % choice,
+                    '%s: Truth or dare?' % choice,
+                    'Your turn, %s!' % choice,
+                    'Time to choose, %s. Truth or dare?' % choice,
+                    "%s, you're up!" % choice]))
 
 
 @commands('tod_list', 'tod_who')
@@ -217,6 +229,7 @@ def clear(bot, trigger):
     if bot.memory['tod']['confirm']:
         with bot.memory['tod']['lock']:
             bot.memory['tod']['list'] = []
+            bot.memory['tod']['last'] = None
             bot.reply('The truth or dare list has been cleared')
             bot.memory['tod']['confirm'] = False
     else:
@@ -231,6 +244,7 @@ def clear_when_dead(bot, trigger):
     if bot.memory['tod']['list'] and bot.memory['tod']['last'] and bot.memory['tod']['last'] < time.time() - _EXPIRY:
         bot.debug(__file__, log.format('Clearing TOD list due to inactivity'), 'verbose')
         bot.memory['tod']['list'] = []
+        bot.memory['tod']['last'] = None
 
 
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
