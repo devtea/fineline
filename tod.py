@@ -54,8 +54,10 @@ def setup(bot):
         bot.memory['tod'] = {}
     if 'list' not in bot.memory['tod']:
         bot.memory['tod']['list'] = []
-    if 'last' not in bot.memory['tod']:
-        bot.memory['tod']['last'] = None
+    if 'lastactivity' not in bot.memory['tod']:
+        bot.memory['tod']['lastactivity'] = None
+    if 'lastspin' not in bot.memory['tod']:
+        bot.memory['tod']['lastspin'] = None
     if 'lock' not in bot.memory:
         bot.memory['tod']['lock'] = threading.Lock()
     if 'confirm' not in bot.memory['tod']:
@@ -84,6 +86,7 @@ def join(bot, trigger):
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
     with bot.memory['tod']['lock']:
+        bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD join for %s, %s' % (trigger.nick, trigger.host)), 'verbose')
 
@@ -103,6 +106,7 @@ def leave(bot, trigger):
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
     with bot.memory['tod']['lock']:
+        bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD quit for %s' % participant), 'verbose')
 
@@ -160,14 +164,15 @@ def spin(bot, trigger):
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
         nick_list = [i for i in nick_list if i not in _excludes]
 
-        if bot.memory['tod']['last'] > time.time() - 15:
+        if bot.memory['tod']['lastspin'] > time.time() - 15:
             return
         elif len([i[0] for i in bot.memory['tod']['list'] if i[0] in nick_list]) < _MINIMUM:
             bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
         else:
-            bot.memory['tod']['last'] = time.time()
+            bot.memory['tod']['lastactivity'] = time.time()
+            bot.memory['tod']['lastspin'] = time.time()
 
-            if bot.memory['tod']['last'] is None:  # pick two nicks if we haven't started a session
+            if bot.memory['tod']['lastspin'] is None:  # pick two nicks if we haven't started a session
                 choice1 = pick_nick(bot)
                 choice2 = pick_nick(bot)
                 bot.say(random.choice[
@@ -229,7 +234,8 @@ def clear(bot, trigger):
     if bot.memory['tod']['confirm']:
         with bot.memory['tod']['lock']:
             bot.memory['tod']['list'] = []
-            bot.memory['tod']['last'] = None
+            bot.memory['tod']['lastactivity'] = None
+            bot.memory['tod']['lastspin'] = None
             bot.reply('The truth or dare list has been cleared')
             bot.memory['tod']['confirm'] = False
     else:
@@ -241,10 +247,14 @@ def clear(bot, trigger):
 
 @interval(1000)
 def clear_when_dead(bot, trigger):
-    if bot.memory['tod']['list'] and bot.memory['tod']['last'] and bot.memory['tod']['last'] < time.time() - _EXPIRY:
+    bot.debug(__file__, log.format('Checking TOD list for inactivity.'), 'verbose')
+    bot.debug(__file__, log.format('last activity was %s' % bot.memory['tod']['lastactivity']), 'verbose')
+    bot.debug(__file__, log.format('now is %s' % time.time()), 'verbose')
+    if bot.memory['tod']['list'] and bot.memory['tod']['lastactivity'] and bot.memory['tod']['lastactivity'] < time.time() - _EXPIRY:
         bot.debug(__file__, log.format('Clearing TOD list due to inactivity'), 'verbose')
         bot.memory['tod']['list'] = []
-        bot.memory['tod']['last'] = None
+        bot.memory['tod']['lastactivity'] = None
+        bot.memory['tod']['lastspin'] = None
 
 
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
