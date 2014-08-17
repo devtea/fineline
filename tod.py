@@ -272,6 +272,8 @@ def clear(bot, trigger):
             bot.memory['tod']['lastspin'] = None
             bot.reply('The truth or dare list has been cleared')
             bot.memory['tod']['clear_confirm'] = False
+            bot.memory['tod']['vote_nick'] = ''
+            bot.memory['tod']['vote_count'] = 0
     else:
         bot.reply('Are you sure you want to clear the truth or dare list? Use this command again within 20s to confirm.')
         bot.memory['tod']['clear_confirm'] = True
@@ -290,6 +292,8 @@ def clear_when_dead(bot):
         bot.memory['tod']['inactive_list'] = []
         bot.memory['tod']['lastactivity'] = None
         bot.memory['tod']['lastspin'] = None
+        bot.memory['tod']['vote_nick'] = ''
+        bot.memory['tod']['vote_count'] = 0
 
 
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
