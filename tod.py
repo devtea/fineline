@@ -187,7 +187,7 @@ def list(bot, trigger):
                 except ValueError:
                     pass  # multiple nicks can beak things
         message = message.strip(',')
-        if participants == 'The current participants include:':
+        if message == 'The current participants include:':
             bot.say("No one is participating right now.")
         else:
             bot.say(message)
