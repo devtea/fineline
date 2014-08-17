@@ -46,8 +46,7 @@ except:
 
 _EXPIRY = 90 * 60  # 90 minutes for list expiry
 _MINIMUM = 5  # Minimum number of participants
-_excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot']
-
+_excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot', 'oppobot']
 
 def setup(bot):
     if 'tod' not in bot.memory:
@@ -81,6 +80,8 @@ def weighted_choice(w):
 @commands('tod_join')
 def join(bot, trigger):
     """This command is used to add yourself to a Truth or Dare session. """
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     with bot.memory['tod']['lock']:
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD join for %s, %s' % (trigger.nick, trigger.host)), 'verbose')
@@ -98,6 +99,8 @@ def join(bot, trigger):
 @commands('tod_leave', 'tod_quit', 'tod_bail')
 def leave(bot, trigger):
     """This command is used to remove yourself to a Truth or Dare session. """
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     with bot.memory['tod']['lock']:
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD quit for %s' % participant), 'verbose')
@@ -120,6 +123,8 @@ def leave(bot, trigger):
 @commands('spin', 'tod_next', 'tod_spin')
 def spin(bot, trigger):
     """This command is used to choose the next target for a Truth or Dare session. """
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     with bot.memory['tod']['lock']:
         nick_list = []
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
@@ -169,6 +174,8 @@ def spin(bot, trigger):
 @commands('tod_list', 'tod_who')
 def list(bot, trigger):
     """This command is used to list those participating in Truth or Dare. """
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     with bot.memory['tod']['lock']:
         participants = compile_nick_list(bot)
         message = 'The current participants include:'
@@ -203,6 +210,8 @@ def tod(bot, trigger):
 @commands('tod_clear', 'tod_end')
 def clear(bot, trigger):
     """Clears the list of participants for a Truth or Dare session."""
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     if bot.memory['tod']['confirm']:
         with bot.memory['tod']['lock']:
             bot.memory['tod']['list'] = []
@@ -225,6 +234,8 @@ def clear_when_dead(bot, trigger):
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
 def template(bot, trigger):
     """Chooses "Truth" or "Dare" randomly."""
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
     bot.reply(random.choice(['Truth', 'Dare']))
 
 
