@@ -393,6 +393,9 @@ def url_watcher(bot, trigger):
     # Don't record stuff from private messages
     if not trigger.sender.startswith('#') or trigger.nick in IGNORE:
         return
+    # Don't record from commands
+    if trigger.bytes.startswith('!'):
+        return
 
     now = time.time()
 
@@ -678,6 +681,18 @@ def build_html(bot, trigger):
 @interval(60)
 def build_regularly(bot):
     build_html(bot, None)
+
+
+@commands('report')
+def report(bot, trigger):
+    pass
+
+
+@commands('unreport')
+def unreport(bot, trigger):
+    if not bot.admin:
+        return
+    pass
 
 
 if __name__ == "__main__":
