@@ -379,7 +379,10 @@ def image_filter(bot, url):
         html = _imgur_album.substitute(url=results['url'])
     else:  # Generic img
         html = _simple_img.substitute(url=results['url'], orig=url)  # format the html link or album
-    return {'url': results['url'], 'service': domain, 'html': html}
+    try:
+        return {'url': results['url'], 'service': domain, 'html': html}
+    except TypeError:
+        return None
 
 url = re.compile(r'''(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
 re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|questionable|explicit|porn|clop')
