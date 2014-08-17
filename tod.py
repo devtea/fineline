@@ -1,4 +1,4 @@
-"""
+"""x
 tod.py - A Willie module that manages a game of Truth or Dare
 Copyright 2014, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
@@ -54,14 +54,20 @@ def setup(bot):
         bot.memory['tod'] = {}
     if 'list' not in bot.memory['tod']:
         bot.memory['tod']['list'] = []
+    if 'inactive_list' not in bot.memory['tod']:
+        bot.memory['tod']['inactive_list'] = []
     if 'lastactivity' not in bot.memory['tod']:
         bot.memory['tod']['lastactivity'] = None
     if 'lastspin' not in bot.memory['tod']:
         bot.memory['tod']['lastspin'] = None
     if 'lock' not in bot.memory:
         bot.memory['tod']['lock'] = threading.Lock()
-    if 'confirm' not in bot.memory['tod']:
-        bot.memory['tod']['confirm'] = False
+    if 'clear_confirm' not in bot.memory['tod']:
+        bot.memory['tod']['clear_confirm'] = False
+    if 'vote_nick' not in bot.memory['tod']:
+        bot.memory['tod']['vote_nick'] = ''
+    if 'vote_count' not in bot.memory['tod']:
+        bot.memory['tod']['vote_count'] = 0
 
 
 def compile_nick_list(bot):  # to be used inside a with:lock statement
@@ -80,6 +86,40 @@ def weighted_choice(w):
     return bisect.bisect_right(sum_steps, random.uniform(0, sum))
 
 
+def move_to_inactive(bot, participant):
+    index = None
+    for i in bot.memory['tod']['list']:
+        bot.debug(__file__, log.format('comparing (%s, %s)' % i), 'verbose')
+        if participant == i[0]:
+            bot.debug(__file__, log.format('found (%s, %s)' % i), 'verbose')
+            index = bot.memory['tod']['list'].index(i)
+            bot.debug(__file__, log.format('index is %s' % index), 'verbose')
+            break
+    if index is not None:
+        bot.memory['tod']['inactive_list'].append(bot.memory['tod']['list'].pop(index))
+        return True
+    else:
+        return False
+
+
+def move_to_list(bot, participant):
+    index = None
+    if not bot.memory['tod']['inactive_list']:
+        return False
+    for i in bot.memory['tod']['inactive_list']:
+        bot.debug(__file__, log.format('comparing (%s, %s)' % i), 'verbose')
+        if participant == i[0]:
+            bot.debug(__file__, log.format('found (%s, %s)' % i), 'verbose')
+            index = bot.memory['tod']['inactive_list'].index(i)
+            bot.debug(__file__, log.format('index is %s' % index), 'verbose')
+            break
+    if index is not None:
+        bot.memory['tod']['list'].append(bot.memory['tod']['inactive_list'].pop(index))
+        return True
+    else:
+        return False
+
+
 @commands('tod_join')
 def join(bot, trigger):
     """This command is used to add yourself to a Truth or Dare session. """
@@ -90,14 +130,17 @@ def join(bot, trigger):
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD join for %s, %s' % (trigger.nick, trigger.host)), 'verbose')
 
-        if participant not in compile_nick_list(bot):
-            if len(compile_nick_list(bot)) < 2:
-                bot.memory['tod']['list'].append((participant, 1))
-            else:
-                bot.memory['tod']['list'].append((participant, len(compile_nick_list(bot)) / 2))
-            bot.reply("You now in the truth or dare list.")
+        if move_to_list(bot, participant):
+            bot.reply("You are back in the truth or dare list.")
         else:
-            bot.reply("You are already in the truth or dare list!")
+            if participant not in compile_nick_list(bot):
+                if len(compile_nick_list(bot)) < 2:
+                    bot.memory['tod']['list'].append((participant, 1))
+                else:
+                    bot.memory['tod']['list'].append((participant, len(compile_nick_list(bot)) / 2))
+                bot.reply("You are now in the truth or dare list.")
+            else:
+                bot.reply("You are already in the truth or dare list!")
 
 
 @commands('tod_leave', 'tod_quit', 'tod_bail')
@@ -109,18 +152,8 @@ def leave(bot, trigger):
         bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
         bot.debug(__file__, log.format('TOD quit for %s' % participant), 'verbose')
-
-        index = None
-        for i in bot.memory['tod']['list']:
-            bot.debug(__file__, log.format('comparing (%s, %s)' % i), 'verbose')
-            if participant == i[0]:
-                bot.debug(__file__, log.format('found (%s, %s)' % i), 'verbose')
-                index = bot.memory['tod']['list'].index(i)
-                bot.debug(__file__, log.format('index is %s' % index), 'verbose')
-                break
-        if index is not None:
-            bot.memory['tod']['list'].pop(index)
-            bot.reply("You no longer in the truth or dare list")
+        if move_to_inactive(bot, participant):
+            bot.reply("You are no longer in the truth or dare list")
         else:
             bot.reply("You weren't in the truth or dare list!")
 
@@ -231,28 +264,30 @@ def clear(bot, trigger):
     """Clears the list of participants for a Truth or Dare session."""
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
         return
-    if bot.memory['tod']['confirm']:
+    if bot.memory['tod']['clear_confirm']:
         with bot.memory['tod']['lock']:
             bot.memory['tod']['list'] = []
+            bot.memory['tod']['inactive_list'] = []
             bot.memory['tod']['lastactivity'] = None
             bot.memory['tod']['lastspin'] = None
             bot.reply('The truth or dare list has been cleared')
-            bot.memory['tod']['confirm'] = False
+            bot.memory['tod']['clear_confirm'] = False
     else:
         bot.reply('Are you sure you want to clear the truth or dare list? Use this command again within 20s to confirm.')
-        bot.memory['tod']['confirm'] = True
+        bot.memory['tod']['clear_confirm'] = True
         time.sleep(20)
-        bot.memory['tod']['confirm'] = False
+        bot.memory['tod']['clear_confirm'] = False
 
 
 @interval(1000)
-def clear_when_dead(bot, trigger):
+def clear_when_dead(bot):
     bot.debug(__file__, log.format('Checking TOD list for inactivity.'), 'verbose')
     bot.debug(__file__, log.format('last activity was %s' % bot.memory['tod']['lastactivity']), 'verbose')
     bot.debug(__file__, log.format('now is %s' % time.time()), 'verbose')
     if bot.memory['tod']['list'] and bot.memory['tod']['lastactivity'] and bot.memory['tod']['lastactivity'] < time.time() - _EXPIRY:
         bot.debug(__file__, log.format('Clearing TOD list due to inactivity'), 'verbose')
         bot.memory['tod']['list'] = []
+        bot.memory['tod']['inactive_list'] = []
         bot.memory['tod']['lastactivity'] = None
         bot.memory['tod']['lastspin'] = None
 
@@ -268,7 +303,39 @@ def template(bot, trigger):
 @commands('tod_vote', 'tod_kick')
 def kick(bot, trigger):
     """Used to vote idle people out of a Truth or Dare session."""
-    pass
+    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+        return
+    try:
+        target = nicks.NickPlus(trigger.args[1].split()[1])
+    except IndexError:
+        return
+    if bot.memory['tod']['vote_nick']:
+        with bot.memory['tod']['lock']:
+            if target == bot.memory['tod']['vote_nick']:
+                if bot.memory['tod']['vote_count'] == 3:
+                    bot.say('%s kicked from Truth or dare. Use !tod_join to rejoin.' % target)
+                    move_to_inactive(bot, target)
+                    bot.memory['tod']['vote_nick'] = ''
+                    bot.memory['tod']['vote_count'] = 0
+                else:
+                    bot.memory['tod']['vote_count'] += 1
+                    bot.reply('%i votes of %i needed to kick.' % (bot.memory['tod']['vote_count'], 4))
+            else:
+                bot.reply("Sorry, currently voting on %s" % bot.memory['tod']['vote_nick'])
+    else:
+        with bot.memory['tod']['lock']:
+            if target in compile_nick_list(bot):
+                bot.memory['tod']['vote_nick'] = target
+                bot.memory['tod']['vote_count'] += 1
+                bot.say('Vote started for %s. 3 more votes in the next 60 seconds are required.' % target)
+            else:
+                bot.reply("Sorry, I didn't find that.")
+        time.sleep(60)
+        with bot.memory['tod']['lock']:
+            if bot.memory['tod']['vote_count'] < 4 and bot.memory['tod']['vote_count'] != 0:
+                bot.say("Vote failed.")
+            bot.memory['tod']['vote_nick'] = ''
+            bot.memory['tod']['vote_count'] = 0
 
 
 if __name__ == "__main__":
