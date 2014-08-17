@@ -187,7 +187,6 @@ def spin(bot, trigger):
 
         # Increment all weights
         bot.memory['tod']['list'] = [(i[0], i[1] + 1) for i in bot.memory['tod']['list']]
-
         return choice[0]
 
     if not trigger.sender.startswith('#') or trigger.nick in _excludes:
@@ -202,17 +201,16 @@ def spin(bot, trigger):
         elif len([i[0] for i in bot.memory['tod']['list'] if i[0] in nick_list]) < _MINIMUM:
             bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
         else:
-            bot.memory['tod']['lastactivity'] = time.time()
-            bot.memory['tod']['lastspin'] = time.time()
-
             if bot.memory['tod']['lastspin'] is None:  # pick two nicks if we haven't started a session
                 choice1 = pick_nick(bot)
                 choice2 = pick_nick(bot)
-                bot.say(random.choice[
+                bot.debug(__file__, log.format(choice1), 'verbose')
+                bot.debug(__file__, log.format(choice2), 'verbose')
+                bot.say(random.choice([
                     '%s will start by asking %s.' % (choice1, choice2),
                     '%s asks %s.' % (choice1, choice2),
-                    'To start, %s will ask %s.' % (choice1, choice2),
-                    ])
+                    'To start, %s will ask %s.' % (choice1, choice2)
+                    ]))
             else:  # Pick one if we are in the middle of a session
                 choice = pick_nick(bot)
                 bot.say(random.choice([
@@ -221,6 +219,8 @@ def spin(bot, trigger):
                     'Your turn, %s!' % choice,
                     'Time to choose, %s. Truth or dare?' % choice,
                     "%s, you're up!" % choice]))
+            bot.memory['tod']['lastactivity'] = time.time()
+            bot.memory['tod']['lastspin'] = time.time()
 
 
 @commands('tod_list', 'tod_who')
