@@ -1,4 +1,4 @@
-"""x
+"""
 tod.py - A Willie module that manages a game of Truth or Dare
 Copyright 2014, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
@@ -43,6 +43,20 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import colors
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of colors")
+        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
+        colors = imp.load_source('colors', pathname, fp)
+        sys.modules['colors'] = colors
+    finally:
+        if fp:
+            fp.close()
+
 
 _EXPIRY = 90 * 60  # 90 minutes for list expiry
 _MINIMUM = 5  # Minimum number of participants
@@ -202,23 +216,33 @@ def spin(bot, trigger):
             bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
         else:
             if bot.memory['tod']['lastspin'] is None:  # pick two nicks if we haven't started a session
-                choice1 = pick_nick(bot)
-                choice2 = pick_nick(bot)
-                bot.debug(__file__, log.format(choice1), 'verbose')
-                bot.debug(__file__, log.format(choice2), 'verbose')
+                choice1 = colors.colorize(pick_nick(bot), ['purple'])
+                choice2 = colors.colorize(pick_nick(bot), ['purple'])
                 bot.say(random.choice([
-                    '%s will start by asking %s.' % (choice1, choice2),
-                    '%s asks %s.' % (choice1, choice2),
-                    'To start, %s will ask %s.' % (choice1, choice2)
+                    '%s%s%s' % (choice1,
+                                colors.colorize(' will start by asking ', ['green']),
+                                choice2),
+                    '%s%s%s' % (choice1,
+                                colors.colorize(' asks ', ['green']),
+                                choice2),
+                    '%s%s%s%s' % (colors.colorize('To start, ', ['green']),
+                                  choice1,
+                                  colors.colorize(' will ask ', ['green']),
+                                  choice2)
                     ]))
             else:  # Pick one if we are in the middle of a session
-                choice = pick_nick(bot)
+                choice = colors.colorize(pick_nick(bot), ['purple'])
                 bot.say(random.choice([
-                    '%s is next!' % choice,
-                    '%s: Truth or dare?' % choice,
-                    'Your turn, %s!' % choice,
-                    'Time to choose, %s. Truth or dare?' % choice,
-                    "%s, you're up!" % choice]))
+                    '%s%s' % (choice, colors.colorize(' is next!', ['green'])),
+                    '%s%s' % (choice, colors.colorize(': Truth or Dare?', ['green'])),
+                    '%s%s%s' % (colors.colorize('Your turn, ', ['green']),
+                                choice,
+                                colors.colorize('!', ['green'])),
+                    '%s%s%s' % (colors.colorize('Time to choose, ', ['green']),
+                                choice,
+                                colors.colorize('. Truth or dare?', ['green'])),
+                    '%s%s' % (choice, colors.colorize(", You're up!", ['green']))
+                    ]))
             bot.memory['tod']['lastactivity'] = time.time()
             bot.memory['tod']['lastspin'] = time.time()
 
