@@ -60,6 +60,7 @@ except:
 
 _EXPIRY = 90 * 60  # 90 minutes for list expiry
 _MINIMUM = 4  # Minimum number of participants
+_KICK_VOTES = 3
 _excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot', 'oppobot']
 
 
@@ -76,6 +77,7 @@ def configure(config):
                         'channel',
                         'Enter the channel to limit the T/D game to.',
                         'Channel:')
+
 
 def setup(bot):
     if 'tod' not in bot.memory:
@@ -307,10 +309,9 @@ def list(bot, trigger):
             bot.say(message)
 
 
-@commands('tod', 'truthordare', 'tord')
+@commands('truthordare', 'tod', 'tord')
 def tod(bot, trigger):
-    """To start a truth or dare session, have at least five people join. To join, use
- !tod_join. To leave, use !tod_leave. To pick the next person, use !spin."""
+    """To join, use !tod_join. To leave, use !tod_leave. To pick the next person, use !spin."""
     bot.say(tod.__doc__.strip())
 
 
@@ -385,14 +386,14 @@ def kick(bot, trigger):
     if bot.memory['tod']['vote_nick']:
         with bot.memory['tod']['lock']:
             if target == bot.memory['tod']['vote_nick']:
-                if bot.memory['tod']['vote_count'] == 3:
+                if bot.memory['tod']['vote_count'] == _KICK_VOTES - 1:
                     bot.say('%s kicked from Truth or dare. Use !tod_join to rejoin.' % target)
                     move_to_inactive(bot, target)
                     bot.memory['tod']['vote_nick'] = ''
                     bot.memory['tod']['vote_count'] = 0
                 else:
                     bot.memory['tod']['vote_count'] += 1
-                    bot.reply('%i votes of %i needed to kick.' % (bot.memory['tod']['vote_count'], 4))
+                    bot.reply('%i votes of %i needed to kick.' % (bot.memory['tod']['vote_count'], _KICK_VOTES))
             else:
                 bot.reply("Sorry, currently voting on %s" % bot.memory['tod']['vote_nick'])
     else:
@@ -400,12 +401,12 @@ def kick(bot, trigger):
             if target in compile_nick_list(bot):
                 bot.memory['tod']['vote_nick'] = target
                 bot.memory['tod']['vote_count'] += 1
-                bot.say('Kick vote started for %s. 3 more votes in the next 60 seconds are required.' % target)
+                bot.say('Kick vote started for %s. %i more votes in the next 60 seconds are required.' % (target, _KICK_VOTES - 1))
             else:
                 bot.reply("Sorry, I didn't find that.")
         time.sleep(60)
         with bot.memory['tod']['lock']:
-            if bot.memory['tod']['vote_count'] < 4 and bot.memory['tod']['vote_count'] != 0:
+            if bot.memory['tod']['vote_count'] < _KICK_VOTES and bot.memory['tod']['vote_count'] != 0:
                 bot.say("Vote failed.")
             bot.memory['tod']['vote_nick'] = ''
             bot.memory['tod']['vote_count'] = 0
