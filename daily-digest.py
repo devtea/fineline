@@ -320,7 +320,7 @@ def image_filter(bot, url):
         try:
             if url.split('.')[-1] in FILELIST:
                 formatted_url = re.sub(u'(www)?\.dropbox\.com', u'dl.dropboxusercontent.com', url, flags=re.I)
-                return _simple_img.substitute(url=formatted_url, orig='url'),
+                return {'url': formatted_url, 'format': 'standard'}
             else:
                 return None
         except:
