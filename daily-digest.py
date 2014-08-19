@@ -53,6 +53,9 @@ except:
 
 EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
 IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
+_REMOVE_VOTES = 5
+_VOTE_TIME = 5  # Time in minutes
+
 # Templates
 _style = '''
     <style>
@@ -158,6 +161,10 @@ def setup(bot):
         bot.memory['digest']['lock'] = threading.Lock()
     if 'context_lock' not in bot.memory['digest']:
         bot.memory['digest']['context_lock'] = threading.Lock()
+    if 'to_remove' not in bot.memory['digest']:
+        bot.memory['digest']['to_remove'] = None
+    if 'count' not in bot.memory['digest']:
+        bot.memory['digest']['count'] = 0
 
     # Load config values
     bot.memory['digest']['template'] = bot.config.dailydigest.template
@@ -395,7 +402,7 @@ def url_watcher(bot, trigger):
     if not trigger.sender.startswith('#') or trigger.nick in IGNORE:
         return
     # Don't record from commands
-    if trigger.bytes.startswith('!'):
+    if trigger.bytes.startswith('!') or trigger.bytes.startswith('.'):
         return
 
     now = time.time()
@@ -763,8 +770,85 @@ def unreport(bot, trigger):
 
 @commands('remove', 'digest_remove')
 def remove(bot, trigger):
-    # TODO Vote to remove links
-    pass
+    '''Allows removal of inappropriate links from the digest.'''
+    def do_remove(bot, link):
+        with bot.memory['digest']['lock']:
+            for i in bot.memory['digest']['digest']:
+                if link == i['image'] or link == i['url']:
+                    bot.memory['digest']['digest'].remove(i)
+            dbcon = bot.db.connect()
+            cur = dbcon.cursor()
+            try:
+                cur.execute('delete from digest where url = ? or image = ?', (link, link))
+                dbcon.commit()
+            except:
+                bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
+                bot.debug(__file__, traceback.format_exc(), 'warning')
+                return False
+            else:
+                return True
+            finally:
+                cur.close()
+
+    # Don't allow private messages
+    if not trigger.sender.startswith('#'):
+        return
+
+    try:
+        target = trigger.args[1].split()[1]
+    except IndexError:
+        bot.reply('You gave me nothing to remove!')
+        return
+    if not re.search('^https?://', target):
+        target = u'http://%s' % target
+
+    if not trigger.admin:
+        if bot.memory['digest']['to_remove']:
+            with bot.memory['digest']['lock']:
+                # Vote is active. Record vote, remove, or say if wrong thing to vote on.
+                if target == bot.memory['digest']['to_remove']:
+                    # A vote for the current link
+                    if bot.memory['digest']['count'] == _REMOVE_VOTES - 1:
+                        # We have enough votes now, remove it
+                        if do_remove(bot, target):
+                            bot.say('Link removed. The page will update shortly.')
+                            bot.memory['digest']['to_remove'] = None
+                            bot.memory['digest']['count'] = 0
+                        else:
+                            bot.reply("Sorry, something went wrong. This bug has been recorded.")
+                    else:
+                        # Not enough votes yet, add one
+                        bot.memory['digest']['count'] += 1
+                        bot.reply('%i votes of %i needed to remove.' % (bot.memory['digest']['count'], _REMOVE_VOTES))
+                else:
+                    bot.reply("Sorry, currently voting on %s" % bot.memory['digest']['to_remove'])
+        else:
+            # Not voting on anything yet, set up new vote.
+            with bot.memory['digest']['lock']:
+                exists = False
+                for i in bot.memory['digest']['digest']:
+                    if target == i['image'] or target == i['url']:
+                        exists = True
+                        break
+                if exists:
+                    bot.memory['digest']['to_remove'] = target
+                    bot.memory['digest']['count'] = 1
+                    bot.say('Link removal vote started for %s. %i more votes in the next %i minutes are required.' %
+                            (target, _REMOVE_VOTES - 1, _VOTE_TIME))
+                else:
+                    bot.reply("I couldn't find that link on the digest page to remove.")
+            time.sleep(_VOTE_TIME * 60)
+            with bot.memory['digest']['lock']:
+                bot.memory['digest']['to_remove'] = None
+                bot.memory['digest']['count'] = 0
+
+    else:
+        if do_remove(bot, target):
+            bot.reply('Done')
+        else:
+            bot.reply('Something broke!')
+        bot.memory['digest']['to_remove'] = None
+        bot.memory['digest']['count'] = 0
 
 
 if __name__ == "__main__":
