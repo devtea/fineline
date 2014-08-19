@@ -743,7 +743,6 @@ def unreport(bot, trigger):
     except IndexError:
         bot.reply('You gave me nothing to report!')
         return
-    if not re.search('^https?://', target):
         target = u'http://%s' % target
     with bot.memory['digest']['lock']:
         for i in bot.memory['digest']['digest']:
@@ -799,8 +798,6 @@ def remove(bot, trigger):
     except IndexError:
         bot.reply('You gave me nothing to remove!')
         return
-    if not re.search('^https?://', target):
-        target = u'http://%s' % target
 
     if not trigger.admin:
         if bot.memory['digest']['to_remove']:
