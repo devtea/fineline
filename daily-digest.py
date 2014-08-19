@@ -568,11 +568,11 @@ def url_dump(bot, trigger):
 
 @commands('digest_build_html')
 def build_html(bot, trigger):
-    def is_nsfw(nsfw):
-        if nsfw is None:
-            return "<b>This image may be NSFW</b> (flagged from conversation context)"
-        elif nsfw:
+    def is_nsfw(nsfw, reported):
+        if nsfw or reported:
             return "<b>This images was tagged as NSFW</b>"
+        elif nsfw is None:
+            return "<b>This image may be NSFW</b> (flagged from conversation context)"
         else:
             return "SFW"
 
@@ -649,7 +649,7 @@ def build_html(bot, trigger):
         dedupe_list = [{'image': dedupe[i]['image'],
                         'html': dedupe[i]['html'],
                         'url': dedupe[i]['url'],
-                        'nsfw': is_nsfw(dedupe[i]['nsfw']),
+                        'nsfw': is_nsfw(dedupe[i]['nsfw'], dedupe[i]['reported']),
                         'author': dedupe[i]['messages'][0]['author'],
                         'channel': dedupe[i]['messages'][0]['channel'],
                         'message': dedupe[i]['messages'][0]['message'],
@@ -685,14 +685,69 @@ def build_regularly(bot):
 
 @commands('report')
 def report(bot, trigger):
-    pass
+    try:
+        target = trigger.args[1].split()[1]
+    except IndexError:
+        bot.reply('You gave me nothing to report!')
+        return
+    if not re.search('^https?://', target):
+        target = u'http://%s' % target
+    with bot.memory['digest']['lock']:
+        for i in bot.memory['digest']['digest']:
+            if target == i['image'] or target == i['url']:
+                i['reported'] = True
+                bad_stuff_happened = False
+                dbcon = bot.db.connect()
+                cur = dbcon.cursor()
+                try:
+                    cur.execute('''update digest set reported = ? where url = ? or image = ?''',
+                                (parsebool(True), target, target))
+                    dbcon.commit()
+                except:
+                    bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
+                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    bad_stuff_happened = True
+                finally:
+                    cur.close()
+        if bad_stuff_happened:
+            bot.reply("Sorry, something went wrong. This bug has been recorded.")
+        else:
+            bot.reply("Thank you for reporting that link. The update will be reflected on the page shortly.")
 
 
 @commands('unreport')
 def unreport(bot, trigger):
-    if not bot.admin:
+    if not trigger.admin:
         return
     pass
+    try:
+        target = trigger.args[1].split()[1]
+    except IndexError:
+        bot.reply('You gave me nothing to report!')
+        return
+    if not re.search('^https?://', target):
+        target = u'http://%s' % target
+    with bot.memory['digest']['lock']:
+        for i in bot.memory['digest']['digest']:
+            if target == i['image'] or target == i['url']:
+                i['reported'] = False
+                bad_stuff_happened = False
+                dbcon = bot.db.connect()
+                cur = dbcon.cursor()
+                try:
+                    cur.execute('''update digest set reported = ? where url = ? or image = ?''',
+                                (parsebool(False), target, target))
+                    dbcon.commit()
+                except:
+                    bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
+                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    bad_stuff_happened = True
+                finally:
+                    cur.close()
+        if bad_stuff_happened:
+            bot.reply("Something broke!")
+        else:
+            bot.reply("Done")
 
 
 if __name__ == "__main__":
