@@ -94,7 +94,8 @@ _desc = '''
 
 
 _imgur_album = Template('<iframe class="imgur-album" width="100%" height="550" frameborder="0" src="${url}/embed?background=f2f2f2&text=1a1a1a&link=4e76c0"></iframe>')
-_img_div = Template('<div class = "img">${img}${desc}</div>')
+_img_div = Template('<div class="img">${img}${desc}</div>')
+_img_div_nsfw = Template('<div class="img" class="nsfw">${img}${desc}</div>')
 _simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" height="250"></a>')
 _desc_div = Template(_desc)
 
@@ -658,7 +659,7 @@ def build_html(bot, trigger):
         dedupe_list.sort(key=lambda t: t['time'], reverse=True)  # Sort the list by post time
 
         msg = u'\n'.join(
-            [_img_div.substitute(
+            [_img_div_nsfw.substitute(
                 img=i['html'],
                 desc=_desc_div.substitute(
                     author=i['author'],
@@ -666,7 +667,17 @@ def build_html(bot, trigger):
                     message=i['message'],
                     ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
                     nsfw=i['nsfw'])
-            ) for i in dedupe_list]
+            ) if re.search('NSFW', i['nsfw']) else
+                _img_div.substitute(
+                img=i['html'],
+                desc=_desc_div.substitute(
+                    author=i['author'],
+                    channel=i['channel'],
+                    message=i['message'],
+                    ftime=datetime.utcfromtimestamp(i['time']).strftime('%H:%M UTC - %b %d, %Y'),
+                    nsfw=i['nsfw'])
+            )
+                for i in dedupe_list]
         )
     else:
         msg = u''
@@ -748,6 +759,12 @@ def unreport(bot, trigger):
             bot.reply("Something broke!")
         else:
             bot.reply("Done")
+
+
+@commands('remove', 'digest_remove')
+def remove(bot, trigger):
+    # TODO Vote to remove links
+    pass
 
 
 if __name__ == "__main__":
