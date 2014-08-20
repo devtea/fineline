@@ -336,7 +336,8 @@ def image_filter(bot, url):
             img = imgur_get_medium(bot, img)
             return {'url': img, 'format': 'standard'}
         else:
-            # Else return the original url for album embedding
+            # Else return the original url sans hash numbers for album embedding
+            url = re.sub('(/[a-zA-Z0-9]{5,})/?#[0-9]*', '\g<1>', url)
             return {'url': url, 'format': 'imgur-album'}
 
     def dropbox(url):
