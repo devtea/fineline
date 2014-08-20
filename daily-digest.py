@@ -51,7 +51,7 @@ except:
         if fp:
             fp.close()
 
-EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
+EXPIRATION = 7 * 24 * 60 * 60  # 24 hour expiration, longer for testing
 IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
 BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
@@ -406,8 +406,9 @@ def url_watcher(bot, trigger):
     if trigger.bytes.startswith('!') or trigger.bytes.startswith('.'):
         return
     # Ignore blacklisted urls
-    if re.search(BLACKLIST, trigger.bytes, re.I):
-        return
+    for i in BLACKLIST:
+        if re.search(i, trigger.bytes, re.I):
+            return
 
     now = time.time()
 
@@ -543,7 +544,8 @@ def clean_links(bot):
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
         try:
-            cur.execute('delete from digest where time < ?', time.time() - EXPIRATION)
+            t = time.time() - EXPIRATION
+            cur.execute('delete from digest where time < ?', (t,))
             dbcon.commit()
         except:
             bot.debug(__file__, log.format(u'Unhandled database exception when cleaning up old links.'), 'warning')
