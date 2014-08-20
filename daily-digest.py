@@ -383,7 +383,11 @@ def image_filter(bot, url):
         return None
 
     # If we got a check function, use that to return the image url
-    results = check(url)
+    if check:
+        results = check(url)
+    else:
+        return None
+
     if results['format'] == 'imgur-album':
         html = _imgur_album.substitute(url=results['url'])
     else:  # Generic img
