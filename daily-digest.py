@@ -53,6 +53,7 @@ except:
 
 EXPIRATION = 5 * 24 * 60 * 60  # 24 hour expiration, 5 day for testing
 IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
+BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
 _VOTE_TIME = 5  # Time in minutes
 
@@ -237,7 +238,7 @@ def parsebool(b):
 @commands(u'dd', u'dailydigest', u'daily-digest', u'digest')
 def template(bot, trigger):
     """Displays the configured url for the daily digest page."""
-    bot.say(u'The daily image digest page is at %s. Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
+    bot.say(u'The daily image digest page is at %s - Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
@@ -404,6 +405,9 @@ def url_watcher(bot, trigger):
     # Don't record from commands
     if trigger.bytes.startswith('!') or trigger.bytes.startswith('.'):
         return
+    # Ignore blacklisted urls
+    if re.search(BLACKLIST, trigger.bytes, re.I):
+        return
 
     now = time.time()
 
@@ -531,15 +535,21 @@ def digest_dump(bot, trigger):
         bot.debug(__file__, log.format('=' * 20), 'always')
 
 
-@interval(3600)
+@interval(60)
 def clean_links(bot):
     '''Remove old links from bot memory'''
-    return  # TODO remove this to re-enable the cleaning. Disabled since this is fucking with the db right now
     with bot.memory['digest']['lock']:
         bot.memory['digest']['digest'] = [i for i in bot.memory['digest']['digest'] if i['time'] > time.time() - EXPIRATION]
-        # Clearing the whole DB every time is inefficient, but simple. Thankfully
-        # this should never be a very large operation.
-        db_refresh(bot)
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('delete from digest where time < ?', time.time() - EXPIRATION)
+            dbcon.commit()
+        except:
+            bot.debug(__file__, log.format(u'Unhandled database exception when cleaning up old links.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+        finally:
+            cur.close()
 
 
 @rule('.*')
