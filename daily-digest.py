@@ -235,6 +235,18 @@ def parsebool(b):
     return None
 
 
+def imgur_get_medium(bot, url):
+    try:
+        if not re.search('(/[a-zA-Z0-9]{5,})[mls](.[a-zA-Z]{3,4})$', url):
+            return re.sub('(/[a-zA-Z0-9]{5,})(.[a-zA-Z]{3,4})$', '\g<1>m\g<2>', url)
+        else:
+            return url
+    except:
+        bot.debug(__file__, log.format(u'Unhandled exception in the imgur medium url formatter.'), 'warning')
+        bot.debug(__file__, traceback.format_exc(), 'warning')
+        return url
+
+
 @commands(u'dd', u'dailydigest', u'daily-digest', u'digest')
 def template(bot, trigger):
     """Displays the configured url for the daily digest page."""
@@ -317,8 +329,11 @@ def image_filter(bot, url):
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
         img = parser.get_img()
+        print('point zero %s' % img)
         if img:
-            # If we got an image back, return it
+            # If we got an image back, process it a touch to get a smaller
+            # image and then return it
+            img = imgur_get_medium(bot, img)
             return {'url': img, 'format': 'standard'}
         else:
             # Else return the original url for album embedding
@@ -372,7 +387,12 @@ def image_filter(bot, url):
         # raw link
         if domain not in temp_preprocess:
             bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
-            html = _simple_img.substitute(url=url, orig=url)  # format the html link or album
+            # For now, only imgur needs raw link modifications. If we do more
+            # than just imgur, though, we'll need a lookup with functions.
+            orig = url
+            if re.search('imgur.com', url):
+                url = imgur_get_medium(bot, url)
+            html = _simple_img.substitute(url=url, orig=orig)  # format the html link or album
             return {'url': url, 'service': domain, 'html': html}
 
     # Try to get url function for specific domain
