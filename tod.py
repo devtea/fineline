@@ -246,33 +246,26 @@ def spin(bot, trigger):
             bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
         else:
             if bot.memory['tod']['lastspin'] is None:  # pick two nicks if we haven't started a session
-                choice1 = colors.colorize(pick_nick(bot), ['purple'])
-                choice2 = colors.colorize(pick_nick(bot), ['purple'])
-                bot.say(random.choice([
-                    '%s%s%s' % (choice1,
-                                colors.colorize(' will start by asking ', ['green']),
-                                choice2),
-                    '%s%s%s' % (choice1,
-                                colors.colorize(' asks ', ['green']),
-                                choice2),
-                    '%s%s%s%s' % (colors.colorize('To start, ', ['green']),
-                                  choice1,
-                                  colors.colorize(' will ask ', ['green']),
-                                  choice2)
-                    ]))
+                choice1 = pick_nick(bot)
+                choice2 = pick_nick(bot)
+                bot.say(
+                    colors.colorize(
+                        random.choice([
+                            'We\'ll have %s start by asking %s ',
+                            'Okay, %s asks %s ',
+                            'To start, %s will ask %s '] % (choice1, choice2)),
+                        ['green']))
             else:  # Pick one if we are in the middle of a session
-                choice = colors.colorize(pick_nick(bot), ['purple'])
-                bot.say(random.choice([
-                    '%s%s' % (choice, colors.colorize(' is next!', ['green'])),
-                    '%s%s' % (choice, colors.colorize(': Truth or Dare?', ['green'])),
-                    '%s%s%s' % (colors.colorize('Your turn, ', ['green']),
-                                choice,
-                                colors.colorize('!', ['green'])),
-                    '%s%s%s' % (colors.colorize('Time to choose, ', ['green']),
-                                choice,
-                                colors.colorize('. Truth or dare?', ['green'])),
-                    '%s%s' % (choice, colors.colorize(", You're up!", ['green']))
-                    ]))
+                choice = pick_nick(bot)
+                bot.say(
+                    colors.colorize(
+                        random.choice([
+                            'Next up, %s ',
+                            'Okay %s, Truth or Dare?',
+                            'Your turn, %s ',
+                            'Time to choose, %s',
+                            'You\'re up, %s '] % choice)
+                        ['green']))
             bot.memory['tod']['lastactivity'] = time.time()
             bot.memory['tod']['lastspin'] = time.time()
 
