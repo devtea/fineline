@@ -97,10 +97,11 @@ _desc = '''
 '''
 
 
-_imgur_album = Template('<iframe class="imgur-album" width="100%" height="550" frameborder="0" src="${url}/embed?background=f2f2f2&text=1a1a1a&link=4e76c0"></iframe>')
+_imgur_album = Template('<iframe class="imgur-album" width="100%" height="350" frameborder="0" src="${url}/embed?background=f2f2f2&text=1a1a1a&link=4e76c0"></iframe>')
+_gfycat_iframe = Template('<iframe src="http://gfycat.com/ifr/${id}" frameborder="0" scrolling="no" height="350" width="600" style="-webkit-backface-visibility: hidden;-webkit-transform: scale(1);" ></iframe>')
 _img_div = Template('<div class="img">${img}${desc}</div>')
 _img_div_nsfw = Template('<div class="img" class="nsfw">${img}${desc}</div>')
-_simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" height="250"></a>')
+_simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" max-height="350"></a>')
 _desc_div = Template(_desc)
 
 
