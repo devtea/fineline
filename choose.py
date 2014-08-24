@@ -81,10 +81,10 @@ def weighted_choice(bot, unweighted):
 
     good = ['art', 'arting', 'artistic', 'arty', 'create', 'creative', 'draw',
             'drawing', 'paint', 'painting', 'sketch', 'sketching', 'study',
-            'studies', 'studying']
+            'studies', 'studying', 'aeyrt', 'tar']
     bad = ['don\'t', 'dont', 'fuck', 'later', 'no', 'not', 'never', 'quit',
            'lame', 'stupid', 'dumb', 'bad', 'out', 'sucks', 'sucky', 'worse',
-           'hitler', 'fcuk', 'fook', 'fock', 'stop']
+           'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but']
 
     bot.debug(__file__, log.format(u'Weighting choices from %s.' % unweighted), 'verbose')
     weighted = []
