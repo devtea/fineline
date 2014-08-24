@@ -286,7 +286,9 @@ def image_filter(bot, url):
         'derpicdn.net': (lambda url: derpibooru(url)),
         'cdn.derpiboo.ru': (lambda url: derpibooru(url)),
         'static1.e621.net': (lambda url: e621(url)),
-        'e621.net': (lambda url: e621(url))
+        'e621.net': (lambda url: e621(url)),
+        'gfycat.com': (lambda url: gfycat(url)),
+        'www.gfycat.com': (lambda url: gfycat(url))
     }
     temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
 
@@ -399,6 +401,16 @@ def image_filter(bot, url):
             bot.debug(__file__, log.format(u'Unhandled exception in the e621 parser.'), 'warning')
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
+
+    def gfycat(url):
+        if url.endswith('/terms'):
+            return None
+        try:
+            id = re.search('gfycat\.com/([a-zA-Z]{6,})', url).groups()[0]
+        except AttributeError:
+            return None
+        # TODO make the custom format just take URL and HTML
+        return {'url': url, 'html': _gfycat_iframe.substitute(id=id), 'format': 'custom'}
 
     bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
 
