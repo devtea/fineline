@@ -238,7 +238,10 @@ def parsebool(b):
 
 def imgur_get_medium(bot, url):
     try:
-        if not re.search('(/[a-zA-Z0-9]{5,})[mls](.[a-zA-Z]{3,4})$', url):
+        if url.lower().endswith(u'.gif'):
+            # Resized gifs don't animate'
+            return url
+        elif not re.search('(/[a-zA-Z0-9]{5,})[mls](.[a-zA-Z]{3,4})$', url):
             return re.sub('(/[a-zA-Z0-9]{5,})(.[a-zA-Z]{3,4})$', '\g<1>m\g<2>', url)
         else:
             return url
@@ -315,22 +318,45 @@ def image_filter(bot, url):
         return {'url': parser.get_img(), 'format': 'standard'}
 
     def imgur(url):
+        def process_url(bot, url):
+            parser = ImgurParser()
+            # No try except here, catching elsewhere
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            parser.feed(html)
+            img = parser.get_img()
+            return img
+
         # Imgur has a lot of shit urls, filter them first before trying to
         # parse the html.
         if re.search('user|\.com/?$|//[^\.\W]{2,}\.imgur.com', url, re.I):
             return None
 
-        parser = ImgurParser()
-        try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
-            parser.feed(html)
-        except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
-            return None
-        img = parser.get_img()
-        print('point zero %s' % img)
+        # Turn mobile urls into normal
+        url = re.sub('m\.imgur\.com', 'i.imgur.com', url)
+
+        if re.search('gallery', url):
+            try:
+                # Turn gallery urls into albums
+                processed_url = re.sub('gallery/([a-zA-Z0-9]{5,})(.*)', 'a/\g<1>', url)
+                img = process_url(bot, processed_url)
+            except:
+                try:
+                    # Turn gallery urls into image links
+                    processed_url = re.sub('gallery/([a-zA-Z0-9]{5,})(.*)', '\g<1>', url)
+                    img = process_url(bot, processed_url)
+                except:
+                    bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
+                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    return None
+        else:
+            try:
+                img = process_url(bot, url)
+            except:
+                bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
+                bot.debug(__file__, traceback.format_exc(), 'warning')
+                return None
+
         if img:
             # If we got an image back, process it a touch to get a smaller
             # image and then return it
@@ -339,7 +365,9 @@ def image_filter(bot, url):
         else:
             # Else return the original url sans hash numbers for album embedding
             url = re.sub('(/[a-zA-Z0-9]{5,})/?#[0-9]*', '\g<1>', url)
-            return {'url': url, 'format': 'imgur-album'}
+            return {'url': url,
+                    'html': _imgur_album.substitute(url=url),
+                    'format': 'custom'}
 
     def dropbox(url):
         # TODO remove this if possible after header check is implemented
@@ -391,8 +419,11 @@ def image_filter(bot, url):
             bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
             # For now, only imgur needs raw link modifications. If we do more
             # than just imgur, though, we'll need a lookup with functions.
+            # Turn mobile urls into normal
+            url = re.sub('m\.imgur\.com', 'i.imgur.com', url)
+
             orig = url
-            if re.search('imgur.com', url):
+            if re.search('imgur\.com', url):
                 url = imgur_get_medium(bot, url)
             html = _simple_img.substitute(url=url, orig=orig)  # format the html link or album
             return {'url': url, 'service': domain, 'html': html}
@@ -410,13 +441,16 @@ def image_filter(bot, url):
     else:
         return None
 
-    if results['format'] == 'imgur-album':
-        html = _imgur_album.substitute(url=results['url'])
-    else:  # Generic img
-        html = _simple_img.substitute(url=results['url'], orig=url)  # format the html link or album
-    try:
-        return {'url': results['url'], 'service': domain, 'html': html}
-    except TypeError:
+    if results:
+        if results['format'] == 'custom':
+            html = results['html']
+        else:  # Generic img, format == 'standard'
+            html = _simple_img.substitute(url=results['url'], orig=url)  # format the html link or album
+        try:
+            return {'url': results['url'], 'service': domain, 'html': html}
+        except TypeError:
+            return None
+    else:
         return None
 
 url = re.compile(r'''(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
