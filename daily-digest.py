@@ -386,9 +386,10 @@ def image_filter(bot, url):
 
     def e621(url):
         id = re.search('post/show/(\d{5,})', url, flags=re.I)
-        if not id:
+        try:
+            parsed = u'https://e621.net/post/show.json?id=%s' % id.groups()[0]
+        except AttributeError:
             return None
-        parsed = u'https://e621.net/post/show.json?id=%s' % id.groups()[0]
         try:
             content = urllib2.urlopen(parsed)
             raw_json = content.read().decode('utf-8', 'replace')
