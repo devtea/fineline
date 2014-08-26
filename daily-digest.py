@@ -64,21 +64,23 @@ _style = '''
         margin: 5px;
         padding: 5px;
         border: 1px solid #000000;
-        height: auto;
+        height: 550px;
         width: auto;
         float: left;
         text-align: center;
+        word-wrap: break-word;
     }
     div.img img {
         display: inline;
         margin: 5px;
         border: 1px solid #ffffff;
+        max-height: 350px;
     }
     div.img a:hover img {
         border:1px solid #0000ff;
     }
     div.desc {
-        text-align: left ;
+        text-align: left;
         font-weight: normal;
         width: 300px;
         margin: 10px;
@@ -101,7 +103,7 @@ _imgur_album = Template('<iframe class="imgur-album" width="100%" height="350" f
 _gfycat_iframe = Template('<iframe src="http://gfycat.com/ifr/${id}" frameborder="0" scrolling="no" height="350" width="600" style="-webkit-backface-visibility: hidden;-webkit-transform: scale(1);" ></iframe>')
 _img_div = Template('<div class="img">${img}${desc}</div>')
 _img_div_nsfw = Template('<div class="img" class="nsfw">${img}${desc}</div>')
-_simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}" max-height="350"></a>')
+_simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}"></a>')
 _desc_div = Template(_desc)
 
 
@@ -265,6 +267,7 @@ def image_filter(bot, url):
     # misc boorus
     # 500px
     # flickr
+    # gfycat
     FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
     _dom_map = {
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
