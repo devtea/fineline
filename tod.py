@@ -253,7 +253,7 @@ def spin(bot, trigger):
                         random.choice([
                             'We\'ll have %s start by asking %s ',
                             'Okay, %s asks %s ',
-                            'To start, %s will ask %s '] % (choice1, choice2)),
+                            'To start, %s will ask %s ']) % (choice1, choice2),
                         ['green']))
             else:  # Pick one if we are in the middle of a session
                 choice = pick_nick(bot)
@@ -264,7 +264,7 @@ def spin(bot, trigger):
                             'Okay %s, Truth or Dare?',
                             'Your turn, %s ',
                             'Time to choose, %s',
-                            'You\'re up, %s '] % choice)
+                            'You\'re up, %s ']) % choice,
                         ['green']))
             bot.memory['tod']['lastactivity'] = time.time()
             bot.memory['tod']['lastspin'] = time.time()
