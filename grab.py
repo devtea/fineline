@@ -103,7 +103,8 @@ def grab(bot, trigger):
                         # Nick already removed, do nothing.
                         pass
             else:
-                bot.say('Sorry, nothing to grab!')
+                # bot.say('Sorry, nothing to grab!')
+                pass
 
 
 @rule('.*')
