@@ -534,9 +534,8 @@ def reddit_post(bot, trigger):
             snippet = match.sub(u' ', snippet)
             snippet = trc(snippet, 15)
             bot.say(
-                u'Comment (↑%s|↓%s) by %s on %s%s — "%s"' % (
+                u'Comment (↑%s) by %s on %s%s — "%s"' % (
                     colors.colorize(str(comment.ups), [u'green']),
-                    colors.colorize(str(comment.downs), [u'orange']),
                     colors.colorize(comment.author.name, [u'purple']),
                     nsfw,
                     trc(_util_html.unescape(post.title), 15),
