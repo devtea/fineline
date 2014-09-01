@@ -25,7 +25,6 @@ import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
-from willie.tools import Nick
 from willie.module import commands, rule, interval
 
 _url = u'(reddit\.com|redd\.it)'
@@ -38,9 +37,9 @@ _timeout_message = u'Sorry, reddit is unavailable right now.'
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
-_ignore = [Nick(r'hushmachine.*'), Nick(r'tmoister1')]
+_ignore = ['hushmachine', 'hushmachine_', 'hushmachine_mk2', 'hushbot', 'finelinefan', 'oppobot', 'toshmotes']
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
-_fetch_quiet = ['hushmachine', 'hushmachine_mk2', 'hushbot']
+_fetch_quiet = ['hushmachine', 'hushmachine_', 'hushmachine_mk2', 'hushbot', 'finelinefan']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
 _announce_interval = 300  # Seconds between announcing found posts
 
@@ -454,9 +453,7 @@ def reddit_post(bot, trigger):
         return diff
 
     try:
-        trigger_nick = Nick(trigger.nick)
-        for i in _ignore:
-            if i == trigger_nick:
+        if trigger.nick in _ignore:
                 return
 
         # Update pay.reddit.com links to work with praw
