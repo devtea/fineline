@@ -240,9 +240,10 @@ def auto_quiet_on_part(bot, trigger):
     try:
         if source in bot.memory['user_timers'] and \
                 trigger.nick.lower() in bot.memory['user_timers'][source]:
-            q, t, r = bot.memory['user_timers'][source][
+            n, q, t, r = bot.memory['user_timers'][source][
                 trigger.nick.lower()]
             bot.memory['user_timers'][source][trigger.nick.lower()] = (
+                n,
                 True,
                 t,
                 r
@@ -259,9 +260,10 @@ def auto_quiet_on_quit(bot, trigger):
     try:
         if source in bot.memory['user_timers'] and \
                 trigger.nick.lower() in bot.memory['user_timers'][source]:
-            q, t, r = bot.memory['user_timers'][source][
+            n, q, t, r = bot.memory['user_timers'][source][
                 trigger.nick.lower()]
             bot.memory['user_timers'][source][trigger.nick.lower()] = (
+                n,
                 True,
                 t,
                 r
