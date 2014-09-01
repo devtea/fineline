@@ -88,8 +88,7 @@ def setup(bot):
 
 
 def seen_reload(bot):
-    bot.memory['seen_lock'].acquire()
-    try:
+    with bot.memory['seen_lock']:
         bot.memory['seen'] = {}
         for row in bot.db.seen.keys('nick'):
             nick, json_data = bot.db.seen.get(
@@ -105,8 +104,6 @@ def seen_reload(bot):
             msg = data['message']
             r_tup = (tm, chan, msg)
             bot.memory['seen'][nn.lower()] = r_tup
-    finally:
-        bot.memory['seen_lock'].release()
 
 
 def seen_insert(bot, nick, data):
@@ -133,17 +130,11 @@ def seen_insert(bot, nick, data):
 '''
 # TODO
 # def seen_delete()
-    bot.memory['seen_lock'].acquire()
-    try:
-    finally:
-        bot.memory['seen_lock'].release()
+    with bot.memory['seen_lock']:
 
 # TODO
 # def seen_ignore()
-    bot.memory['seen_lock'].acquire()
-    try:
-    finally:
-        bot.memory['seen_lock'].release()
+    with bot.memory['seen_lock']:
 '''
 
 
@@ -155,8 +146,7 @@ def load_from_logs(bot, trigger):
     bot.reply(u"Alright, I'll start looking through the logs, " +
                 u"but this is going to take a while..."
                 )
-    bot.memory['seen_lock'].acquire()
-    try:
+    with bot.memory['seen_lock']:
         bot.debug(__file__, log.format(u'=' * 25), u'verbose')
         bot.debug(__file__, log.format(u'Starting'), u'verbose')
         filelist = []
@@ -202,8 +192,6 @@ def load_from_logs(bot, trigger):
                         '''bot.debug(__file__, log.format('utc timestamp is %f' % timestamp), 'verbose')'''
                         data = (timestamp, chan, msg)
                         seen_insert(bot, nn.lower(), data)
-    finally:
-        bot.memory['seen_lock'].release()
     bot.debug(__file__, log.format(u'done'), u'verbose')
     bot.reply(u"Okay, I'm done reading the logs!")
 
@@ -216,14 +204,11 @@ def seen_nuke(bot, trigger):
         bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
     bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
-    bot.memory['seen_lock'].acquire()
-    try:
+    with bot.memory['seen_lock']:
         bot.memory['seen'] = {}  # NUKE IT FROM ORBIT
         for row in bot.db.seen.keys('nick'):
             bot.db.seen.delete(row[0], 'nick')
         bot.reply(u"Done!")
-    finally:
-        bot.memory['seen_lock'].release()
 
 
 @priority(u'low')
@@ -238,11 +223,8 @@ def seen_recorder(bot, trigger):
 
     data = (now, chan, msg)
 
-    bot.memory['seen_lock'].acquire()
-    try:
+    with bot.memory['seen_lock']:
         seen_insert(bot, nn.lower(), data)
-    finally:
-        bot.memory['seen_lock'].release()
 
 
 @commands('seen', 'lastseen')

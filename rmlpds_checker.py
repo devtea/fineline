@@ -184,8 +184,7 @@ def rmlpds(bot):
     """Checks the subreddit for unattended recent posts."""
     if bot.memory["rmlpds_timer"] > time.time() - _check_interval:
         return  # return if not enough time has elapsed since last full run
-    bot.memory["rmlpds_timer_lock"].acquire()
-    try:
+    with bot.memory["rmlpds_timer_lock"]:
         try:
             mlpds = rc.get_subreddit(u'MLPDrawingSchool')
         except (InvalidSubreddit, HTTPError):
@@ -249,8 +248,6 @@ def rmlpds(bot):
                 bot.debug(__file__, log.format(u"No uncommented posts found."), u"verbose")
         else:
             bot.debug(__file__, log.format(u"Cannot check posts."), u"warning")
-    finally:
-        bot.memory["rmlpds_timer_lock"].release()
 
 
 @commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')

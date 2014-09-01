@@ -104,8 +104,7 @@ def new_timer(bot, trigger):
     if bot.memory['shush']:
         return
     source = trigger.args[0]  # e.g. '#fineline_testing'
-    bot.memory['user_timers_lock'].acquire()
-    try:
+    with bot.memory['user_timers_lock']:
         if source not in bot.memory['user_timers']:
             bot.memory['user_timers'][source] = {}
         if len(trigger.args[1].split()) <= 1:
@@ -228,16 +227,13 @@ def new_timer(bot, trigger):
                             u"for help") % bot.nick
                     )
                 return
-    finally:
-        bot.memory['user_timers_lock'].release()
 
 
 @rule(u'.*')
 @event(u'PART')
 def auto_quiet_on_part(bot, trigger):
     source = trigger.args[0]
-    bot.memory['user_timers_lock'].acquire()
-    try:
+    with bot.memory['user_timers_lock']:
         if source in bot.memory['user_timers'] and \
                 trigger.nick.lower() in bot.memory['user_timers'][source]:
             n, q, t, r = bot.memory['user_timers'][source][
@@ -248,16 +244,13 @@ def auto_quiet_on_part(bot, trigger):
                 t,
                 r
             )
-    finally:
-        bot.memory['user_timers_lock'].release()
 
 
 @event(u'QUIT')
 @rule(u'.*')
 def auto_quiet_on_quit(bot, trigger):
     source = trigger.args[0]
-    bot.memory['user_timers_lock'].acquire()
-    try:
+    with bot.memory['user_timers_lock']:
         if source in bot.memory['user_timers'] and \
                 trigger.nick.lower() in bot.memory['user_timers'][source]:
             n, q, t, r = bot.memory['user_timers'][source][
@@ -268,15 +261,12 @@ def auto_quiet_on_quit(bot, trigger):
                 t,
                 r
             )
-    finally:
-        bot.memory['user_timers_lock'].release()
 
 
 @interval(1)
 def timer_check(bot):
     now = time()
-    bot.memory['user_timers_lock'].acquire()
-    try:
+    with bot.memory['user_timers_lock']:
         for chan in bot.memory['user_timers']:
             bot.debug(__file__, log.format(u"found channel %s" % chan), u'verbose')
             for user in bot.memory['user_timers'][chan]:
@@ -301,8 +291,6 @@ def timer_check(bot):
                             chan,
                             u'%s, you have %s remaining.' % (n, format_sec(r))
                         )
-    finally:
-        bot.memory['user_timers_lock'].release()
 
 
 def timer_del(bot, trigger):

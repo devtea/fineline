@@ -110,15 +110,12 @@ def grab(bot, trigger):
 @rule('.*')
 def recent_watcher(bot, trigger):
     # bot.memory['grab']['list'][nick] = (is_action, text)
-    bot.memory['grab']['lock'].acquire()
-    try:
+    with bot.memory['grab']['lock']:
         if trigger.sender.startswith('#'):
             if trigger.bytes.startswith('\001ACTION'):
                 bot.memory['grab']['list'][Nick(trigger.nick)] = (True, trigger.bytes[8:])
             else:
                 bot.memory['grab']['list'][Nick(trigger.nick)] = (False, trigger.bytes)
-    finally:
-        bot.memory['grab']['lock'].release()
 
 
 @commands('grab_clear')

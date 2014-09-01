@@ -67,8 +67,7 @@ def slow_room(bot):
 
     bot.memory['slow_wait'] = (random.uniform(23, 33) * 60)
 
-    bot.memory["slow_timer_lock"].acquire()
-    try:
+    with bot.memory["slow_timer_lock"]:
         for key in bot.memory["slow_timer"].keys():
             try:
                 if bot.memory["slow_timer"][key] < time.time() - bot.memory['slow_wait'] \
@@ -97,8 +96,6 @@ def slow_room(bot):
                 # It appears a bad file descriptor can be cached when the bot
                 # disconnects and reconnects. We need to flush these.
                 del bot.memory["slow_timer"][key]
-    finally:
-        bot.memory["slow_timer_lock"].release()
 
 
 def fetch_rss(bot, feed_url):
@@ -117,8 +114,7 @@ def fetch_rss(bot, feed_url):
         bot.memory["fetch_rss"][feed_url].append(time.time())
         bot.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
         bot.debug(__file__, log.format(u"Updated feed and stored cached version."), u"verbose")
-    bot.memory["fetch_rss_lock"].acquire()
-    try:
+    with bot.memory["fetch_rss_lock"]:
         # {feed_url: [time, feed]}
         bot.debug(__file__, log.format('Checking feed url %s' % feed_url), 'verbose')
         if feed_url in bot.memory["fetch_rss"]:
@@ -131,8 +127,6 @@ def fetch_rss(bot, feed_url):
         else:  # No cached version, try to get new
             refresh_feed(bot, feed_url)
         return bot.memory["fetch_rss"][feed_url][1]
-    finally:
-        bot.memory["fetch_rss_lock"].release()
 
 
 def fzoo(bot, channel):
@@ -236,11 +230,8 @@ def last_activity(bot, trigger):
         if 'slow_timer_lock' not in bot.memory:
             bot.debug(__file__, log.format(u'WTF Devs'), u'warning')
             setup(bot)
-        bot.memory["slow_timer_lock"].acquire()
-        try:
+        with bot.memory["slow_timer_lock"]:
             bot.memory["slow_timer"][trigger.sender] = time.time()
-        finally:
-            bot.memory["slow_timer_lock"].release()
 
 
 @commands(u'pony', u'pon[ie]')

@@ -39,8 +39,7 @@ except:
 
 
 def loadReminders(fn, lock):
-    lock.acquire()
-    try:
+    with lock:
         result = {}
         f = open(fn)
         for line in f:
@@ -52,14 +51,11 @@ def loadReminders(fn, lock):
                     continue  # @@ hmm
                 result.setdefault(tellee, []).append((teller, verb, timenow, msg))
         f.close()
-    finally:
-        lock.release()
     return result
 
 
 def dumpReminders(fn, data, lock):
-    lock.acquire()
-    try:
+    with lock:
         f = open(fn, 'w')
         for tellee in iterkeys(data):
             for remindon in data[tellee]:
@@ -72,8 +68,6 @@ def dumpReminders(fn, data, lock):
             f.close()
         except IOError:
             pass
-    finally:
-        lock.release()
     return True
 
 
@@ -133,14 +127,11 @@ def f_remind(bot, trigger):
     if not tellee in (Nick(teller), bot.nick, 'me'):
         tz = willie.tools.get_timezone(bot.db, bot.config, None, tellee)
         timenow = willie.tools.format_time(bot.db, bot.config, tz, tellee)
-        bot.memory['tell_lock'].acquire()
-        try:
+        with bot.memory['tell_lock']:
             if not tellee in bot.memory['reminders']:
                 bot.memory['reminders'][tellee] = [(teller, verb, timenow, msg)]
             else:
                 bot.memory['reminders'][tellee].append((teller, verb, timenow, msg))
-        finally:
-            bot.memory['tell_lock'].release()
 
         response = "I'll pass that on when %s is around." % tellee
 
@@ -158,8 +149,7 @@ def getReminders(bot, channel, key, tellee):
     template = "%s: %s <%s> %s"
     today = time.strftime('%d %b', time.gmtime())
 
-    bot.memory['tell_lock'].acquire()
-    try:
+    with bot.memory['tell_lock']:
         for (teller, verb, datetime, msg) in bot.memory['reminders'][key]:
             if datetime.startswith(today):
                 datetime = datetime[len(today) + 1:]
@@ -170,8 +160,6 @@ def getReminders(bot, channel, key, tellee):
             del bot.memory['reminders'][key]
         except KeyError:
             bot.msg(channel, 'Er...')
-    finally:
-        bot.memory['tell_lock'].release()
     return lines
 
 
