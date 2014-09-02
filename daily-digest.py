@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
+import hashlib
 import json
 import re
 import threading
@@ -300,7 +301,8 @@ def image_filter(bot, url):
     _dom_map = {
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
         'deviantart.com': re.compile('\S+\.deviantart\.com'),
-        'imgur.com': re.compile('i\.imgur\.com')
+        'imgur.com': re.compile('i\.imgur\.com'),
+        'tinypic.com': re.compile('\S+\.tinypic\.com')
     }
     domains = {
         'deviantart.net': (lambda url: deviantart(url)),
@@ -325,9 +327,15 @@ def image_filter(bot, url):
         'steamcommunity.com': (lambda url: steam(url)),
         '500px.com': (lambda url: fivehpx(url)),
         'www.flickr.com': (lambda url: flickr(url)),
-        'flickr.com': (lambda url: flickr(url))
+        'flickr.com': (lambda url: flickr(url)),
+        'tinypic.com': (lambda url: tinypic(url))
     }
-    temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
+    # Temporary list to specify which need to be preprocessed
+    temp_preprocess = [
+        'dropbox.com',
+        'www.dropbox.com',
+        'tinypic.com'
+    ]
 
     def derpibooru(url):
         '''derpibooru provides an oembed option at derpiboo.ru/oembed.json'''
@@ -395,6 +403,14 @@ def image_filter(bot, url):
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
         return {'url': thumbnail, 'format': 'standard'}
+
+    def tinypic(url):
+        # Need to add a unique identifier that doesn't break the url so unique
+        # messages show up in the digest
+        uniquifier = hashlib.md5()
+        uniquifier.update(url)
+        url = u'http://i.imgur.com/akZmL5j.gif?id=%s' % unicode(uniquifier.hexdigest())
+        return {'url': url, 'format': 'standard'}
 
     def deviantart(url):
         parser = DAParser()
