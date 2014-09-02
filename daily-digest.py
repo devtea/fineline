@@ -643,6 +643,16 @@ def url_watcher(bot, trigger):
         bot.debug(__file__, log.format(pp(t)), 'verbose')
 
 
+@commands('digest_clear')
+def digest_clear(bot, trigger):
+    if not trigger.owner:
+        return
+    with bot.memory['digest']['lock']:
+        bot.memory['digest']['digest'] = []
+        db_refresh(bot)
+    bot.reply(u'Cleared.')
+
+
 @commands('digest_refresh_db')
 def digest_db_refresh(bot, trigger):
     if not trigger.owner:
@@ -696,15 +706,6 @@ def write_to_db(bot, item):
         bot.debug(__file__, traceback.format_exc(), 'warning')
     finally:
         cur.close()
-
-
-@commands('digest_clear')
-def digest_clear(bot, trigger):
-    if not trigger.owner:
-        return
-    with bot.memory['digest']['lock']:
-        bot.memory['digest']['digest'] = []
-    bot.reply(u'Cleared.')
 
 
 @commands('digest_dump')
