@@ -296,7 +296,6 @@ def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
     # TODO Image services to Support
     # misc boorus
-    # flickr
     FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
     _dom_map = {
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
@@ -323,7 +322,9 @@ def image_filter(bot, url):
         'www.gfycat.com': (lambda url: gfycat(url)),
         'grab.by': (lambda url: tinygrab(url)),
         'steamcommunity.com': (lambda url: steam(url)),
-        '500px.com': (lambda url: fivehpx(url))
+        '500px.com': (lambda url: fivehpx(url)),
+        'www.flickr.com': (lambda url: flickr(url)),
+        'flickr.com': (lambda url: flickr(url))
     }
     temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
 
@@ -378,6 +379,21 @@ def image_filter(bot, url):
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
+    def flickr(url):
+        '''Flickr seems to do a lot of javascript voodoo after page load so tag searching is difficult'''
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            try:
+                base_url = re.search("baseURL: '([^']+)'", html).groups()[0]
+            except IndexError:
+                pass  # No match, no image.
+            thumbnail = re.sub('(\d+_\w+)\.(\w+)$', '\g<1>_n.\g<2>', base_url)
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the flickr parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        return {'url': thumbnail, 'format': 'standard'}
 
     def deviantart(url):
         parser = DAParser()
