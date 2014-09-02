@@ -441,6 +441,12 @@ def image_filter(bot, url):
         if re.search('user|\.com/?$|//[^\.\W]{2,}\.imgur.com', url, re.I):
             return None
 
+        # Trim off trailing ?1 shit
+        url = re.sub('(.*)\?\S*$', '\g<1>', url)
+        if url.split('.')[-1] in FILELIST:
+            # We just cleaned up a raw image link
+            return {'url': url, 'format': 'standard'}
+
         # Turn mobile urls into normal
         url = re.sub('m\.imgur\.com', 'i.imgur.com', url)
 
@@ -530,8 +536,6 @@ def image_filter(bot, url):
         domain = _dom_map[r].sub(r, domain)
     bot.debug(__file__, log.format("Processed domain is: %s" % domain), 'verbose')
 
-    # TODO Are there urls with shit after the file name? eg.
-    # http://example.net/image.png?shit=stuffs
     if url.split('.')[-1] in FILELIST:
         # TODO Grab header and see if MIME type is sane before returning the
         # raw link
