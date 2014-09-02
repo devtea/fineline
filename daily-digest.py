@@ -396,8 +396,8 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             try:
                 base_url = re.search("baseURL: '([^']+)'", html).groups()[0]
-            except IndexError:
-                pass  # No match, no image.
+            except AttributeError:
+                return None  # No match, no image.
             thumbnail = re.sub('(\d+_\w+)\.(\w+)$', '\g<1>_n.\g<2>', base_url)
         except:
             bot.debug(__file__, log.format(u'Unhandled exception in the flickr parser.'), 'warning')
