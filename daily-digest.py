@@ -142,6 +142,17 @@ class ImgurParser(ImageParser):
                     self.img = u'http://%s' % d['src'].strip('/')
 
 
+class TinyGrabParser(ImageParser):
+    def handle_starttag(self, tag, attrs):
+        if tag == 'img' and attrs:
+            # Attrs are a list of tuples, (name, value)
+            d = {}
+            for attr in attrs:
+                d[attr[0]] = attr[1]
+            if d and 'id' in d and d['id'] == 'thegrab':
+                self.img = d['src']
+
+
 def configure(config):
     '''
     [ daily-digest ]
@@ -291,7 +302,8 @@ def image_filter(bot, url):
         'static1.e621.net': (lambda url: e621(url)),
         'e621.net': (lambda url: e621(url)),
         'gfycat.com': (lambda url: gfycat(url)),
-        'www.gfycat.com': (lambda url: gfycat(url))
+        'www.gfycat.com': (lambda url: gfycat(url)),
+        'grab.by': (lambda url: tinygrab(url))
     }
     temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
 
@@ -309,6 +321,18 @@ def image_filter(bot, url):
             bot.debug(__file__, log.format(u'Unhandled exception in the derpibooru parser.'), 'warning')
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
+
+    def tinygrab(url):
+        parser = TinyGrabParser()
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            parser.feed(html)
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the tinygrab parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        return {'url': parser.get_img(), 'format': 'standard'}
 
     def deviantart(url):
         parser = DAParser()
