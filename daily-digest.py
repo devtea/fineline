@@ -310,6 +310,7 @@ def image_filter(bot, url):
         'dropbox.com': (lambda url: dropbox(url)),
         'www.dropbox.com': (lambda url: dropbox(url)),
         'i.imgur.com': (lambda url: imgur(url)),
+        'm.imgur.com': (lambda url: imgur(url)),
         'imgur.com': (lambda url: imgur(url)),
         'derpiboo.ru': (lambda url: derpibooru(url)),
         'derpibooru.org': (lambda url: derpibooru(url)),
