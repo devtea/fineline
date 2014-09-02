@@ -126,7 +126,7 @@ class DAParser(ImageParser):
             for attr in attrs:
                 d[attr[0]] = attr[1]
             if d and 'class' in d and d['class'] == 'dev-content-full':
-                self.img = d['src']
+                self.img = re.sub('(deviantart.net/fs[0-9]+)/', '\g<1>/200H/', d['src'])
 
 
 class ImgurParser(ImageParser):
