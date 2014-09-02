@@ -164,6 +164,17 @@ class SteamParser(ImageParser):
                 self.img = re.sub('\d+x\d+\.resizedimage', '0x200.resizedimage', d['src'])
 
 
+class FivehpxParser(ImageParser):
+    def handle_starttag(self, tag, attrs):
+        if tag == 'img' and attrs:
+            # Attrs are a list of tuples, (name, value)
+            d = {}
+            for attr in attrs:
+                d[attr[0]] = attr[1]
+            if d and 'class' in d and d['class'] == 'the_photo':
+                self.img = re.sub('(cdn\.500px\.org/\d+/\w+/)\d+\.', '\g<1>4.', d['src'])
+
+
 def configure(config):
     '''
     [ daily-digest ]
@@ -285,9 +296,7 @@ def image_filter(bot, url):
     '''Filter URLs for known image hosting services and raw image links'''
     # TODO Image services to Support
     # misc boorus
-    # 500px
     # flickr
-    # gfycat
     FILELIST = ['png', 'jpg', 'jpeg', 'tiff', 'gif', 'bmp', 'svg']
     _dom_map = {
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
@@ -313,7 +322,8 @@ def image_filter(bot, url):
         'gfycat.com': (lambda url: gfycat(url)),
         'www.gfycat.com': (lambda url: gfycat(url)),
         'grab.by': (lambda url: tinygrab(url)),
-        'steamcommunity.com': (lambda url: steam(url))
+        'steamcommunity.com': (lambda url: steam(url)),
+        '500px.com': (lambda url: fivehpx(url))
     }
     temp_preprocess = ['dropbox.com', 'www.dropbox.com']  # Temporary list to specify which need to be preprocessed
 
@@ -355,6 +365,19 @@ def image_filter(bot, url):
             bot.debug(__file__, traceback.format_exc(), 'warning')
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
+
+    def fivehpx(url):
+        parser = FivehpxParser()
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            parser.feed(html)
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the 500px parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        return {'url': parser.get_img(), 'format': 'standard'}
+
 
     def deviantart(url):
         parser = DAParser()
