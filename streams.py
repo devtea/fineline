@@ -53,8 +53,6 @@ _exc_regex = []
 _twitch_client_id = None  # Overwritten in setup()
 _youtube_api_key = None  # Overwritten in setup()
 _ustream_dev_key = None  # Overwritten in setup()
-_re_jtv = re.compile('(?<=justin\.tv/)[^/(){}[\]]+')
-_exc_regex.append(re.compile('justin\.tv/'))
 _re_ttv = re.compile('(?<=twitch\.tv/)[^/(){}[\]]+')
 _exc_regex.append(re.compile('twitch\.tv/'))
 _re_ls = re.compile('(?<=livestream\.com/)[^/(){}[\]]+')
@@ -66,8 +64,7 @@ _exc_regex.append(re.compile('youtube\.com/'))
 _re_pic = re.compile('(?<=picarto\.tv/live/channel.php\?watch=)[^/(){}[\]]+')
 _exc_regex.append(re.compile('picarto\.tv/'))
 # _url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
-_services = ['justin.tv', 'twitch.tv', 'livestream.com', 'youtube.com',
-             'ustream.tv', 'picarto.tv']
+_services = ['twitch.tv', 'livestream.com', 'youtube.com', 'ustream.tv', 'picarto.tv']
 _SUB = ('?',)  # This will be replaced in setup()
 # TODO move this to memory
 _include = ['#reddit-mlpds', '#fineline_testing']
@@ -179,90 +176,6 @@ class stream(object):
         # Dummy function to be extended by children. Use to hit the appropriate
         # streaming site and update object variables.
         return
-
-
-class justintv(stream):
-    # http://www.justin.tv/p/api
-    _base_url = 'http://api.justin.tv/api/'
-    _service = 'justin.tv'
-    _last_update = time.time()
-    # _header_info = ''
-
-    def __init__(self, name, alias=None):
-        super(justintv, self).__init__(name, alias)
-        self.update()
-
-    def update(self):
-        # Update stream info - first grab chan, then try to grab stream
-        # Update channel info
-        try:
-            self._results = web.get(u'%schannel/show/%s.json' % (
-                self._base_url, self._name))
-        except timeout:
-            raise
-        try:
-            self._form_j = json.loads(self._results)
-        except ValueError:
-            print("Bad Json loaded from justin.tv")
-            print("Raw data is:")
-            print(self._results)
-            raise
-        except IndexError:
-            raise
-        except TypeError:
-            raise
-        try:
-            raise ValueError(self._form_j['error'])
-        except KeyError:
-            pass
-        for s in self._form_j:
-            self._settings[s] = self._form_j[s]
-        self._form_j = None  # cleanup
-
-        # Update stream info if available
-        try:
-            self._results = web.get(u'%sstream/list.json?channel=%s' % (
-                self._base_url, self._name))
-        except timeout:
-            raise
-        try:
-            self._form_j = json.loads(self._results)
-        except ValueError:
-            print("Bad Json loaded from justin.tv")
-            print("Raw data is:")
-            print(self._results)
-            raise
-        except IndexError:
-            raise
-        except TypeError:
-            raise
-        if self._form_j:
-            # We got results here, it means the stream is live
-            if not self._live:
-                self._last_update = time.time()
-                self._live = True
-            try:
-                raise ValueError(self._form_j['error'])
-            except KeyError:
-                # the object has no key 'error' so nothing's wrong
-                pass
-            except TypeError:
-                # The object is probably valid, dict inside list
-                pass
-            # Load data [{...}]
-            for s in self._form_j[0]:
-                self._settings[s] = self._form_j[0][s]
-        else:
-            # No results means stream's not live if self._live:
-                self._live = False
-                self._last_update = time.time()
-        self._form_j = None  # cleanup
-        self._url = self._settings['channel_url']
-        # NSFW flag is one of ['true', 'false', None]
-        if self._settings['mature'] == 'true':
-            self._nsfw = True
-        else:
-            self._nsfw = False
 
 
 class livestream(stream):
@@ -465,7 +378,6 @@ class youtube(stream):
 
 
 class twitchtv(stream):
-    # https://github.com/justintv/twitch-api
     _base_url = 'https://api.twitch.tv/kraken/'
     _service = 'twitch.tv'
     _header_info = {'Accept': 'application/vnd.twitchtv.v2+json'}
@@ -540,9 +452,7 @@ class twitchtv(stream):
 class StreamFactory(object):
     def newStream(self, channel, service, alias=None):
         # TODO catch exceptions from object instantiations
-        if service == 'justin.tv':
-            return justintv(channel, alias)
-        elif service == 'twitch.tv':
+        if service == 'twitch.tv':
             return twitchtv(channel, alias)
         elif service == 'livestream.com':
             return livestream(channel, alias)
@@ -678,6 +588,13 @@ def setup(bot):
                            (channel text, service text)''')
             cur.execute('''CREATE TABLE IF NOT EXISTS sub_streams
                            (channel text, service text, nick text)''')
+            dbcon.commit()
+
+            # TODO Remove this on next commit
+            # Justin.tv cleanup
+            cur.execute("DELETE FROM STREAMS WHERE SERVICE = 'justin.tv'")
+            cur.execute("DELETE FROM SUB_STREAMS WHERE SERVICE = 'justin.tv'")
+            cur.execute("DELETE FROM FEAT_STREAMS WHERE SERVICE = 'justin.tv'")
             dbcon.commit()
         finally:
             cur.close()
@@ -1001,9 +918,7 @@ def parse_service(service):
         else:
             return None
     else:
-        if _re_jtv.search(service):
-            return (_re_jtv.findall(service)[0], 'justin.tv')
-        elif _re_ttv.search(service):
+        if _re_ttv.search(service):
             return (_re_ttv.findall(service)[0], 'twitch.tv')
         elif _re_ls.search(service):
             return (_re_ls.findall(service)[0], 'livestream.com')
@@ -1048,10 +963,6 @@ def add_stream(bot, user):
                 elif str(txt) == '500 Internal Server Error':
                     bot.reply(u'Service returned internal server error, try' +
                               u' again later.')
-                    return
-                # Twitch.tv - user is a justin.tv user
-                elif str(txt).startswith('422 Unprocessable Entity: Channel'):
-                    bot.reply(u'That is actually a justin.tv user.')
                     return
                 # Twitch.tv - user does not exist
                 elif str(txt).startswith('404 Not Found: Channel'):
@@ -1243,10 +1154,9 @@ def publish_lists(bot, trigger=None):
 
 @commands('services')
 def services(bot, trigger):
-    '''Propert input includes a URL by itself (e.g. http://justin.tv/tdreyer1)
- or a channel name / service name pair (e.g. tdreyer1 justin.tv). Accepted
- service names are justin.tv, livestream.com, twitch.tv, ustream.tv,
- picarto.tv, and youtube.com'''
+    '''Propert input includes a URL by itself (e.g. http://twitch.tv/tdreyer1)
+ or a channel name / service name pair (e.g. tdreyer1 twitch.tv). Accepted
+ service names are livestream.com, twitch.tv, ustream.tv, picarto.tv, and youtube.com'''
     bot.say(__doc__.strip())
     return
 
@@ -1536,20 +1446,6 @@ def announcer(bot):
     bot.debug(__file__, log.format(u'Announcer sleeping'), u'verbose')
 
 
-# Justin.tv caches for at least 60 seconds. Updating faster is pointless.
-@interval(311)
-def jtv_updater(bot):
-    bot.debug(__file__, log.format(u'Starting justin.tv updater.'), u'verbose')
-    now = time.time()
-    for s in [i for i in bot.memory['streams'] if i.service == 'justin.tv']:
-        # TODO handle timeout, misc exceptions
-        s.update()
-        time.sleep(0.25)
-    bot.debug(__file__,
-              log.format(u'jtv updater complete in %s seconds.' % (time.time() - now)),
-              u'verbose')
-
-
 # Livestream limits access to the following limits
 #    10 requests per second
 #    100 requests per minutes ( ~1 / 2sec )
@@ -1658,13 +1554,11 @@ def stats(bot):
     # number of featured, number of subs, steams by service
     bot.say('I am tracking %s streams, %s of which are featured.' %
             (len(bot.memory['streams']), len(bot.memory['feat_streams'])))
-    bot.say((u'There are %s from livestream.com, %s from justin.tv, '
+    bot.say((u'There are %s from livestream.com, '
              u'%s from twitch.tv, %s from youtube.com, %s '
              u'from ustream.tv, and %s from picarto.tv.') % (
             len([i for i in bot.memory['streams']
                 if i.service == 'livestream.com']),
-            len([i for i in bot.memory['streams']
-                if i.service == 'justin.tv']),
             len([i for i in bot.memory['streams']
                 if i.service == 'twitch.tv']),
             len([i for i in bot.memory['streams']
