@@ -161,7 +161,6 @@ def reddit_dump(bot, trigger):
 def reddit_list(bot, trigger):
     '''ADMIN: List watched subreddits'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
     with bot.memory['reddit_lock']:
         subs = []
@@ -213,7 +212,7 @@ def reddit_add(bot, trigger):
 def reddit_del(bot, trigger):
     '''ADMIN: Remove watched subreddit. Syntax = #Channel subredditname'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to delete a watched subreddit!'), 'warning')
         return
     try:
         channel = trigger.args[1].split()[1]
@@ -243,7 +242,6 @@ def reddit_del(bot, trigger):
 def reddit_queue(bot, trigger):
     '''ADMIN: List size of queues'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
     for c in bot.memory['reddit_msg_queue']:
         bot.reply('%s: %i' % (c, len(bot.memory['reddit_msg_queue'][c])))
@@ -253,7 +251,7 @@ def reddit_queue(bot, trigger):
 def queue_del(bot, trigger):
     '''ADMIN: clears announce queue'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
+        bot.debug(__file__, log.format(trigger.nick, ' just tried to clear the reddit queue!'), 'warning')
         return
     bot.memory['reddit_msg_queue'] = {}
 
@@ -280,7 +278,6 @@ def fetch_reddits(bot, trigger=None):
     '''ADMIN: Manual fetching of the auto-announce posts'''
     if trigger:
         if not trigger.owner and not trigger.admin and not trigger.isop:
-            bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
             return
     try:
         for channel in bot.memory['reddit-announce']:
