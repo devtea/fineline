@@ -97,10 +97,10 @@ def weighted_choice(bot, unweighted):
                 weighted.append((i, 1))
             else:
                 bot.debug(__file__, log.format(u'  Found choice in good list.'), 'verbose')
-                weighted.append((i, 2500))
+                weighted.append((i, 10000))
         else:
             bot.debug(__file__, log.format(u'  Normal choice.'), 'verbose')
-            weighted.append((i, 50))
+            weighted.append((i, 150))
     bot.debug(__file__, log.format(u'Weighted list is %s.' % weighted), 'verbose')
 
     i = choose(weighted)
