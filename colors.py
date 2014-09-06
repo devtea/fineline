@@ -23,6 +23,7 @@ Recognized 'default' colors:
 '''
 from random import choice
 from types import ListType
+from willie.module import commands
 
 RESET = u"\x0f"
 COLORS = {
@@ -109,6 +110,21 @@ def rainbow(text):
             message = u'%s%s' % (message, colorize(c, [rainbow[choice(range(len(rainbow)))]]))
     message = u'%s%s' % (message, RESET)
     return message
+
+
+@commands('colors')
+def colors(bot, trigger):
+    if not trigger.owner:
+        return
+    for c in [u'white', u'black', u'dark blue', u'green', u'red', u'dark red', u'purple',
+              u'orange', u'yellow', u'light green', u'teal', u'cyan', u'blue', u'magenta',
+              u'dark grey', u'light grey']:
+        bot.say(u"%s %s %s %s" % (
+            colorize(c, [c]),
+            colorize('italic', [c], ['i']),
+            colorize('bold', [c], ['b']),
+            colorize('underline', [c], ['u'])
+        ))
 
 
 if __name__ == "__main__":
