@@ -104,12 +104,19 @@ def colorize(text, colors=[], styles=[]):
 def rainbow(text):
     assert isinstance(text, basestring), u"No string provided."
     assert text, u"Text is empty."
-    rainbow = [u'black', u'red', u'navy', u'green', u'purple', u'pink']
+    rainbow = [u'green', u'red', u'dark red', u'purple', u'orange', u'teal', u'magenta']
     message = u''
     for c in text:
             message = u'%s%s' % (message, colorize(c, [rainbow[choice(range(len(rainbow)))]]))
     message = u'%s%s' % (message, RESET)
     return message
+
+
+@commands('rainbow')
+def rb(bot, trigger):
+    if not trigger.owner:
+        return
+    bot.say(rainbow(trigger.bytes[9:]))
 
 
 @commands('colors')
