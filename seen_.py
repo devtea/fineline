@@ -19,7 +19,6 @@ from types import FloatType, TupleType
 from willie.tools import Nick
 from willie.module import commands, example, priority, rule
 
-log_dir = u''
 log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
 line_regex = re.compile(u'^\[(\d\d:\d\d:\d\d)\] <([^>]+)> (.*)$')
 chan_regex = re.compile(u'^(.*?)_\d{8}$')
@@ -72,10 +71,12 @@ except:
 
 
 def setup(bot):
-    global log_dir
     if bot.config.has_option('seen', 'log_dir'):
-        log_dir = bot.config.seen.log_dir
-        bot.debug(__file__, log.format(u'found dir %s' % log_dir), u'verbose')
+        bot.memory['seen_log_dir'] = bot.config.seen.log_dir
+        bot.debug(__file__, log.format(u'found dir %s' % bot.memory['seen_log_dir']), u'verbose')
+    else:
+        bot.memory['seen_log_dir'] = None
+
     if 'seen_lock' not in bot.memory:
         bot.memory['seen_lock'] = threading.Lock()
 
@@ -148,16 +149,14 @@ def load_from_logs(bot, trigger):
     """ADMIN: Initializes seen database from log files."""
     if not trigger.owner:
         return
-    bot.reply(u"Alright, I'll start looking through the logs, " +
-                u"but this is going to take a while..."
-                )
+    bot.reply(u"Alright, I'll start looking through the logs, but this is going to take a while...")
     with bot.memory['seen_lock']:
         bot.debug(__file__, log.format(u'=' * 25), u'verbose')
         bot.debug(__file__, log.format(u'Starting'), u'verbose')
         filelist = []
-        for f in os.listdir(log_dir):
-            if log_regex.match(f) and os.path.isfile(log_dir + f):
-                filelist.append(log_dir + f)
+        for f in os.listdir(bot.memory['seen_log_dir']):
+            if log_regex.match(f) and os.path.isfile(bot.memory['seen_log_dir'] + f):
+                filelist.append(bot.memory['seen_log_dir'] + f)
         filelist.sort()
         for log_file in filelist:
             bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')

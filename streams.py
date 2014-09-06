@@ -517,6 +517,8 @@ def configure(config):
 
 
 def setup(bot):
+    # These globals are necessary because the bot.memory dict won't be
+    # available where they are referenced
     global _twitch_client_id
     _twitch_client_id = bot.config.streams.twitch_client_id
     global _youtube_api_key

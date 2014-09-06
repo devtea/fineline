@@ -28,22 +28,19 @@ except:
         if fp:
             fp.close()
 
-
 random.seed()
-
-ponies = []
-verbs = []
-nouns = []
 
 
 def setup(bot):
     # Load list of names
-    global ponies
-    ponies = []
-    global nouns
-    nouns = []
-    global verbs
-    verbs = []
+    if 'prompt' not in bot.memory:
+        bot.memory['prompt'] = {}
+    if 'ponies' not in bot.memory['prompt']:
+        bot.memory['prompt']['ponies'] = []
+    if 'nouns' not in bot.memory['prompt']:
+        bot.memory['prompt']['nouns'] = []
+    if 'verbs' not in bot.memory['prompt']:
+        bot.memory['prompt']['verbs'] = []
 
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -60,25 +57,25 @@ def setup(bot):
         dbload = cur.fetchall()
         if dbload:
             for n, w in dbload:
-                ponies.append((n, w))
+                bot.memory['prompt']['ponies'].append((n, w))
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s weighted ponies." % str(len(ponies))), u"verbose")
+        bot.debug(__file__, log.format(u"Loaded %s weighted ponies." % str(len(bot.memory['prompt']['ponies']))), u"verbose")
 
         cur.execute('SELECT * FROM prompt_nouns')
         dbload = cur.fetchall()
         if dbload:
             for n in dbload:
-                nouns.append(n[0])
+                bot.memory['prompt']['nouns'].append(n[0])
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s nouns." % str(len(nouns))), u"verbose")
+        bot.debug(__file__, log.format(u"Loaded %s nouns." % str(len(bot.memory['prompt']['nouns']))), u"verbose")
 
         cur.execute('SELECT * FROM prompt_verbs')
         dbload = cur.fetchall()
         if dbload:
             for v in dbload:
-                verbs.append(v[0])
+                bot.memory['prompt']['verbs'].append(v[0])
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s verbs." % str(len(verbs))), u"verbose")
+        bot.debug(__file__, log.format(u"Loaded %s verbs." % str(len(bot.memory['prompt']['verbs']))), u"verbose")
     finally:
         cur.close()
         dbcon.close()
@@ -107,11 +104,11 @@ def prompt(bot, trigger):
     bot.debug(__file__, log.format(u"=============="), u"verbose")
     bot.debug(__file__, log.format(u"Module started"), u"verbose")
     # Make our random selections for our prompt construction
-    index_no = weighted_choice(ponies)
+    index_no = weighted_choice(bot.memory['prompt']['ponies'])
     sentence = [u"Your random prompt is: ",
-                ponies[index_no][0],
-                random.choice(verbs).strip(),
-                random.choice(nouns).strip() + u"."
+                bot.memory['prompt']['ponies'][index_no][0],
+                random.choice(bot.memory['prompt']['verbs']).strip(),
+                random.choice(bot.memory['prompt']['nouns']).strip() + u"."
                 ]
     bot.reply(u" ".join(sentence))
 
