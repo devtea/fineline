@@ -534,14 +534,13 @@ def reddit_post(bot, trigger):
             snippet = comment.body
             match = re.compile(ur'\n')  # 2 lines to remove newline markup
             snippet = match.sub(u' ', snippet)
-            snippet = trc(snippet, 15)
             bot.say(
                 u'Comment (↑%s) by %s on %s%s — "%s"' % (
                     colors.colorize(str(comment.ups), [u'orange']),
                     colors.colorize(comment.author.name, [u'purple']),
                     nsfw,
                     trc(_util_html.unescape(colors.colorize(post.title, [u'green'])), 15),
-                    colors.colorize(snippet.strip(), [u'teal'])
+                    trc(_util_html.unescape(colors.colorize(snippet.strip(), [u'teal'])), 15)
                 )
             )
 
