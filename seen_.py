@@ -78,37 +78,32 @@ def setup(bot):
         bot.debug(__file__, log.format(u'found dir %s' % log_dir), u'verbose')
     if 'seen_lock' not in bot.memory:
         bot.memory['seen_lock'] = threading.Lock()
-    if bot.db and not bot.db.check_table('seen',
-                                         ['nick', 'data'],
-                                         'nick'
-                                         ):
-        bot.db.add_table('seen', ['nick', 'data'], 'nick')
-    # TODO Initialize preference table for those who wish to not be recorded
-    seen_reload(bot)
 
+    bot.memory['seen'] = {}
 
-def seen_reload(bot):
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
     with bot.memory['seen_lock']:
-        bot.memory['seen'] = {}
-        for row in bot.db.seen.keys('nick'):
-            nick, json_data = bot.db.seen.get(
-                row[0],  # We're getting back ('x',) when we need 'x'
-                ('nick', 'data'),
-                'nick'
-            )
-            nn = Nick(nick)
-            data = json.loads(unescape(json_data))
-            tm = float(data['time'])
-            assert type(tm) is FloatType, u'%r is not float' % tm
-            chan = data['channel']
-            msg = data['message']
-            r_tup = (tm, chan, msg)
-            bot.memory['seen'][nn.lower()] = r_tup
+        try:
+            cur.execute('''CREATE TABLE IF NOT EXISTS seen
+                        (nick TEXT NOT NULL, data TEXT, PRIMARY KEY(nick))''')
+            dbcon.commit()
+
+            cur.execute('select nick, data from seen')
+            dbload = cur.fetchall()
+            if dbload:
+                for n, d in dbload:
+                    data = json.loads(unescape(d))
+                    n = Nick(n)
+
+                    bot.memory['seen'][n.lower()] = (float(data['time']), data['channel'], data['message'])
+        finally:
+            cur.close()
+            dbcon.close()
 
 
 def seen_insert(bot, nick, data):
     # TODO change data imput to dict
-    # TODO Just pass data through to databasae
 
     assert isinstance(nick, basestring)
     assert type(data) is TupleType
@@ -123,8 +118,18 @@ def seen_insert(bot, nick, data):
     dict['message'] = data[2]
 
     bot.memory['seen'][nn] = data
-    # bot.debug(__file__, log.format('%s, %r' % (nn.lower(), dict)), 'verbose')
-    bot.db.seen.update(nn.lower(), {'data': escape(json.dumps(dict))})
+
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute('delete from seen where nick = ?', (nn.lower(),))
+        cur.execute('''insert into seen (nick, data)
+                    values (?, ?)''',
+                    (nn.lower(), escape(json.dumps(dict))))
+        dbcon.commit()
+    finally:
+        cur.close()
+        dbcon.close()
 
 
 '''
@@ -154,9 +159,9 @@ def load_from_logs(bot, trigger):
             if log_regex.match(f) and os.path.isfile(log_dir + f):
                 filelist.append(log_dir + f)
         filelist.sort()
-        for log in filelist:
+        for log_file in filelist:
             bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
-            with open(log, 'r') as file:
+            with open(log_file, 'r') as file:
                 file_list = []
                 for l in file:
                     # omfg took me way too long to figure out 'replace'
@@ -173,7 +178,7 @@ def load_from_logs(bot, trigger):
                         nn = Nick(m.group(2))
                         msg = m.group(3)
                         log_name = os.path.splitext(
-                            os.path.basename(log)
+                            os.path.basename(log_file)
                         )
                         chan = chan_regex.search(log_name[0]).group(1)
                         chan = chan.decode('utf-8', 'replace')
@@ -206,8 +211,14 @@ def seen_nuke(bot, trigger):
     bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
     with bot.memory['seen_lock']:
         bot.memory['seen'] = {}  # NUKE IT FROM ORBIT
-        for row in bot.db.seen.keys('nick'):
-            bot.db.seen.delete(row[0], 'nick')
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('delete from seen')
+            dbcon.commit()
+        finally:
+            cur.close()
+            dbcon.close()
         bot.reply(u"Done!")
 
 

@@ -40,21 +40,48 @@ def setup(bot):
     # Load list of names
     global ponies
     ponies = []
-    for row in bot.db.prompt_ponies.keys():
-        ponies.append(bot.db.prompt_ponies.get(row[0], ('name', 'weight')))
-    bot.debug(__file__, log.format(u"Loaded %s weighted ponies." % str(len(ponies))), u"verbose")
-    # Load list of nouns
     global nouns
     nouns = []
-    for row in bot.db.prompt_nouns.keys():
-        nouns.append(bot.db.prompt_nouns.get(row[0], 'noun'))
-    bot.debug(__file__, log.format(u"Loaded %s nouns." % str(len(nouns))), u"verbose")
-    # Load list of verbs
     global verbs
     verbs = []
-    for row in bot.db.prompt_verbs.keys():
-        verbs.append(bot.db.prompt_verbs.get(row[0], 'verb'))
-    bot.debug(__file__, log.format(u"Loaded %s verbs." % str(len(verbs))), u"verbose")
+
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute('''CREATE TABLE IF NOT EXISTS prompt_ponies
+                    (name TEXT, weight INTEGER)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS prompt_nouns
+                    (noun TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS prompt_verbs
+                    (verb TEXT)''')
+        dbcon.commit()
+
+        cur.execute('SELECT name, weight FROM prompt_ponies')
+        dbload = cur.fetchall()
+        if dbload:
+            for n, w in dbload:
+                ponies.append((n, w))
+            dbload = None
+        bot.debug(__file__, log.format(u"Loaded %s weighted ponies." % str(len(ponies))), u"verbose")
+
+        cur.execute('SELECT * FROM prompt_nouns')
+        dbload = cur.fetchall()
+        if dbload:
+            for n in dbload:
+                nouns.append(n[0])
+            dbload = None
+        bot.debug(__file__, log.format(u"Loaded %s nouns." % str(len(nouns))), u"verbose")
+
+        cur.execute('SELECT * FROM prompt_verbs')
+        dbload = cur.fetchall()
+        if dbload:
+            for v in dbload:
+                verbs.append(v[0])
+            dbload = None
+        bot.debug(__file__, log.format(u"Loaded %s verbs." % str(len(verbs))), u"verbose")
+    finally:
+        cur.close()
+        dbcon.close()
 
 
 def weighted_choice(weighted):
