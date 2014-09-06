@@ -262,7 +262,11 @@ def announce_posts(bot, trigger=None):
         try:
             for c in bot.memory['reddit_msg_queue']:
                 if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
-                    bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
+                    # If there is a silencing nick around now, don't announce
+                    if [i for i in _fetch_quiet if nicks.in_chan(bot, c, i)]:
+                        del bot.memory['reddit_msg_queue'][c][0]
+                    else:
+                        bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
         except:
             bot.debug(
                 __file__,
@@ -283,8 +287,6 @@ def fetch_reddits(bot, trigger=None):
         for channel in bot.memory['reddit-announce']:
             if channel not in bot.channels:
                 # Do nothing if not connected to channel
-                continue
-            if [i for i in _fetch_quiet if nicks.in_chan(bot, channel, i)]:
                 continue
             for sub in bot.memory['reddit-announce'][channel]:
                 fetch_limit = 10
@@ -314,29 +316,32 @@ def fetch_reddits(bot, trigger=None):
                         continue
                     elif p.created_utc < time.time() - (10 * 60 * 60):
                         bot.debug(__file__, log.format(u'found id %s too old' % p.id), 'verbose')
-                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                        while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     elif p.url in bot.memory['reddit_link_history']:
                         bot.debug(__file__, log.format(u'found matching url for %s, probable crosspost or repost.' % p.id), 'verbose')
-                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                        while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     elif _reurl.search(p.url):
                         bot.debug(__file__, log.format(u'found reddit url for %s, probably a crosspost.' % p.id), 'verbose')
-                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                        while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     else:
                         msg = link_parser(p, url=True, new=True)
-                        bot.memory['reddit_msg_queue'][channel].append(msg)
-                        if len(bot.memory['reddit-announce'][channel][sub]) > 1000:
+                        # If no silencing nicks are around, add the message to
+                        # the queue to announce
+                        if not [i for i in _fetch_quiet if nicks.in_chan(bot, channel, i)]:
+                            bot.memory['reddit_msg_queue'][channel].append(msg)
+                        while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
-                        if len(bot.memory['reddit_link_history']) > 1000:
+                        while len(bot.memory['reddit_link_history']) > 1000:
                             bot.memory['reddit_link_history'].pop(0)
                         bot.memory['reddit_link_history'].append(p.url)
                         bot.debug(
