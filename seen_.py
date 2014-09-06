@@ -287,7 +287,7 @@ def seen(bot, trigger):
                       colors.colorize(nn, [u'purple']),
                       chan,
                       t,
-                      colors.colorize(msg, [u'blue'])
+                      colors.colorize(msg, [u'green'])
                       ))
             return
         else:

@@ -177,7 +177,7 @@ def boop(bot, trigger):
                 if message:
                     msg = "%s %s" % (msg, '| <%s> %s')
                     bot.action(msg % (colors.colorize(trigger.nick, [u'purple']),
-                                      colors.colorize(message, [u'blue'])
+                                      colors.colorize(message, [u'green'])
                                       ))
                 else:
                     bot.action(msg)

@@ -1013,8 +1013,11 @@ def list_streams(bot, arg=None, nick=None):
         live = ''
         if st.live:
             live = '[%s] ' % colors.colorize('LIVE', ['green'], ['b'])
-        return '%s%s%s [ %s ]' % (nsfw, live, name, colors.colorize(st.url,
-                                                                    ['blue']))
+        return '%s%s%s [ %s ]' % (
+            nsfw,
+            live,
+            colors.colorize(name, ['purple']),
+            colors.colorize(st.url, ['blue']))
 
     if arg == 'subscribed' or arg == 'subscriptions':
         # Private subscriptions should be PM'd, even if many

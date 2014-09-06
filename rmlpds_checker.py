@@ -237,7 +237,7 @@ def rmlpds(bot):
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
                                 t,
-                                colors.colorize(_util_html.unescape(post.title), ['blue']),
+                                colors.colorize(_util_html.unescape(post.title), ['green']),
                                 post.short_link
                             )
                         )
@@ -313,7 +313,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), [u'blue'])
+                        colors.colorize(_util_html.unescape(post.title), [u'green'])
                     )
                 )
             else:
@@ -324,7 +324,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), [u'blue'])
+                        colors.colorize(_util_html.unescape(post.title), [u'green'])
                     )
                 )
     else:

@@ -254,7 +254,7 @@ def spin(bot, trigger):
                             'We\'ll have %s start by asking %s ',
                             'Okay, %s asks %s ',
                             'To start, %s will ask %s ']) % (choice1, choice2),
-                        ['green']))
+                        ['magenta'], ['bold']))
             else:  # Pick one if we are in the middle of a session
                 choice = pick_nick(bot)
                 bot.say(
@@ -265,7 +265,7 @@ def spin(bot, trigger):
                             'Your turn, %s ',
                             'Time to choose, %s',
                             'You\'re up, %s ']) % choice,
-                        ['green']))
+                        ['magenta'], ['bold']))
             bot.memory['tod']['lastactivity'] = time.time()
             bot.memory['tod']['lastspin'] = time.time()
 
