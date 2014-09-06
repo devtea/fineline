@@ -164,7 +164,10 @@ _link_page = Template('''
 @commands('karma_export')
 @rate('1000')
 def karma_export(bot, trigger):
-    # TODO move the bot memery stuff here
+    if not bot.memory['karma_export_dir']:
+        bot.reply('This option is not configured.')
+        return
+
     JSON_FILE = '%skarma.json' % bot.memory['karma_export_dir']
     PLAIN_FILE = '%skarma.txt' % bot.memory['karma_export_dir']
     CSV_FILE = '%skarma.csv' % bot.memory['karma_export_dir']
@@ -174,10 +177,6 @@ def karma_export(bot, trigger):
     PLAIN_URL = '%skarma.txt' % bot.memory['karma_url']
     CSV_URL = '%skarma.csv' % bot.memory['karma_url']
     LINK_URL = '%skarma.html' % bot.memory['karma_url']
-
-    if not bot.memory['karma_export_dir']:
-        bot.reply('This option is not configured.')
-        return
 
     bot.reply('Exporting data, please wait...')
 
