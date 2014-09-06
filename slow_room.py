@@ -17,7 +17,7 @@ from socket import EBADF
 import time
 import threading
 
-from willie.module import interval, rule, commands
+from willie.module import interval, rule, commands, rate
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -177,8 +177,25 @@ def sing(bot, channel):
         u"♫It's what my cutie mark is telling me♪",
         u"♫I have to find a way, to make this all okay♪",
         u"♫A True, True Friend helps a friend in need!♪",
-        u"♫You've come such a long, long way...♪"
+        u"♫You've come such a long, long way...♪",
+        u"♫We've got hearts as strong as horses♪",
+        u"♪You see one comin', you'd better run and hide!♫",
+        u"♫Oh, Manehattan, what you do to me♪",
+        u"♪We're Apples forever, Apples together; We're family, but so much more♫",
+        u"♫Today I planned a party, and it's just for you!♪",
+        u"♪For there's only one great party pony -- that is Pinkie Pie♫",
+        u"♫Time to make a wish, better make it right now!♪",
+        u"♪And the music makes your heart soar in reply♫",
+        u"♫When you find you've got the music; You've got to look inside and find♪",
+        u"♪Know that your time is coming soon; As the sun rises, so does the moon♫",
+        u"♫Let the rainbow remind you; That together we will always shine♪"
     ]))
+
+
+@commands('sing')
+@rate('120')
+def why_is_this_bot_singing(bot, trigger):
+    sing(bot, trigger.sender)
 
 
 def poke(bot, channel):
