@@ -5,17 +5,46 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 
+import csv
+import json
 import threading
 import time
 
-from willie.module import commands, example, rule, priority
+from string import Template
+from pprint import pprint
+
+from willie.module import commands, example, rule, priority, rate
 from willie.tools import Nick
+
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
 
 _ignore = ['hushmachine']
 
 
 def setup(bot):
+    if bot.config.has_section('karma') and bot.config.has_option('karma', 'export_dir'):
+        bot.memory['karma_export_dir'] = bot.config.karma.export_dir
+        bot.memory['karma_url'] = bot.config.karma.url
+    else:
+        bot.memory['karma_export_dir'] = None
+    bot.memory
     if 'karma_lock' not in bot.memory:
         bot.memory['karma_lock'] = threading.Lock()
     if 'karma_time' not in bot.memory:
@@ -41,8 +70,8 @@ def setup(bot):
                 bot.memory['karma'][t] = s
 
 
-@priority(u'low')
-@rule(u'[^!]*(\+\+|--)$')
+@priority('low')
+@rule('[^!]*(\+\+|--)$')
 def karmaRule(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
@@ -69,7 +98,7 @@ def karmaRule(bot, trigger):
                 newkarm = modkarma(bot, shortobj, -1)
             bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
         else:
-            bot.reply(u"You just used karma! You can't use it again for a bit.")
+            bot.reply("You just used karma! You can't use it again for a bit.")
 
 
 def timecheck(bot, trigger):
@@ -83,7 +112,7 @@ def timecheck(bot, trigger):
 
 
 @commands('karma')
-@example(u'!karma fzoo')
+@example('!karma fzoo')
 def karma(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
@@ -117,5 +146,92 @@ def modkarma(bot, obj, amount):
         dbcon.close()
 
 
+_link_page = Template('''
+<!DOCTYPE html>
+<html>
+    <meta charset="UTF-8">
+    <head><title>Karma Data Download</title></head>
+    <p>The karma data is exported in three formats as seen below. Save the format you'd like and have a ball</p>
+    <p>
+        <a href="${json_path}" download>JSON format</a><br>
+        <a href="${csv_path}" download>CSV format</a><br>
+        <a href="${plain_path}" download>Plain text</a><br>
+    </p>
+</html>
+''')
+
+
+@commands('karma_export')
+@rate('1000')
+def karma_export(bot, trigger):
+    # TODO move the bot memery stuff here
+    JSON_FILE = '%skarma.json' % bot.memory['karma_export_dir']
+    PLAIN_FILE = '%skarma.txt' % bot.memory['karma_export_dir']
+    CSV_FILE = '%skarma.csv' % bot.memory['karma_export_dir']
+    LINK_FILE = '%skarma.html' % bot.memory['karma_export_dir']
+
+    JSON_URL = '%skarma.json' % bot.memory['karma_url']
+    PLAIN_URL = '%skarma.txt' % bot.memory['karma_url']
+    CSV_URL = '%skarma.csv' % bot.memory['karma_url']
+    LINK_URL = '%skarma.html' % bot.memory['karma_url']
+
+    if not bot.memory['karma_export_dir']:
+        bot.reply('This option is not configured.')
+        return
+
+    bot.reply('Exporting data, please wait...')
+
+    with bot.memory['karma_lock']:
+        try:
+            with open(JSON_FILE) as f:
+                previous_json = ''.join(f.readlines())
+        except IOError:
+            previous_json = ''
+            bot.debug(__file__, log.format('IO error grabbing karma.json file contents. File may not exist yet'), 'warning')
+
+        json_dump = json.dumps(bot.memory['karma'])
+
+        # noclobber once. Don't really need to check every file
+        if previous_json != json_dump:
+            try:
+                with open(JSON_FILE, 'w') as f:
+                    bot.debug(__file__, log.format('Writing json'), 'verbose')
+                    f.write(json_dump)
+
+                plain_dump = '\n'.join(['%s %s' % (bot.memory['karma'][i], i) for i in bot.memory['karma']])
+                print(pprint(plain_dump))
+                with open(PLAIN_FILE, 'w') as f:
+                    bot.debug(__file__, log.format('Writing plain file'), 'verbose')
+                    f.write(plain_dump.encode('utf-8', 'replace'))
+
+                with open(CSV_FILE, 'wb') as f:
+                    bot.debug(__file__, log.format('Writing csv file'), 'verbose')
+                    writer = csv.writer(f)
+                    writer.writerows([(bot.memory['karma'][i], i.encode('utf-8', 'replace')) for i in bot.memory['karma']])
+
+                link_page = _link_page.substitute(
+                    json_path=JSON_URL,
+                    csv_path=CSV_URL,
+                    plain_path=PLAIN_URL)
+                try:
+                    with open(LINK_FILE) as f:
+                        bot.debug(__file__, log.format('Reading link file'), 'verbose')
+                        previous_links = ''.join(f.readlines())
+                except IOError:
+                    previous_links = ''
+                    bot.debug(__file__, log.format('IO error grabbing karma.html file contents. File may not exist yet'), 'warning')
+                if previous_links != link_page:
+                    with open(LINK_FILE, 'w') as f:
+                        bot.debug(__file__, log.format('writing link file'), 'verbose')
+                        f.write(link_page)
+            except IOError:
+                bot.debug(__file__, log.format('IO error. check file permissions for karma export output.'), 'warning')
+                return
+
+            # wait 60s for web server to update
+            time.sleep(60)
+    bot.reply('The karma data has been exported to %s' % LINK_URL)
+
+
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())
