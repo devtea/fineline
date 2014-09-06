@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 
 import csv
 import json
+import os.path
 import threading
 import time
 
@@ -168,15 +169,15 @@ def karma_export(bot, trigger):
         bot.reply('This option is not configured.')
         return
 
-    JSON_FILE = '%skarma.json' % bot.memory['karma_export_dir']
-    PLAIN_FILE = '%skarma.txt' % bot.memory['karma_export_dir']
-    CSV_FILE = '%skarma.csv' % bot.memory['karma_export_dir']
-    LINK_FILE = '%skarma.html' % bot.memory['karma_export_dir']
+    JSON_FILE = os.path.join(bot.memory['karma_export_dir'], 'karma.json')
+    PLAIN_FILE = os.path.join(bot.memory['karma_export_dir'], 'karma.txt')
+    CSV_FILE = os.path.join(bot.memory['karma_export_dir'], 'karma.csv')
+    LINK_FILE = os.path.join(bot.memory['karma_export_dir'], 'karma.html')
 
-    JSON_URL = '%skarma.json' % bot.memory['karma_url']
-    PLAIN_URL = '%skarma.txt' % bot.memory['karma_url']
-    CSV_URL = '%skarma.csv' % bot.memory['karma_url']
-    LINK_URL = '%skarma.html' % bot.memory['karma_url']
+    JSON_URL = os.path.join(bot.memory['karma_url'], 'karma.json')
+    PLAIN_URL = os.path.join(bot.memory['karma_url'], 'karma.txt')
+    CSV_URL = os.path.join(bot.memory['karma_url'], 'karma.csv')
+    LINK_URL = os.path.join(bot.memory['karma_url'], 'karma.html')
 
     bot.reply('Exporting data, please wait...')
 
