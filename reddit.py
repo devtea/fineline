@@ -37,9 +37,7 @@ _timeout_message = u'Sorry, reddit is unavailable right now.'
 _error_msg = u"That doesn't exist, or reddit is being squirrely."
 _bad_reddit_msg = u"That doesn't seem to exist on reddit."
 _bad_user_msg = u"That user doesn't seem to exist."
-_ignore = ['hushmachine', 'hushmachine_', 'hushmachine_mk2', 'hushbot', 'finelinefan', 'oppobot', 'toshmotes']
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
-_fetch_quiet = ['hushmachine', 'hushmachine_', 'hushmachine_mk2', 'hushbot', 'finelinefan']
 _fetch_interval = 100  # Seconds between checking reddit for new posts
 _announce_interval = 300  # Seconds between announcing found posts
 
@@ -87,6 +85,19 @@ except:
         fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
     finally:
         if fp:
             fp.close()
@@ -263,7 +274,7 @@ def announce_posts(bot, trigger=None):
             for c in bot.memory['reddit_msg_queue']:
                 if c in bot.channels and bot.memory['reddit_msg_queue'][c]:
                     # If there is a silencing nick around now, don't announce
-                    if [i for i in _fetch_quiet if nicks.in_chan(bot, c, i)]:
+                    if util.exists_quieting_nick(bot, c):
                         del bot.memory['reddit_msg_queue'][c][0]
                     else:
                         bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
@@ -336,7 +347,7 @@ def fetch_reddits(bot, trigger=None):
                         msg = link_parser(p, url=True, new=True)
                         # If no silencing nicks are around, add the message to
                         # the queue to announce
-                        if not [i for i in _fetch_quiet if nicks.in_chan(bot, channel, i)]:
+                        if not util.exists_quieting_nick(bot, channel):
                             bot.memory['reddit_msg_queue'][channel].append(msg)
                         while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
@@ -455,8 +466,8 @@ def reddit_post(bot, trigger):
         return diff
 
     try:
-        if trigger.nick in _ignore:
-                return
+        if util.ignore_nick(bot, trigger.nick, trigger.host):
+            return
 
         # Update pay.reddit.com links to work with praw
         link = re.sub('pay\.reddit', 'reddit', trigger.bytes, flags=re.I)
@@ -546,9 +557,8 @@ def reddit_post(bot, trigger):
 
         # Submission Section
         elif re.match(u'.*?%s' % subm, link):
-            for n in _ignore:
-                if re.match(u'%s.*?' % n, trigger.nick):
-                    return
+            if util.ignore_nick(bot, trigger.nick, trigger.host):
+                return
             bot.debug(__file__, log.format(u"URL is submission"), u"verbose")
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
                                  link

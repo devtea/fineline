@@ -51,9 +51,21 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
 
 EXPIRATION = 7 * 24 * 60 * 60  # 24 hour expiration, longer for testing
-IGNORE = ['hushmachine', 'hushbot', 'hushrobot', 'fineline', 'feignline']
 BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
 _VOTE_TIME = 5  # Time in minutes
@@ -584,7 +596,7 @@ re_nsfw = re.compile(r'(?i)NSFW|suggestive|nude|questionable|explicit|porn|clop'
 @rule(r'''(?i).*\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?]))''')
 def url_watcher(bot, trigger):
     # Don't record stuff from private messages
-    if not trigger.sender.startswith('#') or trigger.nick in IGNORE:
+    if not trigger.sender.startswith('#') or util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # Don't record from commands
     if trigger.bytes.startswith('!') or trigger.bytes.startswith('.'):

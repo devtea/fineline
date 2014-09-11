@@ -8,7 +8,21 @@ http://bitbucket.org/tdreyer/fineline
 
 from willie.module import commands, rule, example, priority
 
-_EXCLUDE = ['#reddit-mlpds']
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
 
 
 @rule(u'$nick' '(?i)(help|doc) +([A-Za-z]+)(?:\?+)?$')
@@ -18,7 +32,7 @@ _EXCLUDE = ['#reddit-mlpds']
 def doc(bot, trigger):
     """Shows a command's documentation, and possibly an example."""
     if not trigger.group(2):
-        if trigger.sender in _EXCLUDE:
+        if util.exists_quieting_nick(bot, trigger.sender):
             return
         bot.reply('Say !help <command> (for example !help seen) to get help for a command, or !commands for a list of commands.')
     else:

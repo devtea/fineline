@@ -35,8 +35,19 @@ except:
     finally:
         if fp:
             fp.close()
-
-_ignore = ['hushmachine']
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
 
 
 def setup(bot):
@@ -79,7 +90,7 @@ def karmaRule(bot, trigger):
         return
     if trigger.sender[0] != '#':
         return
-    if trigger.nick in _ignore:
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     obj = trigger.bytes.strip()
     if not obj or len(obj) < 3:

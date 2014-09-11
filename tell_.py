@@ -1,4 +1,4 @@
-#encoding=utf8
+# encoding=utf8
 """
 tell.py - Willie Tell and Ask Module
 Copyright 2008, Sean B. Palmer, inamidst.com, Tim Dreyer
@@ -10,14 +10,12 @@ from __future__ import unicode_literals
 
 import os
 import time
-import datetime
 import willie.tools
 import threading
 from willie.tools import Nick, iterkeys
-from willie.module import commands, nickname_commands, rule, priority, example
+from willie.module import commands, nickname_commands, rule, priority
 
 maximum = 4
-_quiet = ['hushmachine', 'hushbot', 'hushmachine_mk2']
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -33,6 +31,19 @@ except:
                                                     )
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
     finally:
         if fp:
             fp.close()
@@ -90,13 +101,11 @@ def setup(self):
 @nickname_commands('tell', 'ask')
 def f_remind(bot, trigger):
     """Give someone a message the next time they're seen"""
-    #filter when certain other bots are present
-    for n in _quiet:
-        # Shutup
-        if nicks.in_chan(bot, trigger.sender, n):
-            return
+    # Filter when certain other bots are present
+    if util.exists_quieting_nick(bot, trigger.sender):
+        return
 
-    #Don't let people send in PMs
+    # Don't let people send in PMs
     if not trigger.sender.startswith('#'):
         return
 
@@ -124,11 +133,11 @@ def f_remind(bot, trigger):
     if tellee == bot.nick:
         return bot.reply("I'm here now, you can tell me whatever you want!")
 
-    if not tellee in (Nick(teller), bot.nick, 'me'):
+    if tellee not in (Nick(teller), bot.nick, 'me'):
         tz = willie.tools.get_timezone(bot.db, bot.config, None, tellee)
         timenow = willie.tools.format_time(bot.db, bot.config, tz, tellee)
         with bot.memory['tell_lock']:
-            if not tellee in bot.memory['reminders']:
+            if tellee not in bot.memory['reminders']:
                 bot.memory['reminders'][tellee] = [(teller, verb, timenow, msg)]
             else:
                 bot.memory['reminders'][tellee].append((teller, verb, timenow, msg))
@@ -153,7 +162,7 @@ def getReminders(bot, channel, key, tellee):
         for (teller, verb, datetime, msg) in bot.memory['reminders'][key]:
             if datetime.startswith(today):
                 datetime = datetime[len(today) + 1:]
-            #lines.append(template % (tellee, datetime, teller, verb, tellee, msg))
+            # lines.append(template % (tellee, datetime, teller, verb, tellee, msg))
             lines.append(template % (tellee, datetime, teller, msg))
 
         try:

@@ -56,12 +56,24 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
 
 
 _EXPIRY = 90 * 60  # 90 minutes for list expiry
 _MINIMUM = 4  # Minimum number of participants
 _KICK_VOTES = 3
-_excludes = ['fineline', 'feignline', 'hushmachine', 'finelinefan', 'hushrobot', 'oppobot']
 
 
 def configure(config):
@@ -158,7 +170,11 @@ def move_to_list(bot, participant):
 @commands('tod_join')
 def join(bot, trigger):
     """This command is used to add yourself to a Truth or Dare session. """
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -184,7 +200,11 @@ def join(bot, trigger):
 @commands('tod_leave', 'tod_quit', 'tod_bail')
 def leave(bot, trigger):
     """This command is used to remove yourself to a Truth or Dare session. """
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -215,7 +235,7 @@ def spin(bot, trigger):
         # Check to see if their nick is different and use that
         nick_list = []
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
-        nick_list = [i for i in nick_list if i not in _excludes]
+        nick_list = [i for i in nick_list if not util.ignore_nick(bot, i)]
 
         n = nick_list.index(next_nick)
         next_nick = nick_list.pop(n)  # This is the current and perhaps updated nickname
@@ -230,7 +250,11 @@ def spin(bot, trigger):
         bot.memory['tod']['list'] = [(i[0], i[1] + 1) for i in bot.memory['tod']['list']]
         return choice[0]
 
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -238,7 +262,7 @@ def spin(bot, trigger):
     with bot.memory['tod']['lock']:
         nick_list = []
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
-        nick_list = [i for i in nick_list if i not in _excludes]
+        nick_list = [i for i in nick_list if not util.ignore_nick(bot, i)]
 
         if bot.memory['tod']['lastspin'] > time.time() - 15:
             return
@@ -273,7 +297,11 @@ def spin(bot, trigger):
 @commands('tod_list', 'tod_who')
 def list(bot, trigger):
     """This command is used to list those participating in Truth or Dare. """
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -285,7 +313,7 @@ def list(bot, trigger):
         nick_list = []
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
         # First filter excludes
-        nick_list = [i for i in nick_list if i not in _excludes]
+        nick_list = [i for i in nick_list if not util.ignore_nick(bot, i)]
 
         for participant in participants:
             if nicks.in_chan(bot, trigger.sender, participant):
@@ -311,7 +339,11 @@ def tod(bot, trigger):
 @commands('tod_clear', 'tod_end')
 def clear(bot, trigger):
     """Clears the list of participants for a Truth or Dare session."""
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -351,7 +383,11 @@ def clear_when_dead(bot):
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
 def template(bot, trigger):
     """Chooses "Truth" or "Dare" randomly."""
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:
@@ -362,7 +398,11 @@ def template(bot, trigger):
 @commands('tod_vote', 'tod_kick')
 def kick(bot, trigger):
     """Used to vote idle people out of a Truth or Dare session."""
-    if not trigger.sender.startswith('#') or trigger.nick in _excludes:
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Prevent certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # return if we're not in the configured channel, if configured.
     if bot.memory['tod']['channel'] and trigger.sender != bot.memory['tod']['channel']:

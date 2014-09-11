@@ -22,6 +22,22 @@ from willie import web, tools
 from willie.module import commands, rule, example
 from socket import timeout
 
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
+
 url_finder = None
 exclusion_char = '!'
 #TODO move these to the database
@@ -29,7 +45,6 @@ _EXCLUDE = ['[ imgur: the simple image sharer ] - imgur.com',
             '[ imgur: the simple image sharer ]',
             '[ imgur: the simple overloaded page] - imgur.com',
             '[ imgur: the simple overloaded page]']
-_ignore = re.compile(r'hushmachine.*')
 # These are used to clean up the title tag before actually parsing it. Not the
 # world's best way to do this, but it'll do for now.
 title_tag_data = re.compile('<(/?)title( [^>]+)?>', re.IGNORECASE)
@@ -132,7 +147,8 @@ def title_auto(bot, trigger):
     where the URL redirects to and show the title for that (or call a function
     from another module to give more information).
     """
-    if re.match(bot.config.core.prefix + 'title', trigger) or _ignore.match(trigger.nick):
+    if re.match(bot.config.core.prefix + 'title', trigger) or \
+            util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     urls = re.findall(url_finder, trigger)
     if urls:

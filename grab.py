@@ -14,6 +14,8 @@ from willie.tools import Nick
 import threading
 import time
 
+# Bot framework is stupid about importing, so we need to override so that
+# various modules are always available for import.
 try:
     import colors
 except:
@@ -24,6 +26,19 @@ except:
         fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
+    finally:
+        if fp:
+            fp.close()
+try:
+    import util
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
     finally:
         if fp:
             fp.close()
@@ -54,13 +69,13 @@ def grab(bot, trigger):
     except IndexError:
         bot.say('Grab who?')
     else:
-        if target == trigger.nick:
+        if target == trigger.nick or target.lower() == 'me':
             bot.say("Eww, don't grab yourself in public!")
             return
         elif target == bot.nick:
             bot.say("Hey, don't grab me!")
             return
-        elif target in _excludes:
+        elif util.ignore_nick(bot, target):
             bot.say("I'm not grabbing that.")
             return
 
