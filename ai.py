@@ -39,6 +39,14 @@ basic_slap = u"slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?"
 random.seed()
 
 
+class SentienceError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 # @rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
 @rule(r'^.*?\bderp\b')
 def derp(bot, trigger):
@@ -63,6 +71,11 @@ def derp(bot, trigger):
             u"[](/derpypeek)",
             u"[](/fillyderp)"
         ]))
+
+
+@rule(u".*love you[\s,]+$nickname")
+def advanced_ai(bot, trigger):
+    raise SentienceError("Constraints exceeded - out of bounds.")
 
 
 @rule(
