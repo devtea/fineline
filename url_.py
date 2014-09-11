@@ -10,6 +10,7 @@ Licensed under the Eiffel Forum License 2.
 
 http://willie.dftba.net
 """
+import os.path
 import re
 import sys
 if sys.version_info.major < 3:
@@ -31,7 +32,7 @@ except:
     import sys
     try:
         print("trying manual import of util")
-        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
     finally:

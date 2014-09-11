@@ -8,6 +8,7 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 import bisect
+import os.path
 import random
 import threading
 from datetime import datetime
@@ -25,7 +26,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:
@@ -39,7 +40,7 @@ except:
     import sys
     try:
         print("trying manual import of nicks")
-        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
@@ -146,7 +147,7 @@ def ship(bot, trigger):
             now = datetime.now()
             for nick in target_list:
                 timedelta = now - last_seen(bot, nick)
-                if timedelta.days <= 3: # magic numbers are magic
+                if timedelta.days <= 3:  # magic numbers are magic
                     target = nick
                     include_nicks = True
                     break
@@ -177,7 +178,7 @@ def ship(bot, trigger):
         now = datetime.now()
         for nick in target_list:
             timedelta = now - last_seen(bot, nick)
-            if nick != i1 and timedelta.days <= 3: # magic numbers are magic
+            if nick != i1 and timedelta.days <= 3:  # magic numbers are magic
                 i2 = nick
                 break
 
@@ -249,6 +250,7 @@ def addname(bot, trigger):
         finally:
             cur.close()
             dbcon.close()
+
 
 def last_seen(bot, nick):
     '''returns the last time the nick was seen as a datetime object'''

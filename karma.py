@@ -29,7 +29,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:
@@ -42,7 +42,7 @@ except:
     import sys
     try:
         print("trying manual import of util")
-        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
     finally:

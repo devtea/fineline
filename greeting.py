@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
+import os.path
 import threading
 import gzip
 import re
@@ -27,7 +28,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:
@@ -40,7 +41,7 @@ except:
     import sys
     try:
         print("trying manual import of nicks")
-        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
@@ -143,16 +144,16 @@ def greeting_initialize(bot, trigger):
             for f in os.listdir(dir):
                 if bot.memory['greet']['log_regex'].match(f) and os.path.isfile(dir + f):
                     filelist.append(dir + f)
-        for log in filelist:
+        for log_ in filelist:
             bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
-            log_name = os.path.splitext(os.path.basename(log))
+            log_name = os.path.splitext(os.path.basename(log_))
             bot.debug(__file__, log.format(u'logname %s' % log_name[0]), u'verbose')
             chan = _chan_regex.search(log_name[0]).groups()[0].decode('utf-8', 'replace')
-            if log.endswith('gz'):
-                with gzip.open(log, 'rb') as gfile:  # May need to switch to r if problems
+            if log_.endswith('gz'):
+                with gzip.open(log_, 'rb') as gfile:  # May need to switch to r if problems
                     parse_log(chan, gfile)
             else:
-                with open(log, 'r') as rfile:
+                with open(log_, 'r') as rfile:
                     parse_log(chan, rfile)
         # Add everyone in joined rooms to list
         for channel in bot.channels:

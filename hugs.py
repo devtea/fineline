@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
+import os.path
 import random
 import re
 import time
@@ -24,7 +25,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:

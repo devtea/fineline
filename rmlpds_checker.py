@@ -10,6 +10,7 @@ from __future__ import print_function
 
 from datetime import datetime
 import HTMLParser
+import os.path
 import random
 import re
 from socket import timeout
@@ -49,7 +50,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:
@@ -63,7 +64,7 @@ except:
     import sys
     try:
         print("Trying manual import of colors.")
-        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:

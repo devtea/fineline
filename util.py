@@ -7,6 +7,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
+import os.path
 import threading
 
 # Bot framework is stupid about importing, so we need to override so that
@@ -18,7 +19,7 @@ except:
     import sys
     try:
         print("trying manual import of nicks")
-        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:

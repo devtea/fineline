@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 from willie.module import commands, rule, example
 from willie.tools import Nick
 
+import os.path
 import threading
 import time
 
@@ -23,7 +24,7 @@ except:
     import sys
     try:
         print("trying manual import of colors")
-        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -36,7 +37,7 @@ except:
     import sys
     try:
         print("trying manual import of util")
-        fp, pathname, description = imp.find_module('util', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
     finally:

@@ -8,6 +8,7 @@ http://bitbucket.org/tdreyer/fineline
 # TODO user aliases
 from __future__ import print_function
 
+import os.path
 from willie.module import commands
 from willie.tools import Nick
 import random
@@ -22,7 +23,7 @@ except:
     import sys
     try:
         print("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
     finally:
@@ -36,7 +37,7 @@ except:
     import sys
     try:
         print("trying manual import of colors")
-        fp, pathname, description = imp.find_module('colors', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
     finally:
@@ -49,7 +50,7 @@ except:
     import sys
     try:
         print("trying manual import of nicks")
-        fp, pathname, description = imp.find_module('nicks', ['./.willie/modules/'])
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
     finally:
