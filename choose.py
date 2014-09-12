@@ -82,7 +82,7 @@ def weighted_choice(bot, unweighted):
 
     good = ['art', 'arting', 'artistic', 'arty', 'create', 'creative', 'draw',
             'drawing', 'paint', 'painting', 'sketch', 'sketching', 'study',
-            'studies', 'studying', 'aeyrt', 'tar', 'tea', 'cook']
+            'studies', 'studying', 'aeyrt', 'tar', 'tea', 'cook', 'productive']
     bad = ['don\'t', 'dont', 'fuck', 'later', 'no', 'not', 'never', 'quit',
            'lame', 'stupid', 'dumb', 'bad', 'out', 'sucks', 'sucky', 'worse',
            'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but', 'dum']
