@@ -127,6 +127,8 @@ def timecheck(bot, trigger):
 @commands('karma')
 @example('!karma fzoo')
 def karma(bot, trigger):
+    '''Allows for voting on anything. ++ to upvote, -- to downvote. Reply will have
+    cool-down time in square brackets at the end. To check karma value, use !karma'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
