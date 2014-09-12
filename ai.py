@@ -414,6 +414,9 @@ def flirt(bot, trigger):
             (False, 'You show me yours, I\'ll show you mine... [](/ww20)'),
             (False, 'Is that a RAID6 in your pocket, or are you happy to see me?')
         ])
+    else:
+        # TODO handle unexpected responses
+        return
     if response[0]:
         bot.action(response[1])
     else:
