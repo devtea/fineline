@@ -108,9 +108,10 @@ def karmaRule(bot, trigger):
                 newkarm = modkarma(bot, shortobj, 1)
             elif obj.endswith("--"):
                 newkarm = modkarma(bot, shortobj, -1)
-            bot.reply("Karma for %s is at %i" % (shortobj, newkarm))
+            bot.reply("Karma for %s is at %i [%i]" % (shortobj, newkarm, 60))
         else:
-            bot.reply("You just used karma! You can't use it again for a bit.")
+            pass
+            # bot.reply("You just used karma! You can't use it again for a bit.")
 
 
 def timecheck(bot, trigger):
