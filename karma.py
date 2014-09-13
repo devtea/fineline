@@ -61,6 +61,8 @@ except:
         if fp:
             fp.close()
 
+SMALL_WAIT_MULTIPLIER = 1.1
+
 
 def setup(bot):
     if bot.config.has_section('karma') and bot.config.has_option('karma', 'export_dir'):
@@ -121,14 +123,26 @@ def karmaRule(bot, trigger):
         newkarm = None
         if not trigger.owner and karmee in bot.memory['karma_time'] and \
                 time_now < bot.memory['karma_time'][karmee][0] + bot.memory['karma_time'][karmee][1]:
-            return  # Fail silently due to insufficient wait time
+            # Optional: Increase the wait time a small amount for spamming
+            '''
+            bot.memory['karma_time'][karmee] = (
+                bot.memory['karma_time'][karmee][0],
+                int(bot.memory['karma_time'][karmee][1] * SMALL_WAIT_MULTIPLIER)
+            )
+            '''
+            # PM the user to let them know their remaining time
+            remaining = int(bot.memory['karma_time'][karmee][1] - (time_now - bot.memory['karma_time'][karmee][0]))
+            bot.msg(trigger.nick,
+                    'Your time has not ellapsed yet, so you may not use karma ' +
+                    'for another %s seconds. ' % remaining +
+                    'Please be considerate of others and keep spam to a minimum.')
+            return
 
         # Update recorded last use and cooldown
         if trigger.owner:
             bot.memory['karma_time'][karmee] = (time_now, -1)
         else:
             bot.memory['karma_time'][karmee] = wait_time(bot, time_now, karmee)
-
 
         # Mod karma
         if obj.endswith("++"):
