@@ -18,7 +18,6 @@ from string import Template
 from pprint import pprint
 
 from willie.module import commands, example, rule, priority, rate
-from willie.tools import Nick
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -48,6 +47,19 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import nicks
+except:
+    import imp
+    import sys
+    try:
+        print("trying manual import of nicks")
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
+        nicks = imp.load_source('nicks', pathname, fp)
+        sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
 
 
 def setup(bot):
@@ -59,11 +71,11 @@ def setup(bot):
     bot.memory
     if 'karma_lock' not in bot.memory:
         bot.memory['karma_lock'] = threading.Lock()
-    if 'karma_time' not in bot.memory:
-        bot.memory['karma_time'] = {}
-    bot.memory['karma'] = {}
 
     with bot.memory['karma_lock']:
+        bot.memory['karma_time'] = {}
+        bot.memory['karma'] = {}
+
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
         try:
@@ -97,38 +109,73 @@ def karmaRule(bot, trigger):
         return
     shortobj = obj[:-2].lower().strip()
 
-    # don't let users karma themselves
+    # Don't let users karma themselves
     if shortobj.lower() == trigger.nick.lower().strip('_`'):
         return
 
+    karmee = nicks.NickPlus(trigger.nick, trigger.host)
+    time_now = time.time()
+
     with bot.memory['karma_lock']:
+        # TODO admin perks
         newkarm = None
-        if timecheck(bot, trigger):
-            if obj.endswith("++"):
-                newkarm = modkarma(bot, shortobj, 1)
-            elif obj.endswith("--"):
-                newkarm = modkarma(bot, shortobj, -1)
-            bot.reply("Karma for %s is at %i [%i]" % (shortobj, newkarm, 60))
+        if not trigger.owner and karmee in bot.memory['karma_time'] and \
+                time_now < bot.memory['karma_time'][karmee][0] + bot.memory['karma_time'][karmee][1]:
+            return  # Fail silently due to insufficient wait time
+
+        # Update recorded last use and cooldown
+        if trigger.owner:
+            bot.memory['karma_time'][karmee] = (time_now, -1)
         else:
-            pass
-            # bot.reply("You just used karma! You can't use it again for a bit.")
+            bot.memory['karma_time'][karmee] = wait_time(bot, time_now, karmee)
 
 
-def timecheck(bot, trigger):
-    if trigger.admin:
-        return True
-    if Nick(trigger.nick) in bot.memory['karma_time'] \
-            and time.time() < bot.memory['karma_time'][Nick(trigger.nick)] + 60:
-        return False
-    bot.memory['karma_time'][Nick(trigger.nick)] = time.time()
-    return True
+        # Mod karma
+        if obj.endswith("++"):
+            newkarm = modkarma(bot, shortobj, 1)
+        elif obj.endswith("--"):
+            newkarm = modkarma(bot, shortobj, -1)
+
+        bot.reply("Karma for %s is at %i [%is]" % (
+            shortobj,
+            newkarm,
+            bot.memory['karma_time'][karmee][1]))
+
+
+def wait_time(bot, now, karmee):
+    '''Takes time and nick, checks last wait time and returns next wait time for that nick'''
+    _DEFAULT = 60
+    _WAIT_MULTIPLIER = 1.75
+    _WAIT_DIVISOR = 1.25
+    _WAIT_SHORT_INTERVAL = 2.5
+    _WAIT_LONG_INTERVAL = 10
+
+    if karmee not in bot.memory['karma_time']:
+        return (now, _DEFAULT)
+
+    delta = now - bot.memory['karma_time'][karmee][0]
+
+    if delta < 0:
+        # Wut
+        return (now, _DEFAULT)
+    elif delta < bot.memory['karma_time'][karmee][1] * _WAIT_SHORT_INTERVAL:
+        # User is using this often, increase wait time
+        return (now, int(bot.memory['karma_time'][karmee][1] * _WAIT_MULTIPLIER))
+    elif delta < bot.memory['karma_time'][karmee][1] * _WAIT_LONG_INTERVAL:
+        # User is using slower, let's cut the time
+        if bot.memory['karma_time'][karmee][1] / _WAIT_DIVISOR < _DEFAULT:
+            return (now, _DEFAULT)
+        else:
+            return (now, int(bot.memory['karma_time'][karmee][1] / _WAIT_DIVISOR))
+    else:
+        return (now, _DEFAULT)
 
 
 @commands('karma')
 @example('!karma fzoo')
 def karma(bot, trigger):
-    '''Allows for voting on anything. ++ to upvote, -- to downvote. Reply will have
-    cool-down time in square brackets at the end. To check karma value, use !karma'''
+    '''Allows for voting on anything. ++ to upvote, -- to downvote. Reply will have a cool-
+    down time in square brackets at the end. To check karma value, use !karma'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
