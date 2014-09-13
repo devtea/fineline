@@ -58,6 +58,9 @@ class NickPlus(Nick):
             return self._lowered == other._lowered or self.hostname == other.hostname
         return self._lowered == Nick._lower(other)
 
+    def __hash__(self):
+        return 0  # Fuck the police
+
 
 # def shared_nicks(channel, nick=None):
 def in_chan(bot, channel, nick=None):
