@@ -154,12 +154,12 @@ def boop(bot, trigger):
             target = nick_list.pop(i)
             # TODO small chance to boop random person
             bot.action(random.choice(_boop) % target)
-        elif target in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target]) > 0:
+        elif target.lower() in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target.lower()]) > 0:
             message = u' '.join(trigger.args[1].split()[2:])
             msg = 'boops'
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
-            for name in bot.memory['boop_lists'][target]:
+            for name in bot.memory['boop_lists'][target.lower()]:
                 if nicks.in_chan(bot, trigger.sender, name):
                     try:
                         i = nick_list.index(name)
@@ -172,7 +172,7 @@ def boop(bot, trigger):
                         pass
             msg = msg.strip(',')
             if msg != 'boops':
-                msg = "%s %s" % (msg, '[%s]' % colors.colorize(target, [u'orange']))
+                msg = "%s %s" % (msg, '[%s]' % colors.colorize(target.lower(), [u'orange']))
 
                 # TODO account for really long messages
                 if message:
