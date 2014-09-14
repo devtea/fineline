@@ -28,26 +28,26 @@ except:
 
 
 def setup(bot):
+    ignore_list = []
+    quiet_list = []
+    ignore_whitelist = []
+    quiet_whitelist = []
     if bot.config.has_section('general'):
-        ignore_list = []
         if bot.config.has_option('general', 'input_ignore'):
             ignore_list = [nicks.NickPlus(i.split("#")[0], i.split("#")[1])
                            if len(i.split("#")) > 1
                            else nicks.NickPlus(i)
                            for i in bot.config.general.get_list('input_ignore')]
-        quiet_list = []
         if bot.config.has_option('general', 'presence_quieters'):
             quiet_list = [nicks.NickPlus(i.split("#")[0], i.split("#")[1])
                           if len(i.split("#")) > 1
                           else nicks.NickPlus(i)
                           for i in bot.config.general.get_list('presence_quieters')]
-        ignore_whitelist = []
         if bot.config.has_option('general', 'input_whitelist'):
             ignore_whitelist = [nicks.NickPlus(i.split("#")[0], i.split("#")[1])
                                 if len(i.split("#")) > 1
                                 else nicks.NickPlus(i)
                                 for i in bot.config.general.get_list('input_whitelist')]
-        quiet_whitelist = []
         if bot.config.has_option('general', 'presence_whitelist'):
             quiet_whitelist = [nicks.NickPlus(i.split("#")[0], i.split("#")[1])
                                if len(i.split("#")) > 1
