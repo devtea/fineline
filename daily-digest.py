@@ -142,6 +142,10 @@ class DAParser(ImageParser):
                 d[attr[0]] = attr[1]
             if d and 'class' in d and d['class'] == 'dev-content-full':
                 self.img = re.sub('(deviantart.net/fs[0-9]+)/', '\g<1>/200H/', d['src'])
+                try:
+                    urllib2.urlopen(self.img)  # Basically just to test if the url throws a 404
+                except urllib2.HTTPError:
+                    self.img = d['src']  # if the small image doesn't exist (aka a gif) use full
 
 
 class ImgurParser(ImageParser):
