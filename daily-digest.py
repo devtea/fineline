@@ -467,7 +467,8 @@ def image_filter(bot, url):
             try:
                 # Turn gallery urls into albums
                 processed_url = re.sub('gallery/([a-zA-Z0-9]{5,})(.*)', 'a/\g<1>', url)
-                img = process_url(bot, processed_url)
+                img = process_url(bot, processed_url)  # all this is really used for is to throw exceptions on 404s
+                url = processed_url
             except:
                 try:
                     # Turn gallery urls into image links
