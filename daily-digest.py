@@ -921,10 +921,10 @@ def report(bot, trigger):
     if not re.search('^https?://', target):
         target = u'http://%s' % target
     with bot.memory['digest']['lock']:
+        bad_stuff_happened = False
         for i in bot.memory['digest']['digest']:
             if target == i['image'] or target == i['url']:
                 i['reported'] = True
-                bad_stuff_happened = False
                 dbcon = bot.db.connect()
                 cur = dbcon.cursor()
                 try:
