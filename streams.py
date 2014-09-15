@@ -15,6 +15,7 @@ from socket import timeout
 from string import Template
 import threading
 import time
+import traceback
 
 import willie.web as web
 from willie.module import commands, interval
@@ -1536,12 +1537,16 @@ def ustream_updater(bot):
 @interval(161)
 def picarto_updater(bot):
     bot.debug(__file__, log.format(u'Starting picarto.tv updater.'), u'verbose')
-    now = time.time()
-    for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
-        # TODO handle timeout, misc exceptions
-        s.update()
-        time.sleep(0.25)
-    bot.debug(__file__, log.format(u'picarto.tv updater complete in %s seconds.' % (time.time() - now)), u'verbose')
+    try:
+        now = time.time()
+        for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
+            # TODO handle timeout, misc exceptions
+            s.update()
+            time.sleep(0.25)
+        bot.debug(__file__, log.format(u'picarto.tv updater complete in %s seconds.' % (time.time() - now)), u'verbose')
+    except:
+        bot.debug(__file__, log.format(u'ERROR: Unhandled exception in the picarto updater.'), u'always')
+        print(traceback.format_exc())
 
 
 def info():
