@@ -1,13 +1,18 @@
+# coding=utf8
 """
 info.py - Willie Information Module
+Copyright 2008, Sean B. Palmer, inamidst.com
+Copyright © 2013, Elad Alfassa, <elad@fedoraproject.org>
 Copyright 2013, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
+from __future__ import unicode_literals
 
 import os.path
 from willie.module import commands, rule, example, priority
+from willie.tools import iterkeys
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -26,11 +31,20 @@ except:
             fp.close()
 
 
-@rule(u'$nick' '(?i)(help|doc) +([A-Za-z]+)(?:\?+)?$')
-@example(u'!help seen')
-@commands(u'help')
-@priority(u'low')
-def doc(bot, trigger):
+def setup(bot=None):
+    if not bot:
+        return
+
+    if bot.config.has_option('help', 'threshold') and not bot.config.help.threshold.isdecimal():#non-negative integer
+        from willie.config import ConfigurationError
+        raise ConfigurationError("Attribute threshold of section [help] must be a nonnegative integer")
+
+
+@rule('$nick' '(?i)(help|doc) +([A-Za-z]+)(?:\?+)?$')
+@example('!help seen')
+@commands('help')
+@priority('low')
+def help(bot, trigger):
     """Shows a command's documentation, and possibly an example."""
     if not trigger.group(2):
         if util.exists_quieting_nick(bot, trigger.sender):
@@ -40,43 +54,45 @@ def doc(bot, trigger):
         name = trigger.group(2)
         name = name.lower()
 
-        if (name in bot.doc
-                and not bot.doc[name][0].startswith(u"ADMIN")):
-            bot.reply(bot.doc[name][0])
+        if bot.config.has_option('help', 'threshold'):
+            threshold=int(bot.config.help.threshold)
+        else:
+            threshold=3
+
+        if name in bot.doc:
+            if len(bot.doc[name][0]) + (1 if bot.doc[name][1] else 0) > threshold:
+                if trigger.nick != trigger.sender: #don't say that if asked in private
+                    bot.reply('The documentation for this command is too long; I\'m sending it to you in a private message.')
+                msgfun=lambda l: bot.msg(trigger.nick,l)
+            else:
+                msgfun=bot.reply
+
+            for line in bot.doc[name][0]:
+                msgfun(line)
             if bot.doc[name][1]:
-                bot.say(u'e.g. ' + bot.doc[name][1])
+                msgfun('e.g. ' + bot.doc[name][1])
 
 
-@commands(u'commands')
-@priority(u'low')
+@commands('commands')
+@priority('low')
 def commands(bot, trigger):
-    """Return a list of the bot's commands"""
-    if trigger.owner:
-        names = u', '.join(sorted(bot.doc.iterkeys()))
-    else:
-        cmds = [i for i in sorted(bot.doc.iterkeys())
-                if not bot.doc[i][0].startswith(u"ADMIN")
-                and i not in [u'newoplist',
-                              u'listops',
-                              u'listvoices',
-                              u'blocks',
-                              u'part',
-                              u'quit'
-                              ]  # bad hack for filtering admin cmds
-                ]
-        names = u', '.join(sorted(cmds))
-    bot.reply(u'Commands I recognise: ' + names + u'.')
-    bot.reply(u"For help, do '!help example' where example is the " +
-              u"name of the command you want help for.")
+    """Return a list of bot's commands"""
+    names = ', '.join(sorted(iterkeys(bot.doc)))
+    if not trigger.is_privmsg:
+        bot.reply("I am sending you a private message of all my commands!")
+    bot.msg(trigger.nick, 'Commands I recognise: ' + names + '.', max_messages=10)
+    bot.msg(trigger.nick, ("For help, do '%s: help example' where example is the " +
+                    "name of the command you want help for.") % bot.nick)
 
 
 @rule('$nick' r'(?i)help(?:[?!]+)?$')
 @priority('low')
-def help(bot, trigger):
+def help2(bot, trigger):
     response = (
-        u'Hi! I\'m %s and I\'m a pony. Say "!commands" to me in private ' +
-        u'for a list of the things I can do. Say hi to my master, %s!'
-    ) % (bot.nick, bot.config.owner)
+        'Hi, I\'m a bot. Say ".commands" to me in private for a list ' +
+        'of my commands, or see http://willie.dftba.net for more ' +
+        'general details. My owner is %s.'
+    ) % bot.config.owner
     bot.reply(response)
 
 
