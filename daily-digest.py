@@ -71,6 +71,8 @@ BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
 _VOTE_TIME = 5  # Time in minutes
 
+_re_tumblr = re.compile(r'https?://\d+\.media\.tumblr\.com/[a-zA-Z0-9]+/tumblr_[a-zA-Z0-9_]+_\d+.[a-zA-Z]{,4}')
+
 # Templates
 _style = '''
     <style>
@@ -320,7 +322,8 @@ def image_filter(bot, url):
         'deviantart.net': re.compile('\S+\.deviantart\.net'),
         'deviantart.com': re.compile('\S+\.deviantart\.com'),
         'imgur.com': re.compile('i\.imgur\.com'),
-        'tinypic.com': re.compile('\S+\.tinypic\.com')
+        'tinypic.com': re.compile('\S+\.tinypic\.com'),
+        'tumblr.com': re.compile('\S+\.tumblr\.com')
     }
     domains = {
         'deviantart.net': (lambda url: deviantart(url)),
@@ -346,7 +349,8 @@ def image_filter(bot, url):
         '500px.com': (lambda url: fivehpx(url)),
         'www.flickr.com': (lambda url: flickr(url)),
         'flickr.com': (lambda url: flickr(url)),
-        'tinypic.com': (lambda url: tinypic(url))
+        'tinypic.com': (lambda url: tinypic(url)),
+        'tumblr.com': (lambda url: tumblr(url))
     }
     # Temporary list to specify which need to be preprocessed
     temp_preprocess = [
@@ -368,6 +372,20 @@ def image_filter(bot, url):
         except:
             bot.debug(__file__, log.format(u'Unhandled exception in the derpibooru parser.'), 'warning')
             bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+
+    def tumblr(url):
+        try:
+            content = urllib2.urlopen(url)
+            html = content.read().decode('utf-8', 'replace')
+            urls = _re_tumblr.findall(html)  # just a simple pattern search for certain urls
+        except:
+            bot.debug(__file__, log.format(u'Unhandled exception in the tumblr parser.'), 'warning')
+            bot.debug(__file__, traceback.format_exc(), 'warning')
+            return None
+        if urls:
+            return {'url': urls[0], 'format': 'standard'}  # Just return the first, I guess?
+        else:
             return None
 
     def tinygrab(url):
