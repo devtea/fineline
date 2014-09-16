@@ -66,7 +66,7 @@ except:
         if fp:
             fp.close()
 
-EXPIRATION = 7 * 24 * 60 * 60  # 24 hour expiration, longer for testing
+EXPIRATION = 3 * 24 * 60 * 60  # 24 hour expiration, longer for testing
 BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
 _VOTE_TIME = 5  # Time in minutes
