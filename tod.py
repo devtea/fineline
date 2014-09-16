@@ -73,7 +73,7 @@ except:
 
 
 _EXPIRY = 90 * 60  # 90 minutes for list expiry
-_MINIMUM = 4  # Minimum number of participants
+_MINIMUM = 5  # Minimum number of participants
 _KICK_VOTES = 3
 
 
