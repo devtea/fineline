@@ -12,6 +12,7 @@ import os
 import time
 import willie.tools
 import threading
+import sys
 from willie.tools import Nick, iterkeys
 from willie.module import commands, nickname_commands, rule, priority
 
@@ -52,7 +53,9 @@ def loadReminders(fn, lock):
         result = {}
         f = open(fn)
         for line in f:
-            line = line.strip().decode('utf8')
+            line = line.strip()
+            if sys.version_info.major < 3:
+                line = line.decode('utf-8')
             if line:
                 try:
                     tellee, teller, verb, timenow, msg = line.split('\t', 4)
@@ -70,7 +73,10 @@ def dumpReminders(fn, data, lock):
             for remindon in data[tellee]:
                 line = '\t'.join((tellee,) + remindon)
                 try:
-                    f.write((line + '\n').encode('utf-8'))
+                    to_write = line + '\n'
+                    if sys.version_info.major < 3:
+                        to_write = to_write.encode('utf-8')
+                    f.write(to_write)
                 except IOError:
                     break
         try:
