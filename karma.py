@@ -18,6 +18,7 @@ from string import Template
 from pprint import pprint
 
 from willie.module import commands, example, rule, priority, rate
+from willie.formatting import color
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -150,9 +151,9 @@ def karmaRule(bot, trigger):
         elif obj.endswith("--"):
             newkarm = modkarma(bot, shortobj, -1)
 
-        bot.reply("Karma for %s is at %i [%is]" % (
-            shortobj,
-            newkarm,
+        bot.reply("Karma for %s is at %s [%is]" % (
+            color(shortobj, fg='orange'),
+            color(str(newkarm), fg='green'),
             bot.memory['karma_time'][karmee][1]))
 
 
@@ -197,7 +198,9 @@ def karma(bot, trigger):
     if not obj:
         return
     karm = modkarma(bot, obj, 0)
-    bot.reply("Karma for %s is at %i" % (obj, karm))
+    bot.reply("Karma for %s is at %s" % (
+        color(obj, fg='orange'),
+        color(str(karm), fg='green')))
 
 
 def modkarma(bot, obj, amount):
