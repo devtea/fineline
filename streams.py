@@ -1018,7 +1018,7 @@ def list_streams(bot, arg=None, nick=None):
         return '%s%s%s [ %s ]' % (
             nsfw,
             live,
-            colors.colorize(name, ['purple']),
+            colors.colorize(str(name), ['purple']),
             colors.colorize(st.url, ['blue']))
 
     if arg == 'subscribed' or arg == 'subscriptions':
