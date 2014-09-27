@@ -107,6 +107,7 @@ def grab(bot, trigger):
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addquote %s' % grab_text)
                     else:
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addarttip %s' % grab_text)
+                    time.sleep(3)
                     bot.reply(
                         "You're trying to grab '%s' - To confirm, repeat this command within 15 seconds." %
                         colors.colorize(grab_text, ['orange']))
