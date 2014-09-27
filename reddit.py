@@ -16,6 +16,7 @@ from datetime import datetime
 import HTMLParser
 import os.path
 import re
+import sys
 from socket import timeout
 import threading
 import time
