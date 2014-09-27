@@ -1,5 +1,5 @@
 """
-daily-digest.py - A Willie module that summarizes and displays images posted in the last day
+image-digest.py - A Willie module that summarizes and displays images posted in the last day
 Copyright 2014, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
@@ -307,10 +307,10 @@ def imgur_get_medium(bot, url):
         return url
 
 
-@commands(u'dd', u'dailydigest', u'daily-digest', u'digest')
+@commands(u'imagedigest', u'image-digest', u'id')
 def template(bot, trigger):
-    """Displays the configured url for the daily digest page."""
-    bot.say(u'The daily image digest page is at %s - Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
+    """Displays the configured url for the image digest page."""
+    bot.say(u'The image image digest page is at %s - Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
