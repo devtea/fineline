@@ -8,14 +8,45 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import unicode_literals
+from __future__ import print_function, unicode_literals
 
 import os.path
-from willie.module import commands, rule, example, priority
-from willie.tools import iterkeys
+import re
+import urlparse
+
+from string import Template
+
+from willie.config import ConfigurationError
+from willie.module import commands, example, interval, priority, rule
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
+try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        print(__file__, "Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+try:
+    import nicks
+except:
+    import imp
+    import sys
+    try:
+        print(__file__, "trying manual import of nicks")
+        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
+        nicks = imp.load_source('nicks', pathname, fp)
+        sys.modules['nicks'] = nicks
+    finally:
+        if fp:
+            fp.close()
 try:
     import util
 except:
@@ -30,14 +61,142 @@ except:
         if fp:
             fp.close()
 
+_FILENAME = 'bot_help.html'
+_ADMIN_FILENAME = 'bot_help_admin.html'
+_html_template = Template('''\
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        .description {
+            padding-left: 15px
+        }
+
+        .example {
+            color: grey;
+            padding-left: 30px;
+            padding-top: 5px
+        }
+    </style>
+</head>
+<body>
+    <h2>Commands</h2>
+    <ul>
+${directory}
+    </ul>
+${body}
+</body>
+</html>
+''')
+_section_template = Template('''
+    <h2 id="${header}">${header}</h2>
+    <p>
+        <div class="description">${description}</div>${example}
+    </p>''')
+_example_template = Template('\n        <div class="example">Example: ${example}</div>')
+_directory_section_template = Template('        <li><a href="#${header}">${header}</a></li>')
+
 
 def setup(bot=None):
     if not bot:
         return
 
-    if bot.config.has_option('help', 'threshold') and not bot.config.help.threshold.isdecimal():#non-negative integer
-        from willie.config import ConfigurationError
+    if bot.config.has_option('help', 'threshold') and not bot.config.help.threshold.isdecimal():  # non-negative integer
         raise ConfigurationError("Attribute threshold of section [help] must be a nonnegative integer")
+
+    bot.memory['help'] = {}
+
+    bot.memory['help']['use_urls'] = False
+    if bot.config.has_section('general'):
+        if bot.config.has_option('general', 'hosted_domain') \
+                and bot.config.has_option('general', 'hosted_path'):
+            bot.memory['help']['user_domain'] = urlparse.urljoin(bot.config.general.hosted_domain, _FILENAME)
+            bot.memory['help']['admin_domain'] = urlparse.urljoin(bot.config.general.hosted_domain, _ADMIN_FILENAME)
+            bot.memory['help']['user_path'] = os.path.join(bot.config.general.hosted_path, _FILENAME)
+            bot.memory['help']['admin_path'] = os.path.join(bot.config.general.hosted_path, _ADMIN_FILENAME)
+            bot.memory['help']['use_urls'] = True
+            generate_help_lists(bot)  # Initialize pages
+        else:
+            raise ConfigurationError("hosted_domain and hosted_path options of section [general] must exist")
+    else:
+        raise ConfigurationError("hosted_domain and hosted_path options of section [general] must exist")
+
+
+@interval(600)
+def generate_help_lists(bot):
+    '''Generates HTML for help pages.'''
+    def format_example(example):
+        if example:
+            return _example_template.substitute(example=example)
+        return ''
+
+    # Check that everything is configured for this module
+    if not bot.memory['help']['use_urls']:
+        return
+
+    reverse_doc = {}
+    for i in bot.doc:
+        if len(bot.doc[i][0]) == 0:
+            desc = bot.doc[i][1] or '[No Description Provided]'
+        else:
+            desc = ' '.join(bot.doc[i][0])  # that list in the docs is lines of the module's docstring
+        if desc not in reverse_doc:
+            reverse_doc[desc] = []
+        reverse_doc[desc].append(i)
+
+    directory = '\n'.join(
+        sorted([_directory_section_template.substitute(
+            header=', '.join(sorted(reverse_doc[i])),
+            ) for i in reverse_doc if not re.findall(r'\badmin\b', i, re.I)]))
+    admin_directory = '\n'.join(
+        sorted([_directory_section_template.substitute(
+            header=', '.join(sorted(reverse_doc[i])),
+            ) for i in reverse_doc]))
+    body = '\n'.join(
+        sorted([_section_template.substitute(
+            header=', '.join(sorted(reverse_doc[i])),
+            description=i,
+            example='' if i == bot.doc[reverse_doc[i][0]][1] else format_example(bot.doc[reverse_doc[i][0]][1])
+            ) for i in reverse_doc if not re.findall(r'\badmin\b', i, re.I)]))
+    admin_body = '\n'.join(
+        sorted([_section_template.substitute(
+            header=', '.join(sorted(reverse_doc[i])),
+            description=i,
+            example='' if i == bot.doc[reverse_doc[i][0]][1] else format_example(bot.doc[reverse_doc[i][0]][1])
+            ) for i in reverse_doc]))
+    html = _html_template.substitute(
+        title='command help',
+        directory=directory,
+        body=body)
+    admin_html = _html_template.substitute(
+        title='command help',
+        directory=admin_directory,
+        body=admin_body)
+
+    try:
+        with open(bot.memory['help']['user_path'], 'r') as f:
+            previous_html = ''.join(f.readlines())
+    except IOError:
+        previous_html = ''
+        bot.debug(__file__, log.format(u'IO error grabbing previous user help file contents. File may not exist yet'), 'warning')
+    try:
+        with open(bot.memory['help']['admin_path'], 'r') as f:
+            previous_admin_html = ''.join(f.readlines())
+    except IOError:
+        previous_admin_html = ''
+        bot.debug(__file__, log.format(u'IO error grabbing previous admin help file contents. File may not exist yet'), 'warning')
+
+    if previous_html != html:
+        bot.debug(__file__, log.format(u'User help file is different, writing.'), 'verbose')
+        with open(bot.memory['help']['user_path'], 'w') as f:
+            f.write(html)
+
+    if previous_admin_html != admin_html:
+        bot.debug(__file__, log.format(u'Admin help file is different, writing.'), 'verbose')
+        with open(bot.memory['help']['admin_path'], 'w') as f:
+            f.write(admin_html)
 
 
 @rule('$nick' '(?i)(help|doc) +([A-Za-z]+)(?:\?+)?$')
@@ -55,17 +214,17 @@ def help(bot, trigger):
         name = name.lower()
 
         if bot.config.has_option('help', 'threshold'):
-            threshold=int(bot.config.help.threshold)
+            threshold = int(bot.config.help.threshold)
         else:
-            threshold=3
+            threshold = 3
 
         if name in bot.doc:
             if len(bot.doc[name][0]) + (1 if bot.doc[name][1] else 0) > threshold:
-                if trigger.nick != trigger.sender: #don't say that if asked in private
+                if trigger.nick != trigger.sender:  # don't say that if asked in private
                     bot.reply('The documentation for this command is too long; I\'m sending it to you in a private message.')
-                msgfun=lambda l: bot.msg(trigger.nick,l)
+                msgfun = lambda l: bot.msg(trigger.nick, l)
             else:
-                msgfun=bot.reply
+                msgfun = bot.reply
 
             for line in bot.doc[name][0]:
                 msgfun(line)
@@ -77,19 +236,18 @@ def help(bot, trigger):
 @priority('low')
 def commands(bot, trigger):
     """Return a list of bot's commands"""
-    names = ', '.join(sorted(iterkeys(bot.doc)))
-    if not trigger.is_privmsg:
-        bot.reply("I am sending you a private message of all my commands!")
-    bot.msg(trigger.nick, 'Commands I recognise: ' + names + '.', max_messages=10)
-    bot.msg(trigger.nick, ("For help, do '%s: help example' where example is the " +
-                    "name of the command you want help for.") % bot.nick)
+    if trigger.admin:
+        bot.reply("Check your messages, %s" % trigger.nick)
+        bot.msg(trigger.nick, "You can see a list of my admin commands at %s" % bot.memory['help']['admin_domain'])
+    else:
+        bot.reply("You can see a list of my user commands at %s" % bot.memory['help']['user_domain'])
 
 
 @rule('$nick' r'(?i)help(?:[?!]+)?$')
 @priority('low')
 def help2(bot, trigger):
     response = (
-        'Hi, I\'m a bot. Say ".commands" to me in private for a list ' +
+        'Hi, I\'m a bot. Say "!commands" to me for a list ' +
         'of my commands, or see http://willie.dftba.net for more ' +
         'general details. My owner is %s.'
     ) % bot.config.owner
@@ -97,4 +255,4 @@ def help2(bot, trigger):
 
 
 if __name__ == '__main__':
-    print __doc__.strip()
+    print(__doc__.strip())
