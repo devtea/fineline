@@ -155,7 +155,7 @@ def generate_help_lists(bot):
     directory = '\n'.join(
         sorted([_directory_section_template.substitute(
             header=', '.join(sorted(reverse_doc[i])),
-            ) for i in reverse_doc if not re.findall(r'\badmin\b', i, re.I)]))
+            ) for i in reverse_doc if not re.findall(r'\badmin\b|\bwillies?\b|\bowner\b', i, re.I)]))
     admin_directory = '\n'.join(
         sorted([_directory_section_template.substitute(
             header=', '.join(sorted(reverse_doc[i])),
@@ -165,7 +165,7 @@ def generate_help_lists(bot):
             header=', '.join(sorted(reverse_doc[i])),
             description=i,
             example='' if i == bot.doc[reverse_doc[i][0]][1] else format_example(bot.doc[reverse_doc[i][0]][1])
-            ) for i in reverse_doc if not re.findall(r'\badmin\b', i, re.I)]))
+            ) for i in reverse_doc if not re.findall(r'\badmin\b|\bwillies?\b|\bowner\b', i, re.I)]))
     admin_body = '\n'.join(
         sorted([_section_template.substitute(
             header=', '.join(sorted(reverse_doc[i])),
