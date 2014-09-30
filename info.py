@@ -71,13 +71,19 @@ _html_template = Template('''\
     <title>${title}</title>
     <style>
         .description {
-            padding-left: 15px
+            padding-left: 15px;
         }
 
         .example {
             color: grey;
             padding-left: 30px;
-            padding-top: 5px
+            padding-top: 5px;
+        }
+        li {
+            border-bottom-width: 1px;
+            border-bottom-style: solid;
+            text-decoration: none;
+            padding-bottom: 1px;
         }
     </style>
 </head>
