@@ -79,11 +79,11 @@ _html_template = Template('''\
             padding-left: 30px;
             padding-top: 5px;
         }
-        li {
+        a {
             border-bottom-width: 1px;
             border-bottom-style: solid;
             text-decoration: none;
-            padding-bottom: 1px;
+            padding-bottom: 0px;
         }
     </style>
 </head>
