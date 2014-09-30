@@ -110,7 +110,7 @@ def start_stream(bot, ep):
 @example('!stream add S01E03')
 @commands('stream')
 def stream(bot, trigger):
-    '''Adds or removes a video from the streaming queue. Use "!stream add
+    '''Adds or removes a video from the stream queue. Use "!stream add
  <name>" to add a video, or "!stream del <name>" to remove it. Do
  "!stream list" for a list of available videos. Do "!stream queue" to
  see the videos queued for streaming.'''
@@ -222,7 +222,7 @@ def list_media(bot, trigger):
 
 @commands('streaming', 'now_playing', 'np', 'now_streaming', 'ns')
 def streaming(bot, trigger):
-    '''To manage videos or get information, see !stream.'''
+    '''Lists the currently streaming video. To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
         bot.reply(u'Now playing at %s - %s' % (
             bot.memory['streaming']['loc'],
@@ -262,6 +262,7 @@ def publish_list(bot):
 
 @commands('bob')
 def random_video(bot, trigger):
+    '''Getcho Bob fix here!'''
     match_list = [os.path.splitext(i)[0] for i in bot.memory['streaming']['ep_list']
                   if bot.memory['streaming']['custom_regex'].match(i)]
     enqueue(bot, random.choice(match_list))

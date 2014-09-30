@@ -123,7 +123,7 @@ def setup(bot):
 
 @commands(u'boop')
 def boop(bot, trigger):
-    """Boops."""
+    """Boops, what else?"""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

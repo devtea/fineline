@@ -22,7 +22,7 @@ from pprint import pprint as pp
 from HTMLParser import HTMLParser
 from string import Template
 
-from willie.module import commands, rule, interval
+from willie.module import commands, rule, interval, example
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -309,7 +309,7 @@ def imgur_get_medium(bot, url):
 
 @commands(u'imagedigest', u'image-digest', u'id')
 def template(bot, trigger):
-    """Displays the configured url for the image digest page."""
+    """Displays the url for the image digest page."""
     bot.say(u'The image image digest page is at %s - Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
 
 
@@ -681,6 +681,7 @@ def url_watcher(bot, trigger):
 
 @commands('digest_clear')
 def digest_clear(bot, trigger):
+    '''Clears all links from the image digest. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['digest']['lock']:
@@ -691,6 +692,7 @@ def digest_clear(bot, trigger):
 
 @commands('digest_refresh_db')
 def digest_db_refresh(bot, trigger):
+    '''Force overwrites the db with what's in memory. Admin only.'''
     if not trigger.owner:
         return
     bot.debug(__file__, log.format('Starting db refresh.'), 'verbose')
@@ -746,6 +748,7 @@ def write_to_db(bot, item):
 
 @commands('digest_dump')
 def digest_dump(bot, trigger):
+    '''Dumps digest debugging data to log. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['digest']['lock']:
@@ -788,6 +791,7 @@ def context(bot, trigger):
 
 @commands('context_clear')
 def context_clear(bot, trigger):
+    '''Clears the running chat context used for NSFW tagging. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['digest']['context_lock']:
@@ -797,6 +801,7 @@ def context_clear(bot, trigger):
 
 @commands('digest_url_dump')
 def url_dump(bot, trigger):
+    '''Dumps digest urls to the log. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['digest']['lock']:
@@ -809,6 +814,7 @@ def url_dump(bot, trigger):
 
 @commands('digest_build_html')
 def build_html(bot, trigger):
+    '''Force builds the HTML page for the image digest. Admin only.'''
     def is_nsfw(nsfw, reported):
         if nsfw or reported:
             return "<b>This images was tagged as NSFW</b>"
@@ -935,7 +941,9 @@ def build_regularly(bot):
 
 
 @commands('report')
+@example('!report http://imgur.com/notarealurl')
 def report(bot, trigger):
+    '''Report an url on the image digest page as NSFW.'''
     try:
         target = trigger.args[1].split()[1]
     except IndexError:
@@ -967,7 +975,11 @@ def report(bot, trigger):
 
 
 @commands('unreport')
+@example('!unreport http://imgur.com/notarealurl')
 def unreport(bot, trigger):
+    '''Unmark an url on the image digest page as NSFW.
+    This will not mark an explicitly tagged image as safe,
+    only reported images. Admin only.'''
     if not trigger.admin:
         return
     pass
@@ -1001,8 +1013,9 @@ def unreport(bot, trigger):
 
 
 @commands('remove', 'digest_remove')
+@example('!remove http://imgur.com/notarealurl')
 def remove(bot, trigger):
-    '''Allows removal of inappropriate links from the digest.'''
+    '''Vote to remove a link from the image digest.'''
     def do_remove(bot, link):
         with bot.memory['digest']['lock']:
             for i in bot.memory['digest']['digest']:

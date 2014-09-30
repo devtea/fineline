@@ -18,7 +18,7 @@ from socket import EBADF
 import time
 import threading
 
-from willie.module import interval, rule, commands, rate
+from willie.module import interval, rule, commands, rate, example
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -194,6 +194,7 @@ def sing(bot, channel):
 
 
 @commands('sing')
+@example('!sing')
 @rate('120')
 def why_is_this_bot_singing(bot, trigger):
     sing(bot, trigger.sender)
@@ -254,7 +255,7 @@ def last_activity(bot, trigger):
 
 @commands(u'pony', u'pon[ie]')
 def pony(bot, trigger):
-    '''Returns pony pic'''
+    '''Links to a random pony pic from a curated collection of quality art.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

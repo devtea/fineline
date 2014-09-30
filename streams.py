@@ -609,7 +609,7 @@ def setup(bot):
 
 @commands('live_reload')
 def load_from_db(bot, trigger=None):
-    """ADMIN: Reload live streams from database"""
+    """ADMIN: Reload live streams from database."""
     if trigger and not trigger.owner:
         return
     bot.debug(__file__, log.format(u'Reloading from DB'), 'verbose')
@@ -801,6 +801,7 @@ def more_help(bot, trigger):
 
 @commands('streams')
 def streams_alias(bot, trigger):
+    '''Lists live streams.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
@@ -1161,7 +1162,7 @@ def publish_lists(bot, trigger=None):
 
 @commands('services')
 def services(bot, trigger):
-    '''Propert input includes a URL by itself (e.g. http://twitch.tv/tdreyer1)
+    '''Proper !live input includes a URL by itself (e.g. http://twitch.tv/tdreyer1)
  or a channel name / service name pair (e.g. tdreyer1 twitch.tv). Accepted
  service names are livestream.com, twitch.tv, ustream.tv, picarto.tv, and youtube.com'''
     bot.say(__doc__.strip())
@@ -1214,6 +1215,7 @@ def remove_stream(bot, user):
 
 @commands('update', 'reload', 'refresh')
 def update_streams(bot, trigger):
+    '''Force update of live streams. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['streamLock']:
@@ -1585,6 +1587,7 @@ def stats(bot):
 
 @commands('db_maint')
 def update_database_tables(bot, trigger):
+    '''Manual one time database maintance. Don't run this. Admin only.'''
     if not trigger.owner:
         return
     with bot.memory['streamLock']:

@@ -129,8 +129,8 @@ def unweighted_choice(unweighted, choices):
 @commands(u'choose', 'pick', 'select')
 @example(ur"!choose 2, The Hobbit, Ender's Game, The Golden Compass")
 def choose(bot, trigger):
-    """Returns a random selection of comma separated items provided to it.
-    Chooses a subset if the first argument is an integer."""
+    """Returns a selection of comma separated items provided to it.
+    If the first option is an integer, it will choose that many items if possible"""
 
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:

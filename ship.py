@@ -14,7 +14,7 @@ import threading
 from datetime import datetime
 from types import IntType
 
-from willie.module import commands
+from willie.module import commands, example
 from willie.tools import Nick
 
 # Bot framework is stupid about importing, so we need to override so that
@@ -196,6 +196,7 @@ def ship(bot, trigger):
 
 
 @commands(u'ship_delname')
+@example(u'!ship_delname some name')
 def delname(bot, trigger):
     '''ADMIN: Removes a pony from the database. Admin only.'''
     if not trigger.admin:
@@ -222,8 +223,9 @@ def delname(bot, trigger):
 
 
 @commands(u'ship_addname')
+@example(u'!ship_addname some name 1000')
 def addname(bot, trigger):
-    '''ADMIN: Adds a pony to the database. Admin only.'''
+    '''Adds a character name and weight to the database. Admin only.'''
     if not trigger.admin:
         return
     command = trigger.args[1].split(' ')

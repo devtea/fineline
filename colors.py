@@ -23,7 +23,7 @@ Recognized 'default' colors:
 '''
 from random import choice
 from types import ListType
-from willie.module import commands
+from willie.module import commands, example
 
 RESET = u"\x0f"
 COLORS = {
@@ -113,7 +113,9 @@ def rainbow(text):
 
 
 @commands('rainbow')
+@example('!rainbow rainbow trout')
 def rb(bot, trigger):
+    '''Colors text in a rainbow of fabulosity. Admin only.'''
     if not trigger.owner:
         return
     bot.say(rainbow(trigger.bytes[9:]))
@@ -121,6 +123,7 @@ def rb(bot, trigger):
 
 @commands('colors')
 def colors(bot, trigger):
+    '''Prints out examples of most colors available in IRC. Admin only.'''
     if not trigger.owner:
         return
     for c in [u'white', u'black', u'dark blue', u'green', u'red', u'dark red', u'purple',

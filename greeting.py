@@ -14,7 +14,7 @@ import re
 import os
 
 from willie.tools import Nick
-from willie.module import commands, rule, event, unblockable, priority
+from willie.module import commands, example, rule, event, unblockable, priority
 
 _re_loglines = re.compile(r'\[[0-9:]*]\s\*{3}\sJoins:\s(\S+)\s\(([^)]+)\)')
 _chan_regex = re.compile(u'^(.*?)_\d{8}')
@@ -111,6 +111,7 @@ def setup(bot):
 
 @commands(u'greeting_initialize')
 def greeting_initialize(bot, trigger):
+    '''Initialize the history of users from a log file. Admin only.'''
     if not trigger.owner:
         return
     tmp_hostlist = {}
@@ -184,7 +185,7 @@ def greeting_initialize(bot, trigger):
 
 @commands('greet_nuke')
 def greet_nuke(bot, trigger):
-    '''ADMIN: Nuke the greeting database'''
+    '''ADMIN: Nuke the greeting database.'''
     if not trigger.owner:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to nuke the greet database!'), 'warning')
         return
@@ -204,7 +205,7 @@ def greet_nuke(bot, trigger):
 
 @commands(u'greet_dump')
 def greet_dump(bot, trigger):
-    '''ADMIN: a debug dump the chan_host_history database'''
+    '''ADMIN: a debug dump of the chan_host_history database.'''
     if not trigger.owner:
         return
     with bot.memory['greet_lock']:
@@ -264,6 +265,7 @@ def join_watcher(bot, trigger):
 
 
 @commands('greet_add', 'greeting_add')
+@example('!greeting_add #channel y welcome to #channel')
 def greeting_add(bot, trigger):
     '''ADMIN: Add greetings for channels. Syntax: Channel Notice(y/n) Greeting to say'''
     if not trigger.admin and not trigger.owner and not trigger.isop:
@@ -303,6 +305,7 @@ def greeting_add(bot, trigger):
 
 
 @commands('greet_del', 'greeting_del')
+@example('!greeting_del #channel')
 def greeting_del(bot, trigger):
     '''ADMIN: Removes greetings for channels. Syntax = #Channel'''
     if not trigger.admin and not trigger.owner and not trigger.isop:
@@ -333,7 +336,7 @@ def greeting_del(bot, trigger):
 
 @commands('greet_list', 'greeting_list')
 def greeting_list(bot, trigger):
-    '''ADMIN: Lists greeting for a channel.'''
+    '''ADMIN: Lists the set greeting for a channel.'''
     if not trigger.admin and not trigger.owner and not trigger.isop:
         return
     triggers = trigger.split()[1:]

@@ -93,8 +93,9 @@ def refresh_nicks(bot):
         time.sleep(0.5)
 
 
-@commands('list')
+@commands('nick_list')
 def list_nicks(bot, trigger):
+    '''Prints nick module debugging info to the log. Admin only.'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
         return
     for i in bot.memory['chan_nicks']:
@@ -214,6 +215,8 @@ def quit(bot, trigger):
     bot.debug(__file__, log.format(u'Caught QUIT by ', trigger.nick), u'verbose')
     try:
         name = NickPlus(trigger.nick, trigger.host)
+        if not trigger.sender.startswith('#'):
+            return
         with bot.memory['nick_lock']:
             for chan in bot.memory['chan_nicks']:
                 try:

@@ -170,7 +170,7 @@ def move_to_list(bot, participant):
 
 @commands('tod_join')
 def join(bot, trigger):
-    """This command is used to add yourself to a Truth or Dare session. """
+    """This command is used to add yourself to a Truth or Dare session."""
     # Don't allow PMs
     if not trigger.sender.startswith('#'):
         return
@@ -383,7 +383,7 @@ def clear_when_dead(bot):
 
 @commands('tod_choose_for_me', 'tod_random', 'tod_choose')
 def template(bot, trigger):
-    """Chooses "Truth" or "Dare" randomly."""
+    """Chooses "Truth" or "Dare" for you randomly."""
     # Don't allow PMs
     if not trigger.sender.startswith('#'):
         return

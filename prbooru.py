@@ -154,7 +154,7 @@ def weighted_choice(weighted):
 @commands(u'pr')
 @example(u'`!pr random` or `!pr tag1, tag two, three`')
 def prbooru(bot, trigger):
-    ''' Pulls images from the Pony Reference Booru at random or by tag'''
+    '''Pulls images from one of the reference boorus at random or by specified tag.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

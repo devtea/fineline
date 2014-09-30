@@ -203,7 +203,7 @@ def load_from_logs(bot, trigger):
 @commands('seen_nuke')
 @priority('low')
 def seen_nuke(bot, trigger):
-    '''ADMIN: Nuke the seen database'''
+    '''ADMIN: Nuke the seen database.'''
     if not trigger.owner:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
@@ -238,7 +238,7 @@ def seen_recorder(bot, trigger):
 
 
 @commands('seen', 'lastseen')
-@example(u'!seen tdreyer1')
+@example(u'!seen username')
 def seen(bot, trigger):
     '''Reports the last time a nick was seen.'''
     # Don't do anything if the bot has been shushed

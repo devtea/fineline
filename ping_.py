@@ -5,11 +5,12 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from willie.module import commands, priority
+from willie.module import commands, priority, example
 
 
 @commands(u'ping')
 @priority(u'high')
+@example(u'!ping')
 def ping(bot, trigger):
     bot.say(u'Pony!')
 

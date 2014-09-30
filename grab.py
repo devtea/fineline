@@ -59,7 +59,7 @@ def setup(bot):
         bot.memory['grab']['request'] = {}
 
 
-@example('!grab tdreyer1')
+@example('!grab username')
 @commands('grab', 'grabart', 'grabarttip', 'grabtip')
 def grab(bot, trigger):
     '''Grabs the last line from a user and !addquotes it.'''
@@ -137,6 +137,7 @@ def recent_watcher(bot, trigger):
 
 @commands('grab_clear')
 def clear(bot, trigger):
+    '''Clears the recent history for grabs. Admin only.'''
     if not trigger.owner:
         return
     bot.memory['grab'] = {}

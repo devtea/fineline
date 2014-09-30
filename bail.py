@@ -7,10 +7,11 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
-from willie.module import commands
+from willie.module import commands, example
 
 
 @commands('bail')
+@example('!bail')
 def bail(bot, trigger):
     bot.say(u'Uh oh! Looks like %s is bailing out. Good luck!' % trigger.nick)
 

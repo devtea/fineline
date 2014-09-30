@@ -196,6 +196,7 @@ def ytinfo(bot, trigger, found_match=None):
 @commands('ytlast', 'ytnew', 'ytlatest')
 @example('.ytlast vlogbrothers')
 def ytlast(bot, trigger):
+    '''Get the latest upload from a user.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

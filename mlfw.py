@@ -60,7 +60,7 @@ def mlfw_search(bot, terms):
 @commands(u'mlfw')
 @example(u"!mlfw tag one, tag two, tag three")
 def mlfw(bot, trigger):
-    """Searches mlfw and returns the top result with all tags specified."""
+    """Searches the my little face when site and returns the top result from all the specified tags."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

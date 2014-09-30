@@ -23,7 +23,7 @@ def about(bot, trigger):
 
 @commands('bugs', 'bug')
 def bugs(bot, trigger):
-    """Shares basic bug reporting information for the bot."""
+    """Shares bug reporting information for the bot."""
     time.sleep(random.uniform(2, 4))
     bot.say(u'Bugs?! I don\'t have any bugs!')
     time.sleep(random.uniform(2, 4))
@@ -34,7 +34,7 @@ def bugs(bot, trigger):
 
 @commands('source')
 def source(bot, trigger):
-    """Gives links to the bot's source code"""
+    """Links to the bot's source code"""
     time.sleep(random.uniform(2, 4))
     bot.say(u"You can see my source at http://willie.dftba.net/ and " +
             u"my plugins at http://bitbucket.org/tdreyer/fineline")

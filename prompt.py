@@ -97,7 +97,7 @@ def weighted_choice(weighted):
 
 @commands(u'prompt')
 def prompt(bot, trigger):
-    """Gives a short drawing prompt using ponies from the show."""
+    """Gives a simple drawing prompt using random words and ponies from the show."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

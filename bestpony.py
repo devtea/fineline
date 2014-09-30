@@ -16,7 +16,7 @@ random.seed()
 
 @commands(u'bestpony')
 def bestpony(bot, trigger):
-    """Responds with who it thinks is the best pony."""
+    """Responds with the best pony."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return

@@ -189,8 +189,8 @@ def wait_time(bot, now, karmee):
 @commands('karma')
 @example('!karma fzoo')
 def karma(bot, trigger):
-    '''Allows for voting on anything. ++ to upvote, -- to downvote. Reply will have a cool-
-    down time in square brackets at the end. To check karma value, use !karma'''
+    '''Allows for voting on anything. ++ to upvote, -- to downvote. Reply will have a cool-down
+    time in square brackets at the end. To check karma value, use !karma'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
@@ -243,6 +243,7 @@ _link_page = Template('''
 @commands('karma_export')
 @rate('1000')
 def karma_export(bot, trigger):
+    '''Exports the karma database to a few common file formats.'''
     if not bot.memory['karma_export_dir']:
         bot.reply('This option is not configured.')
         return

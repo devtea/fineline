@@ -27,7 +27,7 @@ import praw.errors
 from praw.errors import InvalidUser, InvalidSubreddit
 from requests import HTTPError
 
-from willie.module import commands, rule, interval
+from willie.module import commands, rule, interval, example
 
 _url = u'(reddit\.com|redd\.it)'
 _reurl = re.compile(_url, flags=re.I)
@@ -53,7 +53,6 @@ try:
     import log
 except:
     import imp
-    import sys
     try:
         print("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -67,7 +66,6 @@ try:
     import colors
 except:
     import imp
-    import sys
     try:
         print("trying manual import of colors")
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
@@ -81,7 +79,6 @@ try:
     import nicks
 except:
     import imp
-    import sys
     try:
         print("trying manual import of nicks")
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
@@ -94,7 +91,6 @@ try:
     import util
 except:
     import imp
-    import sys
     try:
         print("trying manual import of util")
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
@@ -188,8 +184,9 @@ def reddit_list(bot, trigger):
 
 
 @commands('reddit_add')
+@example('!reddit_add #channel subreddit')
 def reddit_add(bot, trigger):
-    '''ADMIN: Add watched subreddit. Syntax = #Channel subredditname'''
+    '''ADMIN: Add watched subreddit.'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
         return
     try:
@@ -222,8 +219,9 @@ def reddit_add(bot, trigger):
 
 
 @commands('reddit_del')
+@example('!reddit_del #channel subreddit')
 def reddit_del(bot, trigger):
-    '''ADMIN: Remove watched subreddit. Syntax = #Channel subredditname'''
+    '''ADMIN: Remove watched subreddit.'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to delete a watched subreddit!'), 'warning')
         return
@@ -253,7 +251,7 @@ def reddit_del(bot, trigger):
 
 @commands('reddit_queue')
 def reddit_queue(bot, trigger):
-    '''ADMIN: List size of queues'''
+    '''ADMIN: List size of reddit announce queues'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
         return
     for c in bot.memory['reddit_msg_queue']:
@@ -262,7 +260,7 @@ def reddit_queue(bot, trigger):
 
 @commands('reddit_queue_del')
 def queue_del(bot, trigger):
-    '''ADMIN: clears announce queue'''
+    '''ADMIN: clears reddit announce queue'''
     if not trigger.owner and not trigger.admin and not trigger.isop:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to clear the reddit queue!'), 'warning')
         return
@@ -292,7 +290,7 @@ def announce_posts(bot, trigger=None):
 @interval(_fetch_interval)
 @commands('reddit_fetch')
 def fetch_reddits(bot, trigger=None):
-    '''ADMIN: Manual fetching of the auto-announce posts'''
+    '''ADMIN: Manual fetch of the auto-announce posts'''
     if trigger:
         if not trigger.owner and not trigger.admin and not trigger.isop:
             return

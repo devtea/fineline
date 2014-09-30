@@ -71,6 +71,7 @@ def get_ep(bot, se):
 
 
 @commands(u'ep-del')
+@example(u'!ep-del SO1E03')
 def ep_del(bot, trigger):
     """ADMIN: Deletes a specified episode from the database."""
     # test the arguments returned, e.g. ['.episode', 'S01E03']
@@ -202,7 +203,7 @@ def episode(bot, trigger):
         randep(bot, trigger)
 
 
-@commands(u'randep', u'rep', u'randomep')
+@commands(u'randep', u'rep', u'randomep', u'randomepisode')
 def randep(bot, trigger):
     """Returns a random episode."""
     # Don't do anything if the bot has been shushed

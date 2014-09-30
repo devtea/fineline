@@ -35,7 +35,7 @@ def setup(bot):
 
 @commands(u'shush', u'stfu')
 def template(bot, trigger):
-    """Quiets many bot functions for a while"""
+    """Quiets many bot functions for a while. Admin only."""
     if not trigger.admin and not trigger.owner and not trigger.isop:
         bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
         return
