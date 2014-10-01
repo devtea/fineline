@@ -87,7 +87,7 @@ def weighted_choice(bot, unweighted):
     bad = ['don\'t', 'dont', 'fuck', 'later', 'no', 'not', 'never', 'quit',
            'lame', 'stupid', 'dumb', 'bad', 'out', 'sucks', 'sucky', 'worse',
            'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but', 'dum', 'freak',
-           'freaks', 'freaky']
+           'freaks', 'freaky', 'silly']
 
     bot.debug(__file__, log.format(u'Weighting choices from %s.' % unweighted), 'verbose')
     weighted = []
