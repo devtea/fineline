@@ -68,7 +68,7 @@ class NickPlus(Nick):
         return 0  # Fuck the police
 
     def __repr__(self):
-        return '%s(%s - %s)' % (self.__class__.__name__, self._lowered, self._hostname)
+        return '%s(%s - %s)' % (self.__class__.__name__, self.__str__(), self._hostname)
 
 
 # def shared_nicks(channel, nick=None):
@@ -120,7 +120,7 @@ def list_nicks(bot, trigger):
 def whois_catcher(bot, trigger):
     '''Parses whois responses'''
     n, h = re_hostname.search(bot.raw).groups()
-    who = NickPlus(n.lower().lstrip('+%@&~'), h)
+    who = NickPlus(n.lstrip('+%@&~'), h)
     bot.debug(__file__, log.format(u'WHOIS %s: %s' % (who, h)), u'verbose')
     with bot.memory['nick_lock']:
         for chan in bot.memory['chan_nicks']:
@@ -147,7 +147,7 @@ def names(bot, trigger):
         with bot.memory['nick_lock']:
             bot.debug(__file__, log.format('trigger:', trigger), 'verbose')
             unprocessed_nicks = re.split(' ', trigger)
-            stripped_nicks = [i.lower().lstrip('+%@&~') for i in unprocessed_nicks]
+            stripped_nicks = [i.lstrip('+%@&~') for i in unprocessed_nicks]
             bot.debug(__file__, [i for i in stripped_nicks], u'verbose')
             nicks = [NickPlus(i, None) for i in stripped_nicks]
             channel = re.findall('#\S*', buf)[0]
@@ -193,14 +193,14 @@ def names(bot, trigger):
 def join(bot, trigger):
     bot.debug(__file__, log.format(u'Caught JOIN by ', trigger.nick), u'verbose')
     try:
-        name = NickPlus(trigger.nick.lower(), trigger.host)
+        name = NickPlus(trigger.nick, trigger.host)
         if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
             # Channel adding on bot join is taken care of in the NAMES
             # processing
             if name != bot.nick:
-                if trigger.nick.lower() not in bot.memory['chan_nicks'][trigger.sender]:
+                if trigger.nick not in bot.memory['chan_nicks'][trigger.sender]:
                     bot.memory['chan_nicks'][trigger.sender].append(name)
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
@@ -221,7 +221,7 @@ def nick(bot, trigger):
     # trigger.sender
     try:
         old_nick = trigger.nick
-        new_nick = NickPlus(trigger.lower(), trigger.host)
+        new_nick = NickPlus(trigger, trigger.host)
         with bot.memory['nick_lock']:
             for chan in bot.memory['chan_nicks']:
                 if old_nick in bot.memory['chan_nicks'][chan]:
@@ -240,15 +240,20 @@ def nick(bot, trigger):
 @thread(False)
 @priority('high')
 def quit(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught QUIT by ', trigger.nick), u'verbose')
+    bot.debug(__file__, log.format(u'Caught QUIT by %s (%s)' % (trigger.nick, trigger)), u'verbose')
+    # Quitting nick is trigger.nick, trigger and trigger.sender contain quit
+    # reason. Don't use trigger.sender to determine if the user is in a
+    # channel!
     try:
-        name = trigger.nick.lower()
-        if not trigger.sender.startswith('#'):
-            return
+        name = trigger.nick
         with bot.memory['nick_lock']:
             for chan in bot.memory['chan_nicks']:
+                bot.debug(__file__, log.format(u'Looking for %s in %s' % (name, chan)), u'verbose')
                 if name in bot.memory['chan_nicks'][chan]:
+                    bot.debug(__file__, log.format(u'Found %s in %s to remove' % (name, chan)), u'verbose')
                     bot.memory['chan_nicks'][chan].remove(name)
+                else:
+                    bot.debug(__file__, log.format(u'%s not found in %s to remove' % (name, chan)), u'verbose')
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
         print(traceback.format_exc())
@@ -261,22 +266,17 @@ def quit(bot, trigger):
 @thread(False)
 @priority('high')
 def kick(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught KICK by ', trigger.nick), u'verbose')
+    # Trigger comes in as trigger==kicked, trigger.nick==kicker
+    bot.debug(__file__, log.format(u'Caught KICK of %s by %s in %s' % (trigger, trigger.nick, trigger.sender)), u'verbose')
     try:
-        name = trigger.lower()  # Trigger comes in as trigger==kicked, trigger.nick==kicker
+        name = trigger
         if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
             if trigger == bot.nick:
                 bot.memory['chan_nicks'].pop(trigger.sender, None)
             else:
-                try:
-                    bot.memory['chan_nicks'][trigger.sender].remove(name)
-                except KeyError:
-                    bot.debug(
-                        __file__,
-                        log.format('%s not found in nick list when they parted from %s.' % (name.lower(), trigger.sender)),
-                        'warning')
+                bot.memory['chan_nicks'][trigger.sender].remove(name)
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
         print(traceback.format_exc())
@@ -289,9 +289,9 @@ def kick(bot, trigger):
 @thread(False)
 @priority('high')
 def part(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught PART by ', trigger.nick), u'verbose')
+    bot.debug(__file__, log.format(u'Caught PART by %s from %s' % (trigger.nick, trigger.sender)), u'verbose')
     try:
-        name = trigger.nick.lower()  # Don't want to use a NickPlus because hostname matching
+        name = trigger.nick  # Don't want to use a NickPlus because hostname matching
         if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
@@ -301,10 +301,7 @@ def part(bot, trigger):
                     try:
                         bot.memory['chan_nicks'][trigger.sender].remove(name)
                     except KeyError:
-                        bot.debug(
-                            __file__,
-                            log.format('%s not found in nick list when they parted from %s.' % (name.lower(), trigger.sender)),
-                            'warning')
+                        bot.debug(__file__, log.format('%s not found in nick list when they parted from %s.' % (name, trigger.sender)), 'warning')
     except:
         bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
         print(traceback.format_exc())
