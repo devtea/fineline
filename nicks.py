@@ -153,7 +153,8 @@ def names(bot, trigger):
             channel = re.findall('#\S*', buf)[0]
             if not channel:
                 return
-            bot.memory['chan_nicks'][channel] = nicks
+            bot.memory['chan_nicks'][channel] = []
+            bot.memory['chan_nicks'][channel].extend(nicks)
             bot.debug(__file__, log.format(u'Refeshing hosts for ', channel), 'verbose')
             for n in nicks:
                 if n not in bot.memory['whois_time'] or bot.memory['whois_time'][n] < time.time() - 600:
@@ -176,7 +177,12 @@ def names(bot, trigger):
                         bot.memory['chan_nicks'][channel].remove(n)  # Remove the nick with None host
                         bot.memory['chan_nicks'][channel].append(match)  # Add nick with an actual host
                     else:
-                        raise ValueError('Nick %s not found in channels when searching for whois match.' % n)
+                        # Do nothing. If a nick wasn't matched then we haven't
+                        # gotten the chance to process the appropriate whois
+                        # response yet. That whois will come in and overwrite
+                        # the entry with a None hostname.
+                        pass
+
         bot.debug(__file__, log.format(u'Done refeshing hosts for ', channel), 'verbose')
     except:
         bot.debug(__file__, log.format(u'ERROR: Unprocessable NAMES response: ', buf), u'warning')
