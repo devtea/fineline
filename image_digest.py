@@ -119,7 +119,7 @@ _imgur_album = Template('<iframe class="imgur-album" width="100%" height="350" f
 _gfycat_iframe = Template('<iframe src="http://gfycat.com/ifr/${id}" frameborder="0" scrolling="no" height="350" width="600" style="-webkit-backface-visibility: hidden;-webkit-transform: scale(1);" ></iframe>')
 _tinypic_gfycat_iframe = Template('<iframe src="http://gfycat.com/ifr/${id}" hash="${hash}" frameborder="0" scrolling="no" height="350" width="600" style="-webkit-backface-visibility: hidden;-webkit-transform: scale(1);" ></iframe>')
 _img_div = Template('<div class="img">${img}${desc}</div>')
-_img_div_nsfw = Template('<div class="img" class="nsfw">${img}${desc}</div>')
+_img_div_nsfw = Template('<div class="img nsfw">${img}${desc}</div>')
 _simple_img = Template('<a href="${orig}" target="_blank"><img src="${url}"></a>')
 _desc_div = Template(_desc)
 
