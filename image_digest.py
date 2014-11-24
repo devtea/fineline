@@ -74,6 +74,16 @@ _VOTE_TIME = 5  # Time in minutes
 _re_tumblr = re.compile(r'https?://\d+\.media\.tumblr\.com/[a-zA-Z0-9]+/tumblr_[a-zA-Z0-9_]+_\d+.[a-zA-Z]{,4}')
 
 # Templates
+_header_script = '''
+    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+    $('.nsfw').click(function() {
+    $(this).toggleClass('shown');
+        });
+    });
+    </script>
+'''
 _style = '''
     <style>
     div.img {
@@ -94,6 +104,12 @@ _style = '''
     }
     div.img a:hover img {
         border:1px solid #0000ff;
+    }
+    div.img.nsfw a {
+        visibility: hidden;
+    }
+    div.img.nsfw.shown a {
+        visibility: visible;
     }
     div.desc {
         text-align: left;
@@ -310,7 +326,7 @@ def imgur_get_medium(bot, url):
 @commands(u'imagedigest', u'image-digest', u'id')
 def template(bot, trigger):
     """Displays the url for the image digest page."""
-    bot.say(u'The image image digest page is at %s - Warning: NSFW posts are not hidden yet!' % bot.memory['digest']['url'])
+    bot.say(u'The image digest page is at %s - Warning: NSFW posts are hidden but still download.' % bot.memory['digest']['url'])
 
 
 def image_filter(bot, url):
@@ -817,9 +833,9 @@ def build_html(bot, trigger):
     '''Force builds the HTML page for the image digest. Admin only.'''
     def is_nsfw(nsfw, reported):
         if nsfw or reported:
-            return "<b>This images was tagged as NSFW</b>"
+            return "<b>This image was tagged as NSFW - Click to reveal.</b>"
         elif nsfw is None:
-            return "<b>This image may be NSFW</b> (flagged from conversation context)"
+            return "<b>This image may be NSFW - Click to reveal.</b> (flagged from conversation context)"
         else:
             return "SFW"
 
@@ -883,9 +899,13 @@ def build_html(bot, trigger):
     # Generate HTML
     # TODO Add check to see if the image is still available and remove those
     # that aren't
-    header = Template('${title}${style}')
-    header_title = '<title>Image digest - Warning, NSFW is not hidden yet!</title>'
-    simple_header = header.substitute(title=header_title, style=_style)
+    header = Template('${title}${script}${style}')
+    header_title = '<title>Image digest</title>'
+
+    simple_header = header.substitute(
+        title=header_title,
+        script=_header_script,
+        style=_style)
 
     # TODO move these
     # First deduplicate our links
