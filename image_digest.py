@@ -242,8 +242,8 @@ def setup(bot):
 
     # Load config values
     bot.memory['digest']['template'] = bot.config.dailydigest.template
-    bot.memory['digest']['destination'] = bot.config.dailydigest.destination
-    bot.memory['digest']['url'] = bot.config.dailydigest.url
+    bot.memory['digest']['destination'] = "%sdaily-digest.html" % bot.config.general.hosted_path
+    bot.memory['digest']['url'] = "%sdaily-digest.html" % bot.config.general.hosted_domain
     with open(bot.memory['digest']['template'], 'r') as f:
         try:
             bot.memory['digest']['templatehtml'] = Template(f.read().decode('utf-8', 'replace'))
