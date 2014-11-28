@@ -153,7 +153,8 @@ def names(bot, trigger):
             channel = re.findall('#\S*', buf)[0]
             if not channel:
                 return
-            bot.memory['chan_nicks'][channel] = []
+            if channel not in bot.memory['chan_nicks']:
+                bot.memory['chan_nicks'][channel] = []
             bot.memory['chan_nicks'][channel].extend(nicks)
             bot.debug(__file__, log.format(u'Refeshing hosts for ', channel), 'verbose')
             for n in nicks:
