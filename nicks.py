@@ -272,14 +272,19 @@ def quit(bot, trigger):
 @thread(False)
 @priority('high')
 def kick(bot, trigger):
-    # Trigger comes in as trigger==kicked, trigger.nick==kicker
-    bot.debug(__file__, log.format(u'Caught KICK of %s by %s in %s' % (trigger, trigger.nick, trigger.sender)), u'verbose')
+    # kicked = 4th part of bot.raw, kicker = trigger.nick, kick reason = trigger
+    target = bot.raw.split()[3]
+    bot.debug(
+        __file__,
+        log.format(u'Caught KICK of %s by %s in %s' % (
+            target, trigger.nick, trigger.sender)),
+        u'verbose')
     try:
-        name = trigger
+        name = target
         if not trigger.sender.startswith('#'):
             return
         with bot.memory['nick_lock']:
-            if trigger == bot.nick:
+            if name == bot.nick:
                 bot.memory['chan_nicks'].pop(trigger.sender, None)
             else:
                 bot.memory['chan_nicks'][trigger.sender].remove(name)
