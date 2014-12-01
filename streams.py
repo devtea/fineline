@@ -529,13 +529,13 @@ def setup(bot):
     _ustream_dev_key = bot.config.streams.ustream_dev_key
     bot.memory['streamSet'] = {}
     bot.memory['streamSet']['help_file_source'] = bot.config.streams.stream_help_file_source
-    bot.memory['streamSet']['help_file_dest'] = bot.config.streams.stream_help_file_dest
-    bot.memory['streamSet']['help_file_url'] = bot.config.streams.stream_help_file_url
+    bot.memory['streamSet']['help_file_dest'] = '%shelp.html' % bot.config.general.hosted_path
+    bot.memory['streamSet']['help_file_url'] = '%shelp.html' % bot.config.general.hosted_domain
     bot.memory['streamSet']['list_template_path'] = bot.config.streams.stream_list_template_path
-    bot.memory['streamSet']['list_main_dest_path'] = bot.config.streams.stream_list_main_dest_path
-    bot.memory['streamSet']['list_feat_dest_path'] = bot.config.streams.stream_list_feat_dest_path
-    bot.memory['streamSet']['list_main_url'] = bot.config.streams.stream_list_main_url
-    bot.memory['streamSet']['list_feat_url'] = bot.config.streams.stream_list_feat_url
+    bot.memory['streamSet']['list_main_dest_path'] = '%slist.html' % bot.config.general.hosted_path
+    bot.memory['streamSet']['list_feat_dest_path'] = '%sfeatured.html' % bot.config.general.hosted_path
+    bot.memory['streamSet']['list_main_url'] = '%slist.html' % bot.config.general.hosted_domain
+    bot.memory['streamSet']['list_feat_url'] = '%sfeatured.html' % bot.config.general.hosted_domain
     try:
         shutil.copyfile(
             bot.memory['streamSet']['help_file_source'],
