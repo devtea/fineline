@@ -41,14 +41,19 @@ _include = ['#reddit-mlpds', '#fineline_testing']
 def setup(bot):
     if 'streaming' not in bot.memory:
         bot.memory['streaming'] = {}
-    bot.memory['streaming']['jtv_key'] = bot.config.streaming.jtv_key
+    bot.memory['streaming']['stream_key'] = bot.config.streaming.stream_key
     bot.memory['streaming']['source_dir'] = bot.config.streaming.source_dir
     bot.memory['streaming']['loc'] = bot.config.streaming.stream_loc
     bot.memory['streaming']['custom_regex'] = re.compile(bot.config.streaming.custom_regex)
     bot.memory['streaming']['template'] = bot.config.streaming.list_template
-    bot.memory['streaming']['dest'] = bot.config.streaming.list_dest
-    bot.memory['streaming']['url'] = bot.config.streaming.list_url
+    bot.memory['streaming']['dest'] = "%sstreaming.html" % bot.config.general.hosted_path
+    bot.memory['streaming']['url'] = "%sstreaming.html" % bot.config.general.hosted_domain
     bot.memory['streaming']['use_html'] = False
+    bot.memory['streaming']['avconv_command'] = u"avconv -re -i " + \
+        u"%s" % bot.memory['streaming']['source_dir'] + \
+        u"%s.flv -acodec copy -vcodec copy " + \
+        u"-f flv rtmp://live-dfw.twitch.tv/app/" + \
+        u"%s" % bot.memory['streaming']['stream_key']
     if bot.config.has_option('streaming', 'use_html'):
         if bot.config.streaming.use_html == 'True':
             bot.memory['streaming']['use_html'] = True
@@ -94,14 +99,7 @@ def start_stream(bot, ep):
     bot.memory['streaming']['live'] = True
     bot.memory['streaming']['title'] = ep
     try:
-        subprocess.call(
-            u"avconv -re -i " +
-            u"%s" % bot.memory['streaming']['source_dir'] +
-            u"%s.flv -acodec copy -vcodec copy " % ep +
-            u"-f flv rtmp://live.justin.tv/app/" +
-            u"%s" % bot.memory['streaming']['jtv_key'],
-            shell=True
-        )
+        subprocess.call(bot.memory['streaming']['avconv_command'] % ep, shell=True)
     finally:
         time.sleep(15)
         bot.memory['streaming']['live'] = False
