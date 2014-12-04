@@ -24,6 +24,8 @@ def about(bot, trigger):
 @commands('bugs', 'bug')
 def bugs(bot, trigger):
     """Shares bug reporting information for the bot."""
+    if len(trigger.bytes.strip()) > 5:
+        return
     time.sleep(random.uniform(2, 4))
     bot.say(u'Bugs?! I don\'t have any bugs!')
     time.sleep(random.uniform(2, 4))
