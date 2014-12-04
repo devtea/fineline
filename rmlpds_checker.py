@@ -22,7 +22,7 @@ import praw.errors
 from praw.errors import InvalidSubreddit
 from requests import HTTPError
 
-from willie.module import interval, commands, rate
+from willie.module import interval, commands, rate, example
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
@@ -70,17 +70,56 @@ except:
     finally:
         if fp:
             fp.close()
+try:
+    import util
+except:
+    import imp
+    try:
+        print("trying manual import of util")
+        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
+        util = imp.load_source('util', pathname, fp)
+        sys.modules['util'] = util
+    finally:
+        if fp:
+            fp.close()
 
 
 def setup(bot):
-    if "rmlpds_timer" not in bot.memory:
+    if "rmlpds" not in bot.memory:
+        bot.memory["rmlpds"] = {}
+    if "rmlpds_timer" not in bot.memory["rmlpds"]:
         # Set the timer and do the first check in a minute
-        bot.memory["rmlpds_timer"] = time.time() - _check_interval + 60
-    if "rmlpds_timer_lock" not in bot.memory:
-        bot.memory["rmlpds_timer_lock"] = threading.Lock()
+        bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + 60
+    if "rmlpds_timer_lock" not in bot.memory["rmlpds"]:
+        bot.memory["rmlpds"]["lock"] = threading.Lock()
+
+    bot.memory["rmlpds"]["vote_id"] = None
+    bot.memory["rmlpds"]["vote_count"] = 0
+    if "last" not in bot.memory["rmlpds"]:
+        bot.memory["rmlpds"]["last"] = None
+
+    if "exclude" not in bot.memory["rmlpds"]:
+        with bot.memory['rmlpds']['lock']:
+            bot.memory["rmlpds"]["exclude"] = []
+
+            dbcon = bot.db.connect()  # sqlite3 connection
+            cur = dbcon.cursor()
+            try:
+                # if our tables don't exist, create them
+                cur.execute('''CREATE TABLE IF NOT EXISTS rmlpds
+                            (id TEXT)''')
+                dbcon.commit()
+
+                cur.execute('SELECT id FROM rmlpds')
+                dbload = cur.fetchall()
+            finally:
+                cur.close()
+                dbcon.close()
+            if dbload:
+                bot.memory['rmlpds']['exclude'].extend(dbload)
 
 
-def filter_posts(posts):
+def filter_posts(bot, posts):
     def is_livestream(post):
         livestreams = [
             u'livestream.com',
@@ -133,6 +172,9 @@ def filter_posts(posts):
             return True
         return False
 
+    def is_ignored(post):
+        return post.id in bot.memory['rmlpds']['exclude']
+
     def is_excludable(post):
         if is_livestream(post):
             return True
@@ -143,6 +185,8 @@ def filter_posts(posts):
         if is_biweekly(post):
             return True
         if is_train(post):
+            return True
+        if is_ignored(post):
             return True
         return False
 
@@ -183,9 +227,9 @@ def filter_comments(post, limit):
 @interval(23)
 def rmlpds(bot):
     """Checks the subreddit for unattended recent posts."""
-    if bot.memory["rmlpds_timer"] > time.time() - _check_interval:
+    if bot.memory["rmlpds"]["timer"] > time.time() - _check_interval:
         return  # return if not enough time has elapsed since last full run
-    with bot.memory["rmlpds_timer_lock"]:
+    with bot.memory["rmlpds"]["lock"]:
         try:
             mlpds = rc.get_subreddit(u'MLPDrawingSchool')
         except (InvalidSubreddit, HTTPError):
@@ -194,7 +238,7 @@ def rmlpds(bot):
             sub_exists = True
         finally:
             # Set the timer for a 5 min. retry in case something goes wrong.
-            bot.memory["rmlpds_timer"] = time.time() - _check_interval + \
+            bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
             bot.debug(__file__, log.format(u"Sub exists."), u"verbose")
@@ -211,12 +255,13 @@ def rmlpds(bot):
                     continue
                 # bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
                 uncommented.append(post)
-            uncommented = filter_posts(uncommented)
+            uncommented = filter_posts(bot, uncommented)
             if uncommented:
                 bot.debug(__file__, log.format(u"There are %i uncommented posts." % len(uncommented)), u"verbose")
                 # There were posts, so set full timer
-                bot.memory["rmlpds_timer"] = time.time()
+                bot.memory["rmlpds"]["timer"] = time.time()
                 post = random.choice(uncommented)
+                bot.memory["rmlpds"]["last"] = post.id  # record last id for ignoring
                 c_date = datetime.utcfromtimestamp(post.created_utc)
                 td = datetime.utcnow() - c_date
                 hr = td.total_seconds() / 60 / 60
@@ -244,7 +289,8 @@ def rmlpds(bot):
                         )
             else:
                 # There were no posts, so set a short timer
-                bot.memory["rmlpds_timer"] = time.time() - \
+                bot.memory["rmlpds"]["last"] = None  # clear the last post so no inadvertant ignoring takes place
+                bot.memory["rmlpds"]["timer"] = time.time() - \
                     (_check_interval * 3 / 4)
                 bot.debug(__file__, log.format(u"No uncommented posts found."), u"verbose")
         else:
@@ -270,7 +316,7 @@ def mlpds_check(bot, trigger):
         bot.say(_timeout_message)
         return
     new_posts = mlpds.get_new(limit=SUB_LIMIT)
-    new_posts = filter_posts(list(new_posts))
+    new_posts = filter_posts(bot, list(new_posts))
     uncommented = []
     for post in new_posts:
         # Filter old posts
@@ -333,6 +379,97 @@ def mlpds_check(bot, trigger):
                   u"posts that need critiquing, though: "
                   u"http://mlpdrawingschool.reddit.com/"
                   )
+
+re_id = re.compile(r"(https?://)?(www\.|pay\.)?reddit.com/r/MLPdrawingschool/comments/([A-Za-z0-9]{4,10})/?")
+re_id2 = re.compile(r"(https?://)?redd.it/([A-Za-z0-9]{4,10})/?")
+_IGNORE_VOTES = 3
+
+
+@example("!ignore http://redd.it/b42k29")
+@commands("ignore")
+def ignore(bot, trigger):
+    """Used to ignore /r/mlpdrawingschool posts that don't need attention. Either provide a
+       single reddit url or nothing to ignore the last announced post."""
+    def add_post(id):
+        bot.memory["rmlpds"]["exclude"].append(id)
+        remove = None
+        if len(bot.memory["rmlpds"]["exclude"]) > 50:
+            remove = bot.memory["rmlpds"]["exclude"].pop(0)
+
+        dbcon = bot.db.connect()  # sqlite3 connection
+        cur = dbcon.cursor()
+        try:
+            cur.execute('INSERT INTO rmlpds (id) VALUES (?)', (id,))
+            if remove:
+                cur.execute("DELETE FROM rmlpds WHERE id = '?'", remove)
+            dbcon.commit()
+        finally:
+            cur.close()
+            dbcon.close()
+
+    # Don't allow PMs
+    if not trigger.sender.startswith('#'):
+        return
+    # Ignore certain nicks
+    if util.ignore_nick(bot, trigger.nick, trigger.host):
+        return
+    with bot.memory["rmlpds"]["lock"]:
+        target = None
+        try:
+            # Grab the provided URL to ignore
+            target = trigger.args[1].split()[1]
+        except IndexError:
+            # Grab the last announced post and ignore it
+            if bot.memory["rmlpds"]["last"]:
+                post_id = unicode(bot.memory["rmlpds"]["last"])
+            else:
+                bot.reply("Sorry, nothing has been announced recently.")
+                return
+        if target:
+            try:
+                post_id = re_id.search(target).groups()[-1]  # reddit links
+            except:
+                try:
+                    post_id = re_id2.search(target).groups()[-1]  # redd.it links
+                except:
+                    bot.reply("Sorry, that doesn't look like a valid post.")
+                    return
+        if post_id in bot.memory["rmlpds"]["exclude"]:
+            bot.reply("That post is already being ignored.")
+            return
+
+    if bot.memory["rmlpds"]["vote_id"]:
+        # A vote is in progress
+        with bot.memory["rmlpds"]["lock"]:
+            if not bot.memory["rmlpds"]["vote_id"]:  # race condition fuckup
+                return
+            if post_id == bot.memory["rmlpds"]["vote_id"]:
+                # Vote is same, process
+                if bot.memory["rmlpds"]["vote_count"] == _IGNORE_VOTES - 1:
+                    bot.say("Vote succeeded. Post ignored.")
+                    bot.memory["rmlpds"]["vote_id"] = None
+                    bot.memory["rmlpds"]["vote_count"] = 0
+                    add_post(post_id)
+                else:
+                    bot.memory["rmlpds"]["vote_count"] += 1
+                    bot.say('%i votes of %i needed to ignore.' % (bot.memory["rmlpds"]["vote_count"], _IGNORE_VOTES))
+            else:
+                bot.reply("Sorry, currently voting on http://www.reddit.com/r/MLPdrawingschool/comments/%s/" % bot.memory["rmlpds"]["vote_id"])
+    else:
+        # New vote
+        with bot.memory["rmlpds"]["lock"]:
+            if bot.memory["rmlpds"]["vote_id"]:  # race condition fuckup
+                return
+            bot.memory["rmlpds"]["vote_id"] = unicode(post_id)
+            bot.memory["rmlpds"]["vote_count"] += 1
+            bot.say("Ignore vote started for http://www.reddit.com/r/MLPdrawingschool/comments/%s/" % bot.memory["rmlpds"]["vote_id"])
+            bot.say("%i more votes in the next five minutes are required." % (_IGNORE_VOTES - 1))
+        time.sleep(300)
+        with bot.memory["rmlpds"]["lock"]:
+            if bot.memory["rmlpds"]["vote_id"] == post_id:
+                bot.say("Ignore vote failed.")
+                bot.memory["rmlpds"]["vote_id"] = None
+                bot.memory["rmlpds"]["vote_count"] = 0
 
 
 if __name__ == "__main__":

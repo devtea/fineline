@@ -464,7 +464,8 @@ def reddit_post(bot, trigger):
             diff = aniv - day  # diff is timedelta object
             diff = int(diff.total_seconds() / (24 * 60 * 60))
         return diff
-
+    if re.match(bot.config.core.prefix, trigger.bytes):
+        return
     try:
         if util.ignore_nick(bot, trigger.nick, trigger.host):
             return
