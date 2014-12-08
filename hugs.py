@@ -65,7 +65,7 @@ def hug_intercept(bot, trigger):
         return
     bot.debug(__file__, log.format(u"Caught hug."), u"verbose")
     # First make sure we're intercepting the proper user's actions
-    if re.match("hushmachine", trigger.nick):
+    if re.match("mlpdsmachine", trigger.nick):
         # Hugs directed at the bot
         if re.match(u"\001ACTION\s.+?%s.+?" % bot.nick, trigger.args[1]):
             time.sleep(1)
@@ -139,7 +139,7 @@ def hug_intercept(bot, trigger):
         elif re.match(u"\001ACTION\s\!no", trigger.args[1]):
             time.sleep(1)
             bot.say(random.choice([
-                u":o hushmachine!",
+                u":o mlpdsmachine!",
                 u"Oh my...",
                 u"lol"]))
 

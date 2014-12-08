@@ -44,9 +44,6 @@ except:
         if fp:
             fp.close()
 
-# Nicks to exclude
-_excludes = ['oppobot', 'hushmachine', 'hushmachine_', 'hushrobot', 'finelinefan']
-
 
 def setup(bot):
     if 'grab' not in bot.memory:
