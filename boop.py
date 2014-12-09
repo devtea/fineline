@@ -9,10 +9,11 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 import os.path
-from willie.module import commands
+from willie.module import commands, example
 from willie.tools import Nick
 import random
 import threading
+import traceback
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -64,61 +65,133 @@ _front = ['any', 'some']
 _back = ['one', 'body', 'pony', 'poni', 'pone']
 _anyone = [a + b for a in _front for b in _back]
 _everyone = ['every' + b for b in _back]
-_boop = [u'boops %s',
-         u'boops %s http://i.imgur.com/ruiIBf5.gif',
-         u'boops %s http://i.imgur.com/QlSFlMK.gif',
-         u'boops %s http://i.imgur.com/nra4yDL.gif',
-         u'boops %s http://i.imgur.com/I8wxiat.jpg',
-         u'boops %s http://i.imgur.com/ZQCHJTM.png',  # handsockz
-         u'boops %s http://i.imgur.com/WhSWjJa.png',  # grenadder
-         u'boops %s http://i.imgur.com/YryE7MX.png',  # brainstew00
-         u'boops %s http://i.imgur.com/j94IXvg.gif',  # The4thaggie
-         u'boops %s http://i.imgur.com/4B42aPA.png',  # bobdude0
-         u'boops %s just a bit too hard http://i.imgur.com/Jz6jS.gif',
-         u'boops %s... politely... http://i.imgur.com/nRwXn.gif',
-         u'sneaks up and boops %s',
-         u'licks her hoof and boops %s',
-         u'boops %s on the nose',
-         u'trips and accidentally boops %s in the eye',
-         u'gently boops %s on the lips',
-         u'"accidentally" boops %s on the plot...',
-         u'boops %s before realizing she stepped in something smelly earlier...',
-         u'giggles and boops %s',
-         u'sticks her tongue out and boops %s',
-         u'tries to boop %s, but... http://i.imgur.com/3mFn5YW.gif'
-         ]
-_self = [u'spins around in circles trying to boop herself http://i.imgur.com/igq9Mio.gif',
-         u'looks funny as she crosses her eyes and tries to boop herself',
-         u'pulls a mirror out of nowhere and boops her reflection'
-         ]
-_all = [u'yells "BOOP" and giggles to herself',
-        u'runs around the room booping everyone'
-        ]
+_defaults = [('boop', u'boops %s'),
+             ('all', u'Yells "BOOP" and giggles to herself'),
+             ('self', u'looks funny as she crosses her eyes and tries to boop herself')]
 
 
 def setup(bot):
-    if 'boop_lock' not in bot.memory:
-        bot.memory['boop_lock'] = threading.Lock()
-    with bot.memory['boop_lock']:
-        bot.memory['boop_lists'] = {}
+    if 'boop' not in bot.memory:
+        bot.memory['boop'] = {}
+    if 'lock' not in bot.memory['boop']:
+        bot.memory['boop']['lock'] = threading.Lock()
+
+    with bot.memory['boop']['lock']:
+        bot.memory['boop']['lists'] = {}
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
-        dbnames = None
+        dblists = None
         try:
             cur.execute('''CREATE TABLE IF NOT EXISTS boop_lists
-                           (list text, nick text, host text)''')
+                           (list TEXT, nick TEXT, host TEXT)''')
+            cur.execute('''CREATE TABLE IF NOT EXISTS boops
+                           (style TEXT NOT NULL, boop TEXT NOT NULL UNIQUE)''')
             dbcon.commit()
 
-            if not bot.memory['boop_lists']:
+            if not bot.memory['boop']['lists']:
                 cur.execute('select list, nick, host from boop_lists')
-                dbnames = cur.fetchall()
+                dblists = cur.fetchall()
+            if 'boop' not in bot.memory['boop']:
+                cur.execute('SELECT style, boop from boops')
+                dbboops = cur.fetchall()
+                if dbboops:
+                    boops = dbboops
+                else:
+                    boops = _defaults
+                    for s, b in boops:
+                        cur.execute('''INSERT INTO boops (style, boop)
+                                    VALUES (?, ?)''', (s, b))
+                        dbcon.commit()
+
+                for s, b in boops:
+                    # This will set up three lists, 'boop', 'self', and 'all'
+                    if s not in bot.memory['boop']:
+                        bot.memory['boop'][s] = []
+                    bot.memory['boop'][s].append(b)
         finally:
             cur.close()
             dbcon.close()
-        for l, n, h in dbnames:
-            if l not in bot.memory['boop_lists']:
-                bot.memory['boop_lists'][l] = []
-            bot.memory['boop_lists'][l].append(nicks.NickPlus(n, h))
+
+        for l, n, h in dblists:
+            if l not in bot.memory['boop']['lists']:
+                bot.memory['boop']['lists'][l] = []
+            bot.memory['boop']['lists'][l].append(nicks.NickPlus(n, h))
+
+
+@commands(u'boop-add')
+@example(u'!boop-add self boops herself!')
+def boop_add(bot, trigger):
+    '''ADMIN: Adds boops. First argument should be one of 'self', 'boop', or 'all' '''
+    if not trigger.owner:
+        return
+    try:
+        arguments = trigger.args[1].split()[1:]
+    except IndexError:
+        # Nothing provided
+        return
+    if len(arguments) < 2 or arguments[0] not in ('self', 'boop', 'all'):
+        bot.reply("malformed arguments")
+        return
+    if arguments[0] == 'boop' and '%s' not in arguments:
+        bot.reply("You must supply exactly one string substitution (%s) for the boop")
+        return
+
+    boop = u' '.join(arguments[1:])
+    if boop not in bot.memory['boop'][arguments[0]]:
+        dbcon = bot.db.connect()
+        cur = dbcon.cursor()
+        try:
+            cur.execute('''INSERT INTO boops (style, boop)
+                        VALUES (?, ?)''', (arguments[0], boop))
+            dbcon.commit()
+            bot.memory['boop'][arguments[0]].append(boop)
+        except:
+            bot.debug(__file__, log.format(u'ERROR: Unable to insert boop'), u'always')
+            print(traceback.format_exc())
+            bot.reply('Error inserting!')
+        else:
+            bot.reply('Added.')
+        finally:
+            cur.close()
+            dbcon.close()
+    else:
+        bot.reply('That already exists.')
+
+
+@commands(u'boop-del')
+@example(u'!boop-del self boops %s')
+def boop_del(bot, trigger):
+    '''ADMIN: attempts to delete boops. First argument should be one of 'self', 'boop', or 'all' '''
+    if not trigger.owner:
+        return
+    try:
+        arguments = trigger.args[1].split()[1:]
+    except IndexError:
+        # Nothing provided
+        return
+    if len(arguments) < 2 or arguments[0] not in ('self', 'boop', 'all'):
+        bot.reply("malformed arguments")
+        return
+    boop = u' '.join(arguments[1:])
+
+    dbcon = bot.db.connect()
+    cur = dbcon.cursor()
+    try:
+        cur.execute("""SELECT COUNT(*)
+                       FROM boops
+                       WHERE style = ?
+                       AND boop like ?""", (arguments[0], boop))
+        count = cur.fetchone()[0]
+        cur.execute("""DELETE FROM boops
+                       WHERE style = ?
+                       AND boop like ?""", (arguments[0], boop))
+        dbcon.commit()
+    except:
+        bot.debug(__file__, log.format(u'ERROR: error removing boop'), u'always')
+        print(traceback.format_exc())
+        bot.reply("Error removing boops, probably malformed text provided for the like '?' portion of the SQL query.")
+    else:
+        bot.reply('%s boop(s) removed.' % count)
 
 
 @commands(u'boop')
@@ -130,21 +203,21 @@ def boop(bot, trigger):
     try:
         target = nicks.NickPlus(trigger.args[1].split()[1])
     except IndexError:
-        bot.action(random.choice(_boop) % trigger.nick)
+        bot.action(random.choice(bot.memory['boop']['boop']) % trigger.nick)
     else:
         if target == trigger.nick or target.lower() in ['me', 'myself']:
-            bot.action(random.choice(_boop) % trigger.nick)
+            bot.action(random.choice(bot.memory['boop']['boop']) % trigger.nick)
         elif target == bot.nick or target.lower() in ['yourself', 'you']:
-            bot.action(random.choice(_self))
+            bot.action(random.choice(bot.memory['boop']['self']))
         elif target.lower() in _everyone:
-            bot.action(random.choice(_all))
+            bot.action(random.choice(bot.memory['boop']['all']))
         elif target.lower() in _anyone:
             target = bot.nick
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
             while target == bot.nick:
                 target = random.choice(nick_list)
-            bot.action(random.choice(_boop) % target)
+            bot.action(random.choice(bot.memory['boop']['boop']) % target)
         elif target in _excludes:
             bot.say(u"I'm not doing that.")
         elif nicks.in_chan(bot, trigger.sender, target):
@@ -153,13 +226,13 @@ def boop(bot, trigger):
             i = nicks.in_chan(bot, trigger.sender).index(target)
             target = nick_list.pop(i)
             # TODO small chance to boop random person
-            bot.action(random.choice(_boop) % target)
-        elif target.lower() in bot.memory['boop_lists'] and len(bot.memory['boop_lists'][target.lower()]) > 0:
+            bot.action(random.choice(bot.memory['boop']['boop']) % target)
+        elif target.lower() in bot.memory['boop']['lists'] and len(bot.memory['boop']['lists'][target.lower()]) > 0:
             message = u' '.join(trigger.args[1].split()[2:])
             msg = 'boops'
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
-            for name in bot.memory['boop_lists'][target.lower()]:
+            for name in bot.memory['boop']['lists'][target.lower()]:
                 if nicks.in_chan(bot, trigger.sender, name):
                     try:
                         i = nick_list.index(name)
@@ -194,7 +267,7 @@ def optin(bot, trigger):
     if len(trigger.args[1].split()) > 2:
         bot.reply('List names cannot contain spaces.')
         return
-    with bot.memory['boop_lock']:
+    with bot.memory['boop']['lock']:
         # Database stuff
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -209,15 +282,15 @@ def optin(bot, trigger):
             if target in _listexclude:
                 bot.reply(u'You can\'t opt into that...')
                 return
-            elif target in bot.memory['boop_lists']:
-                if Nick(trigger.nick) not in bot.memory['boop_lists'][target]:
-                    bot.memory['boop_lists'][target].append(name)
+            elif target in bot.memory['boop']['lists']:
+                if Nick(trigger.nick) not in bot.memory['boop']['lists'][target]:
+                    bot.memory['boop']['lists'][target].append(name)
                     cur.execute('''insert into boop_lists (list, nick, host)
                                 values (?, ?, ?)''', (target, trigger.nick, trigger.host))
                     dbcon.commit()
                 bot.reply('You are on the %s list.' % colors.colorize(target, [u'orange']))
             else:
-                bot.memory['boop_lists'][target] = [nicks.NickPlus(trigger.nick)]
+                bot.memory['boop']['lists'][target] = [nicks.NickPlus(trigger.nick)]
                 cur.execute('''insert into boop_lists (list, nick, host)
                                values (?, ?, ?)''', (target, trigger.nick, trigger.host))
                 dbcon.commit()
@@ -233,7 +306,7 @@ def optout(bot, trigger):
     if len(trigger.args[1].split()) > 2:
         bot.reply('List names cannot contain spaces.')
         return
-    with bot.memory['boop_lock']:
+    with bot.memory['boop']['lock']:
         # Database stuff
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -243,8 +316,8 @@ def optout(bot, trigger):
             bot.reply("You must specify a list to opt out of.")
         else:
             name = nicks.NickPlus(trigger.nick, trigger.host)
-            if target in bot.memory['boop_lists'] and name in bot.memory['boop_lists'][target]:
-                bot.memory['boop_lists'][target] = [i for i in bot.memory['boop_lists'][target] if i != name]
+            if target in bot.memory['boop']['lists'] and name in bot.memory['boop']['lists'][target]:
+                bot.memory['boop']['lists'][target] = [i for i in bot.memory['boop']['lists'][target] if i != name]
                 cur.execute('''delete from boop_lists
                                where lower(list) = ?
                                and (lower(nick) = ?
@@ -254,9 +327,9 @@ def optout(bot, trigger):
                 dbcon.commit()
                 bot.reply('You have been removed from the %s list.' % colors.colorize(target, [u'orange']))
             elif target in ['all', 'everything']:
-                for i in bot.memory['boop_lists']:
+                for i in bot.memory['boop']['lists']:
                     try:
-                        bot.memory['boop_lists'][i].remove(name)
+                        bot.memory['boop']['lists'][i].remove(name)
                     except:
                         pass
                 cur.execute('''delete from boop_lists
@@ -265,7 +338,7 @@ def optout(bot, trigger):
                                ''', (trigger.nick.lower(), trigger.host.lower()))
                 dbcon.commit()
                 bot.reply('You have been removed from the all lists.')
-            elif target in bot.memory['boop_lists']:
+            elif target in bot.memory['boop']['lists']:
                 bot.reply('You are not on that list.')
             else:
                 bot.reply('That list does not exist.')
