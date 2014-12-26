@@ -198,6 +198,7 @@ class livestream(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
+            print(time.strftime("%Y-%m-%d %H:%M:%S"))
             if re.findall('400 Bad Request', self._results):
                 print('Livestream Error: 400 Bad Request')
                 raise ValueError('400 Bad Request')
@@ -214,6 +215,8 @@ class livestream(stream):
                 print("Bad Json loaded from livestream.com")
                 print("Raw data is:")
                 print(self._results)
+                print("Raw Exception:")
+                print(traceback.format_exc())
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
@@ -232,6 +235,7 @@ class livestream(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
+            print(time.strftime("%Y-%m-%d %H:%M:%S"))
             if re.findall('400 Bad Request', self._results):
                 print('Livestream Error: 400 Bad Request')
                 raise ValueError('400 Bad Request')
@@ -248,6 +252,8 @@ class livestream(stream):
                 print("Bad Json loaded from livestream.com")
                 print("Raw data is:")
                 print(self._results)
+                print("Raw Exception:")
+                print(traceback.format_exc())
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
