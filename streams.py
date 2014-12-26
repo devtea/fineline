@@ -296,7 +296,7 @@ class ustream(stream):
 
 class picarto(stream):
     _user_url = 'https://www.picarto.tv/live/channel.php?watch=%s'
-    _live_url = 'https://www.picarto.tv/live/onlinecheck.php?channel=%s'
+    _live_url = 'https://www.picarto.tv/live/api.php?channel=%s'
     _service = 'picarto.tv'
 
     _last_update = time.time()
@@ -320,12 +320,20 @@ class picarto(stream):
     def update(self):
         self._results = web.get(self._live_url % self._name)
         try:
-            self._watchers = int(self._results)
-        except ValueError:
-            self._watchers = 0
+            self.json_data = json.loads(self._results)
+            if self.json_data['streamer-data']['online'] == '1':
+                self._live = True
+            else:
+                self._live = False
+        except:
+            print(time.strftime("%Y-%m-%d %H:%M:%S"))
+            print("Bad Json loaded from livestream.com")
+            print("Raw data is:")
+            print(self._results)
+            print("Raw Exception:")
+            print(traceback.format_exc())
             self._live = False
-        else:
-            self._live = True
+            raise
 
 
 class youtube(stream):
