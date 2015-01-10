@@ -8,7 +8,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 from __future__ import print_function
 
-from datetime import datetime
+import datetime
 import HTMLParser
 import os.path
 import random
@@ -16,6 +16,7 @@ import re
 from socket import timeout
 import threading
 import time
+from string import Template
 
 import praw
 import praw.errors
@@ -87,10 +88,10 @@ except:
 def setup(bot):
     if "rmlpds" not in bot.memory:
         bot.memory["rmlpds"] = {}
-    if "rmlpds_timer" not in bot.memory["rmlpds"]:
+    if "timer" not in bot.memory["rmlpds"]:
         # Set the timer and do the first check in a minute
         bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + 60
-    if "rmlpds_timer_lock" not in bot.memory["rmlpds"]:
+    if "lock" not in bot.memory["rmlpds"]:
         bot.memory["rmlpds"]["lock"] = threading.Lock()
 
     bot.memory["rmlpds"]["vote_id"] = None
@@ -106,6 +107,11 @@ def setup(bot):
             cur = dbcon.cursor()
             try:
                 # if our tables don't exist, create them
+                cur.execute('''CREATE TABLE IF NOT EXISTS stor
+                               (module TEXT NOT NULL,
+                                item TEXT NOT NULL,
+                                value TEXT,
+                                    PRIMARY KEY (module, item))''')
                 cur.execute('''CREATE TABLE IF NOT EXISTS rmlpds
                             (id TEXT)''')
                 dbcon.commit()
@@ -119,7 +125,7 @@ def setup(bot):
                 bot.memory['rmlpds']['exclude'].extend(dbload)
 
 
-def filter_posts(bot, posts):
+def filter_posts(bot, posts, ignore=True):
     def is_livestream(post):
         livestreams = [
             u'livestream.com',
@@ -186,7 +192,7 @@ def filter_posts(bot, posts):
             return True
         if is_train(post):
             return True
-        if is_ignored(post):
+        if ignore and is_ignored(post):
             return True
         return False
 
@@ -262,8 +268,8 @@ def rmlpds(bot):
                 bot.memory["rmlpds"]["timer"] = time.time()
                 post = random.choice(uncommented)
                 bot.memory["rmlpds"]["last"] = post.id  # record last id for ignoring
-                c_date = datetime.utcfromtimestamp(post.created_utc)
-                td = datetime.utcnow() - c_date
+                c_date = datetime.datetime.utcfromtimestamp(post.created_utc)
+                td = datetime.datetime.utcnow() - c_date
                 hr = td.total_seconds() / 60 / 60
                 t = u'%i hours ago' % hr
                 msg = u'Hey everyone, there is at least 1 post that might ' + \
@@ -349,7 +355,7 @@ def mlpds_check(bot, trigger):
                 apos = u"'"
             else:
                 apos = u"'s"
-            c_date = datetime.utcfromtimestamp(post.created_utc)
+            c_date = datetime.datetime.utcfromtimestamp(post.created_utc)
             f_date = c_date.strftime(u'%b %d')
             if spammy:
                 bot.msg(
@@ -470,6 +476,289 @@ def ignore(bot, trigger):
                 bot.say("Ignore vote failed.")
                 bot.memory["rmlpds"]["vote_id"] = None
                 bot.memory["rmlpds"]["vote_count"] = 0
+
+
+@commands('reddit_contest')
+def reddit_contest(bot, trigger):
+    '''Admin: Runs a comment summary for the last month. Add the 'force' argument if you want to force a refresh of data from reddit.'''
+    def include_comment(reddit, comment):
+        # Returns true iff comment is top level, or author has no other
+        # comments higher in the thread
+        this_comment = comment
+        if not this_comment.author:  # Comment was deleted
+            return False
+        if this_comment.is_root:
+            return True
+        while not this_comment.is_root:
+            try:
+                this_comment = reddit.get_info(thing_id=this_comment.parent_id)
+            except timeout:
+                return True  # Reddit timed out, we'll go ahead and count the comment
+            if this_comment.author and this_comment.author.name == comment.author.name:
+                return False  # Comment Author has another comment higher in the thread
+        return True
+
+    def get_name(thinger):
+        try:
+            if thinger.name:
+                return thinger.name
+            else:
+                raise Exception("hello sucky code")
+        except:
+            return '[deleted]'
+
+    def trim_comment(text):
+        try:
+            words = text.split()
+            if len(words) > 65:
+                short = words[:65]
+                short.append('...')
+                return u' '.join(short)
+            else:
+                return text
+        except:
+            return u'[Processing error]'
+
+    markup_link = re.compile(r'\[(\s*[^\]]+\s*)\]\(([^\]/][^\)]*)\)')
+
+    if not trigger.admin:
+        return
+
+    try:
+        arguments = trigger.args[1].split()[1:]
+    except IndexError:
+        # Nothing provided
+        pass
+    else:
+        if arguments and (len(arguments) > 1 or arguments[0] not in ('force')):
+            bot.reply("malformed arguments")
+            return
+
+    if bot.config.has_section('general') and bot.config.has_option('general', 'hosted_path') and \
+            bot.config.has_option('general', 'hosted_domain'):
+        tail = 'reddit_contest.html'
+        bot.memory['rmlpds']['export_location'] = u'%s%s' % (bot.config.general.hosted_path, tail)
+        bot.memory['rmlpds']['export_url'] = u'%s%s' % (bot.config.general.hosted_domain, tail)
+    else:
+        bot.reply("This module is not configured properly. Please configure the hosted path and domain in the config file.")
+        return
+
+    with bot.memory['rmlpds']['lock']:
+        mlpds = rc.get_subreddit(u'MLPDrawingSchool')
+        now = time.time()
+
+        # Caching
+        if (not arguments or not arguments[0] == 'force') and 'fetch_time' in bot.memory['rmlpds'] and \
+                bot.memory['rmlpds']['fetch_time'][0] > time.time() - (7 * 24 * 60 * 60):
+            # Load cached comments
+            bot.debug(__file__, log.format(u"using cached comments"), u"warning")
+            bot.reply("Okay, I checked recently so I will use what I found then. Use 'force' if you think I need to check again.")
+            now = bot.memory['rmlpds']['fetch_time'][0]
+            comments = bot.memory['rmlpds']['fetch_time'][1]
+            all_comments = bot.memory['rmlpds']['fetch_time'][2]
+            filtered_comments = []
+        else:
+            bot.debug(__file__, log.format(u"Grabbing last 1000 comments"), u"warning")
+            bot.reply("Okay, this *will* take a few minutes. I will message you with the results.")
+            comments = [i for i in mlpds.get_comments(limit=1000)]
+            filtered_comments = []
+
+            # Filter deleted comments
+            bot.debug(__file__, log.format(u"Filtering deleted comments"), u"warning")
+            for comment in comments:
+                try:
+                    if comment.author:
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Filter by date to include only comments made last month
+            bot.debug(__file__, log.format(u"Filtering by date"), u"warning")
+            last_month = datetime.datetime.utcnow().month - 1
+            if last_month == 0:
+                last_month = 12
+            for comment in comments:
+                try:
+                    if datetime.datetime.utcfromtimestamp(comment.created_utc).month == last_month:
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # filter by submission to exclude commonly excluded posts
+            bot.debug(__file__, log.format(u"Filtering by submission"), u"warning")
+            for comment in comments:
+                try:
+                    include = filter_posts(bot, [comment.submission], ignore=False)
+                    if include:
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Filter comment if submission date more than 10 days prior to
+            # comment date
+            bot.debug(__file__, log.format(u"Filtering on time difference between post and comment"), u"warning")
+            for comment in comments:
+                try:
+                    if comment.created_utc - comment.submission.created_utc < 10 * 24 * 60 * 60:  # 10 day diff
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Filter self comments on posts
+            bot.debug(__file__, log.format(u"Filtering self replies"), u"warning")
+            for comment in comments:
+                try:
+                    commenter = comment.author.name
+                    try:
+                        poster = comment.submission.author.name
+                    except AttributeError:
+                        poster = None  # Submission was probably deleted, we can safely assume self replies probably were too...
+                    if commenter != poster:
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Now that we've filtered using universal stuffs, make a copy of the list
+            # for potential later use and apply our more strict filters
+            all_comments = []
+            all_comments.extend(comments)
+
+            # filter by comment length or inclusion of link
+            bot.debug(__file__, log.format(u"Filtering by length OR link"), u"warning")
+            for comment in comments:
+                try:
+                    if len(comment.body.split()) > 100 or markup_link.search(comment.body):
+                        filtered_comments.append(comment)
+                except timeout:
+                    continue
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Only keep top level or first reply comments
+            bot.debug(__file__, log.format(u"Filtering based on top comment and thread participation"), u"warning")
+            for comment in comments:
+                if include_comment(rc, comment):
+                    filtered_comments.append(comment)
+            comments = []
+            comments.extend(filtered_comments)
+            filtered_comments = []
+
+            # Save cache
+            bot.memory['rmlpds']['fetch_time'] = (now, comments, all_comments)
+
+        # Build list by commenter
+        bot.debug(__file__, log.format(u"Building list"), u"warning")
+        commenters = {}
+        for comment in comments:
+            if comment.author.name not in commenters:
+                commenters[comment.author.name] = []
+            commenters[comment.author.name].append(comment)
+
+        # Filter commenters who have fewer than 3 applicable comments
+        bot.debug(__file__, log.format(u"Filtering less than three"), u"warning")
+        for commenter in commenters.keys():
+            if len(commenters[commenter]) < 3:
+                del commenters[commenter]
+
+        sorted_commenters = sorted(commenters.items(), key=lambda x: len(x[1]), reverse=True)
+
+        # Ugly code~
+        t_page = Template(
+            '''
+            <!DOCTYPE html>
+            <html>
+            <h2>${month} comment report</h2>
+            <p>Data collected: ${cdate} UTC <br />
+            Page generated: ${gdate} UTC</p>
+            ${body}
+            </html>
+            ''')
+        t_user_section = Template(
+            '''
+            <p><a href="https://reddit.com/user/${user}/comments/">${userr}</a> - Filtered comments: <b>${count}</b> <br />
+                <ul>
+                ${comments}
+                </ul>
+            </p>
+            ''')
+        t_comment = Template(
+            '''
+            <li><a href="${link}">Comment</a> (${cdate} UTC) on <a href="${sub}">${title}</a> by <em>${name}</em> (${sdate} UTC)
+            <br />${comment}</li>
+            ''')
+        t_com_link = Template('''https://reddit.com/r/${subreddit}/comments/${sid}/x/${cid}?context=10''')
+        t_sub_link = Template('''https://reddit.com/r/${subreddit}/comments/${sid}/''')
+
+        page_content = u''
+        for user in sorted_commenters:  # Remember, here 'user' is a tuple
+            buf = ''
+            for comment in commenters[user[0]]:
+                buf = '%s%s' % (buf, t_comment.substitute(
+                    link=t_com_link.substitute(
+                        subreddit=comment.subreddit,
+                        sid=comment.submission.id,
+                        cid=comment.id),
+                    comment=trim_comment(_util_html.unescape(comment.body)),
+                    title=_util_html.unescape(comment.submission.title),
+                    cdate=str(datetime.datetime.utcfromtimestamp(comment.created_utc)),
+                    sdate=str(datetime.datetime.utcfromtimestamp(comment.submission.created_utc)),
+                    name=get_name(comment.submission.author),
+                    sub=t_sub_link.substitute(
+                        subreddit=comment.subreddit,
+                        sid=comment.submission.id)))
+            page_content = '%s%s' % (page_content, t_user_section.substitute(
+                user=user[0],
+                userr=user[0],
+                count=len(user[1]),
+                comments=buf))
+
+        # Figure out last month for header
+        day = datetime.datetime.utcfromtimestamp(now)
+        first = datetime.date(day=1, month=day.month, year=day.year)
+        last_month = first - datetime.timedelta(days=1)
+
+        # Jam everything into the page template
+        page_content = t_page.substitute(
+            month=last_month.strftime('%B'),
+            gdate=str(datetime.datetime.utcnow()),  # Generated time
+            cdate=str(datetime.datetime.utcfromtimestamp(now)),  # Data collection time
+            body=page_content)
+
+        # Illgotten attempt at prettifying
+        # from lxml import etree, html
+        # page_content = etree.tostring(html.fromstring(page_content), encoding='unicode', pretty_print=True)
+
+        # replace markdown links with html links - shouldn't be an issue to run
+        # this over the whole html page, but if it is move it up to work on
+        # each comment individually
+        page_content = re.subn(markup_link, r'<a href="\2">\1</a>', page_content)[0]
+
+        try:
+            with open(bot.memory['rmlpds']['export_location'], 'w') as f:
+                f.write(page_content)
+        except IOError:
+            bot.debug(__file__, log.format('IO error writing contest file. check file permissions.'), 'warning')
+            return
+        time.sleep(5)  # wait a bit for file syncing and shit so the new page is available
+        bot.debug(__file__, log.format('Finished processing list.'), 'warning')
+        bot.msg(trigger.nick, 'The summary is out at %s' % bot.memory['rmlpds']['export_url'])
+        bot.reply("Check your messages.")
 
 
 if __name__ == "__main__":
