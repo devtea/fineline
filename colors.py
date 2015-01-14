@@ -118,7 +118,7 @@ def rb(bot, trigger):
     '''Colors text in a rainbow of fabulosity. Admin only.'''
     if not trigger.owner:
         return
-    bot.say(rainbow(trigger.bytes[9:]))
+    bot.say(rainbow(trigger.raw[9:]))
 
 
 @commands('colors')

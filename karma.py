@@ -107,7 +107,7 @@ def karmaRule(bot, trigger):
         return
     if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
-    obj = trigger.bytes.strip()
+    obj = trigger.raw.strip()
     if not obj or len(obj) < 3:
         return
     shortobj = obj[:-2].lower().strip()
@@ -194,7 +194,7 @@ def karma(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    obj = trigger.bytes[7:].lower().strip()
+    obj = trigger.raw[7:].lower().strip()
     if not obj:
         return
     karm = modkarma(bot, obj, 0)

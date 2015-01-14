@@ -639,20 +639,20 @@ def url_watcher(bot, trigger):
     if not trigger.sender.startswith('#') or util.ignore_nick(bot, trigger.nick, trigger.host):
         return
     # Don't record from commands
-    if trigger.bytes.startswith('!') or trigger.bytes.startswith('.'):
+    if trigger.raw.startswith('!') or trigger.raw.startswith('.'):
         return
     # Ignore blacklisted urls
     for i in BLACKLIST:
-        if re.search(i, trigger.bytes, re.I):
+        if re.search(i, trigger.raw, re.I):
             return
 
     now = time.time()
 
     try:
-        matches = [i[0] for i in url.findall(trigger.bytes)]
+        matches = [i[0] for i in url.findall(trigger.raw)]
     except IndexError:
         bot.debug(__file__, log.format('Error finding all URLs in message - No urls found!'), 'warning')
-        bot.debug(__file__, log.format('Message was: %s' % trigger.bytes), 'warning')
+        bot.debug(__file__, log.format('Message was: %s' % trigger.raw), 'warning')
         return
 
     time.sleep(20)  # Wait just a bit to grab post-link nsfw tagging context, but only once per message
@@ -669,7 +669,7 @@ def url_watcher(bot, trigger):
         # the context contains keywords, mark as unknown/maybe.
         # TODO catch SFW tags to override context
         nsfw = False
-        if re_nsfw.search(trigger.bytes):
+        if re_nsfw.search(trigger.raw):
             nsfw = True
         else:
             for i in [x[1] for x in local_context if x[0] == trigger.sender]:
@@ -679,7 +679,7 @@ def url_watcher(bot, trigger):
             return
         t = {
             'time': now,
-            'message': trigger.bytes,  # This is unicode
+            'message': trigger.raw,  # This is unicode
             'author': nicks.NickPlus(trigger.nick, trigger.host),
             'nsfw': nsfw,
             'url': original,  # This is unicode
@@ -798,7 +798,7 @@ def clean_links(bot):
 def context(bot, trigger):
     '''Function to keep a running context of messages.'''
     with bot.memory['digest']['context_lock']:
-        bot.memory['digest']['context'].append((trigger.sender, trigger.bytes))
+        bot.memory['digest']['context'].append((trigger.sender, trigger.raw))
 
         # Trim list to keep it contextual
         if len(bot.memory['digest']['context']) > 20:

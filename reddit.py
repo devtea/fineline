@@ -311,7 +311,7 @@ def fetch_reddits(bot, trigger=None):
                     bot.debug(
                         __file__,
                         log.format(u'Unhandled exception when fetching posts: %s [%s]' % (
-                            sys.exc_info()[0], trigger.bytes)),
+                            sys.exc_info()[0], trigger.raw)),
                         u"verbose")
                     print(traceback.format_exc())
                     continue
@@ -464,14 +464,14 @@ def reddit_post(bot, trigger):
             diff = aniv - day  # diff is timedelta object
             diff = int(diff.total_seconds() / (24 * 60 * 60))
         return diff
-    if re.match(bot.config.core.prefix, trigger.bytes):
+    if re.match(bot.config.core.prefix, trigger.raw):
         return
     try:
         if util.ignore_nick(bot, trigger.nick, trigger.host):
             return
 
         # Update pay.reddit.com links to work with praw
-        link = re.sub('pay\.reddit', 'reddit', trigger.bytes, flags=re.I)
+        link = re.sub('pay\.reddit', 'reddit', trigger.raw, flags=re.I)
         link = re.sub('https', 'http', link, flags=re.I)
 
         # Fix links that are missing the www. Could be from typo or SSL link
