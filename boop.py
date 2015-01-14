@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import os.path
 from willie.module import commands, example
-from willie.tools import Nick
+from willie.tools import Identifier
 import random
 import threading
 import traceback
@@ -283,7 +283,7 @@ def optin(bot, trigger):
                 bot.reply(u'You can\'t opt into that...')
                 return
             elif target in bot.memory['boop']['lists']:
-                if Nick(trigger.nick) not in bot.memory['boop']['lists'][target]:
+                if Identifier(trigger.nick) not in bot.memory['boop']['lists'][target]:
                     bot.memory['boop']['lists'][target].append(name)
                     cur.execute('''insert into boop_lists (list, nick, host)
                                 values (?, ?, ?)''', (target, trigger.nick, trigger.host))

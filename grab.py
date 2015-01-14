@@ -9,7 +9,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from willie.module import commands, rule, example
-from willie.tools import Nick
+from willie.tools import Identifier
 
 import os.path
 import threading
@@ -66,7 +66,7 @@ def grab(bot, trigger):
     if not trigger.sender.startswith('#'):
         return
     try:
-        target = Nick(trigger.args[1].split()[1])
+        target = Identifier(trigger.args[1].split()[1])
     except IndexError:
         bot.say('Grab who?')
     else:
@@ -130,9 +130,9 @@ def recent_watcher(bot, trigger):
     with bot.memory['grab']['lock']:
         if trigger.sender.startswith('#'):
             if trigger.raw.startswith('\001ACTION'):
-                bot.memory['grab']['list'][Nick(trigger.nick)] = (True, trigger.raw[8:])
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, trigger.raw[8:])
             else:
-                bot.memory['grab']['list'][Nick(trigger.nick)] = (False, trigger.raw)
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, trigger.raw)
 
 
 @commands('grab_clear')

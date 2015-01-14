@@ -15,7 +15,7 @@ from datetime import datetime
 from types import IntType
 
 from willie.module import commands, example
-from willie.tools import Nick
+from willie.tools import Identifier
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -139,7 +139,7 @@ def ship(bot, trigger):
             # seen_.py:203/128:
             #     data = (timestamp, chan, msg)
             #     bot.memory['seen'][nn] = data
-            #     where nn is Nick(nick)
+            #     where nn is Identifier(nick)
             #     timestamp is a float
             target = None
             target_list = nicks.in_chan(bot, trigger.sender)
@@ -256,7 +256,7 @@ def addname(bot, trigger):
 
 def last_seen(bot, nick):
     '''returns the last time the nick was seen as a datetime object'''
-    nn = Nick(nick)
+    nn = Identifier(nick)
     try:
         tm, channel, message = bot.memory['seen'][nn]
         return datetime.fromtimestamp(float(tm))

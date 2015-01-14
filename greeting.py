@@ -13,7 +13,7 @@ import gzip
 import re
 import os
 
-from willie.tools import Nick
+from willie.tools import Identifier
 from willie.module import commands, example, rule, event, unblockable, priority
 
 _re_loglines = re.compile(r'\[[0-9:]*]\s\*{3}\sJoins:\s(\S+)\s\(([^)]+)\)')
@@ -125,7 +125,7 @@ def greeting_initialize(bot, trigger):
             nicknhost = _re_loglines.search(line)
             if nicknhost:
                 nn, host = nicknhost.groups()
-                nn = Nick(nn)
+                nn = Identifier(nn)
                 host = host.lstrip('~')
                 bot.debug(__file__, log.format(u'found nick and host. %s %s for %s' % (nn, host, channel)), u'verbose')
                 if channel not in tmp_hostlist:

@@ -19,7 +19,7 @@ import time
 import traceback
 
 
-from willie.tools import Nick
+from willie.tools import Identifier
 from willie.module import rule, event, commands, unblockable, thread, priority
 
 re_hostname = re.compile(r':\S+\s311\s\S+\s(\S+)\s\S+\s(\S+)\s\*')

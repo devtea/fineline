@@ -16,7 +16,7 @@ from time import time
 import threading
 from types import FloatType, TupleType
 
-from willie.tools import Nick
+from willie.tools import Identifier
 from willie.module import commands, example, priority, rule
 
 log_regex = re.compile(u'^#reddit-mlpds_\d{8}\.log$')
@@ -95,7 +95,7 @@ def setup(bot):
             if dbload:
                 for n, d in dbload:
                     data = json.loads(unescape(d))
-                    n = Nick(n)
+                    n = Identifier(n)
 
                     bot.memory['seen'][n.lower()] = (float(data['time']), data['channel'], data['message'])
         finally:
@@ -112,7 +112,7 @@ def seen_insert(bot, nick, data):
     assert type(data[0]) is FloatType, u'%r is not float' % data[0]
     assert isinstance(data[1], basestring)
     assert isinstance(data[2], basestring)
-    nn = Nick(nick)
+    nn = Identifier(nick)
     dict = {}
     dict['time'] = str(data[0])
     dict['channel'] = data[1]  # data[1] should be unicode
@@ -174,7 +174,7 @@ def load_from_logs(bot, trigger):
                     if m:
                         '''bot.debug(__file__, log.format('line is message'), 'verbose')'''
                         '''bot.debug(__file__, log.format('%s %s %s' % ( m.group(1), m.group(2), m.group(3))), 'verbose')'''
-                        nn = Nick(m.group(2))
+                        nn = Identifier(m.group(2))
                         msg = m.group(3)
                         log_name = os.path.splitext(
                             os.path.basename(log_file)
@@ -226,7 +226,7 @@ def seen_nuke(bot, trigger):
 def seen_recorder(bot, trigger):
     if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
         return  # ignore priv msg and excepted rooms
-    nn = Nick(trigger.nick)
+    nn = Identifier(trigger.nick)
     now = time()
     msg = trigger.args[1].strip().encode('utf-8', 'replace')
     chan = trigger.args[0].encode('utf-8', 'replace')
@@ -248,7 +248,7 @@ def seen(bot, trigger):
     if len(trigger.args[1].split()) == 1:
         bot.reply(u"Seen who?")
         return
-    nn = Nick(trigger.args[1].split()[1])
+    nn = Identifier(trigger.args[1].split()[1])
     chan = trigger.args[0]
 
     with bot.memory['seen_lock']:

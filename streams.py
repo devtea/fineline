@@ -19,7 +19,7 @@ import traceback
 
 import willie.web as web
 from willie.module import commands, interval
-from willie.tools import Nick
+from willie.tools import Identifier
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -655,7 +655,7 @@ def load_from_db(bot, trigger=None):
     for c, s in feat_rows:
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
-        subscribe(bot, 'subscribe', (c, s), Nick(n), quiet=True)
+        subscribe(bot, 'subscribe', (c, s), Identifier(n), quiet=True)
     bot.debug(__file__, log.format(u'Done.'), 'verbose')
 
 
@@ -836,7 +836,7 @@ def sceencasting(bot, trigger):
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream url"
         arg1 = trigger.args[1].split()[1].lower()
         if arg1 == 'list':
-            list_streams(bot, nick=Nick(trigger.nick))
+            list_streams(bot, nick=Identifier(trigger.nick))
             return
         if arg1 == 'stats':
             stats(bot)
@@ -857,7 +857,7 @@ def sceencasting(bot, trigger):
             remove_stream(bot, arg2)
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            subscribe(bot, arg1, arg2, Nick(trigger.nick))
+            subscribe(bot, arg1, arg2, Identifier(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             if trigger.admin:
@@ -867,7 +867,7 @@ def sceencasting(bot, trigger):
                 bot.reply(u"Sorry, that's an admin only command.")
                 return
         elif arg1 == 'list':
-            list_streams(bot, arg2, Nick(trigger.nick))
+            list_streams(bot, arg2, Identifier(trigger.nick))
             return
         elif arg1 == 'info':
             info(bot, arg2)
@@ -889,7 +889,7 @@ def sceencasting(bot, trigger):
             remove_stream(bot, (arg2, arg3))
             return
         elif arg1 == 'subscribe' or arg1 == 'unsubscribe':
-            subscribe(bot, arg1, (arg2, arg3), Nick(trigger.nick))
+            subscribe(bot, arg1, (arg2, arg3), Identifier(trigger.nick))
             return
         elif arg1 == 'feature' or arg1 == 'unfeature':
             if trigger.admin:
@@ -899,7 +899,7 @@ def sceencasting(bot, trigger):
                 bot.reply(u"Sorry, that's an admin only command.")
                 return
         elif arg1 == 'list':
-            list_streams(bot, arg2, Nick(trigger.nick))
+            list_streams(bot, arg2, Identifier(trigger.nick))
             return
         elif arg1 == 'info':
             info(bot, (arg2, arg3))

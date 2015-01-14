@@ -12,7 +12,7 @@ import os.path
 import random
 import re
 import time
-from willie.tools import Nick
+from willie.tools import Identifier
 
 from willie.module import rule, rate, priority
 
@@ -160,7 +160,7 @@ def badbot(bot, trigger):
             u"[](/aj05)",
             u"[](/pinkiefear)"
         ]))
-    elif Nick(trigger.nick) == Nick('DarkFlame'):
+    elif Identifier(trigger.nick) == Identifier('DarkFlame'):
         bot.say(random.choice([
             u'[](/ppnowhy "Why are you so mean to me?!")',
             u'[](/ppnowhy "Why do you hate me?!")',
@@ -389,7 +389,7 @@ def flirt(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if trigger.nick != Nick('hushmachine'):
+    if trigger.nick != Identifier('hushmachine'):
         return
     time.sleep(random.uniform(2, 5))
     if re.search("you come here often", trigger.raw):

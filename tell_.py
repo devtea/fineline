@@ -13,7 +13,7 @@ import time
 import willie.tools
 import threading
 import sys
-from willie.tools import Nick, iterkeys
+from willie.tools import Identifier, iterkeys
 from willie.module import commands, nickname_commands, rule, priority
 
 maximum = 4
@@ -127,7 +127,7 @@ def f_remind(bot, trigger):
         bot.reply("%s %s what?" % (verb, tellee))
         return
 
-    tellee = Nick(tellee)
+    tellee = Identifier(tellee)
 
     if not os.path.exists(bot.tell_filename):
         return
@@ -137,7 +137,7 @@ def f_remind(bot, trigger):
     if tellee == bot.nick:
         return bot.reply("I'm here now, you can tell me whatever you want!")
 
-    if tellee not in (Nick(teller), bot.nick, 'me'):
+    if tellee not in (Identifier(teller), bot.nick, 'me'):
         tz = willie.tools.get_timezone(bot.db, bot.config, None, tellee)
         timenow = willie.tools.format_time(bot.db, bot.config, tz, tellee)
         with bot.memory['tell_lock']:
@@ -149,7 +149,7 @@ def f_remind(bot, trigger):
         response = "I'll pass that on when %s is around." % tellee
 
         bot.reply(response)
-    elif Nick(teller) == tellee:
+    elif Identifier(teller) == tellee:
         bot.say('You can %s yourself that.' % verb)
     else:
         bot.say("Hey, I'm not as stupid as Monty you know!")

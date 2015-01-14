@@ -153,7 +153,7 @@ def choose(bot, trigger):
         args[i] = str.strip()
     bot.debug(__file__, log.format('args: ', args), u"verbose")
     if len(args) > 1:
-        caller = nicks.Nick(trigger.nick)
+        caller = nicks.Identifier(trigger.nick)
         # If the first argument is an int, we'll want to use it
         if args[0].isdigit():
             bot.debug(__file__, log.format(u"First arg is a number."), u"verbose")
@@ -184,7 +184,7 @@ def choose(bot, trigger):
         bot.debug(__file__, log.format(u"Not enough args."), u"verbose")
         bot.reply(u"You didn't give me enough to choose from!")
 
-    bot.memory['choose'][nicks.Nick(trigger.nick)] = now
+    bot.memory['choose'][nicks.Identifier(trigger.nick)] = now
     bot.debug(__file__, log.format(u"Updated last choose time for nick."), u"verbose")
     bot.debug(__file__, log.format(u"=" * 20), u"verbose")
 
