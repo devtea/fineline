@@ -14,7 +14,7 @@ import datetime
 import feedparser
 import os.path
 import random
-from socket import EBADF
+# from socket import EBADF
 import time
 import threading
 
@@ -69,7 +69,7 @@ def slow_room(bot):
     bot.memory['slow_wait'] = (random.uniform(23, 33) * 60)
 
     with bot.memory["slow_timer_lock"]:
-        for key in bot.memory["slow_timer"].keys():
+        for key in bot.memory["slow_timer"]:
             try:
                 if bot.memory["slow_timer"][key] < time.time() - bot.memory['slow_wait'] \
                         and key in bot.channels:
@@ -93,10 +93,12 @@ def slow_room(bot):
                 else:
                     if bot.memory["slow_timer"][key] < time.time() - _REFRESH_TIME:
                         fetch_rss(bot, bot.memory["da_faves"])  # update feed regularly
-            except EBADF:
+            except:
                 # It appears a bad file descriptor can be cached when the bot
                 # disconnects and reconnects. We need to flush these.
-                del bot.memory["slow_timer"][key]
+                # del bot.memory["slow_timer"][key]
+                bot.debug(__file__, 'Caught exception in slow room module.', 'warning')
+                bot.memory["slow_timer"] = {}
 
 
 def fetch_rss(bot, feed_url):
