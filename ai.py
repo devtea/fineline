@@ -56,7 +56,6 @@ def derp(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    # TODO don't do anything if not in a whitelisted room
     if trigger.owner:
         prob = 1
     else:
@@ -390,7 +389,7 @@ def flirt(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if trigger.nick != Nick('mlpdsmachine'):
+    if trigger.nick != Nick('hushmachine'):
         return
     time.sleep(random.uniform(2, 5))
     if re.search("you come here often", trigger.bytes):
@@ -406,7 +405,7 @@ def flirt(bot, trigger):
         response = random.choice([
             (False, '[](/sbstare)'),
             (True, 'grabs the degausser and cackles maniacally.'),
-            (True, 'follows mlpdsmachine to the back room'),
+            (True, 'follows hushmachine to the back room'),
             (False, 'um.....sure?'),
             (False, '01000010011000010110001001111001001000000110010001101111011011100010011101110100001000000110100001110101011100100111010000100000011011010110010100101110'),
             (False, 'Hmmm.... Why not?'),
