@@ -136,11 +136,8 @@ def list_nicks(bot, trigger):
 def whois_catcher(bot, trigger):
     '''Parses whois responses'''
     try:
-        if bot.raw:
-            n, h = re_hostname.search(bot.raw).groups()
-        else:
-            bot.debug(__file__, log.format(u'whois_catcher bot.raw is empty, trying trigger.raw'), u'verbose')
-            n, h = re_hostname.search(trigger.raw).groups()
+        # No more bot.raw in willie 5.0. trigger.raw seems usable
+        n, h = re_hostname.search(trigger.raw).groups()
         who = NickPlus(n.lstrip('+%@&~'), h)
         bot.debug(__file__, log.format(u'WHOIS %s: %s' % (who, h)), u'verbose')
         with bot.memory['nick_lock']:
@@ -259,7 +256,6 @@ def kick(bot, trigger):
         if bot.raw:
             target = bot.raw.split()[3]
         else:
-            bot.debug(__file__, log.format(u'kick bot.raw is empty, trying trigger.raw'), u'verbose')
             target = trigger.raw.split()[3]
         bot.debug(
             __file__,
