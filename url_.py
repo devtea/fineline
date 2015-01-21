@@ -159,7 +159,7 @@ def title_auto(bot, trigger):
         bot.memory['last_seen_url'][trigger.sender] = urls[-1]
 
     for title, domain in results[:4]:
-        if domain in trigger.raw:
+        if domain in unicode(trigger):
             message = '[ %s ]' % title
         else:
             message = '[ %s ] - %s' % (title, domain)

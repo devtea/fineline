@@ -129,7 +129,7 @@ def woo(bot, trigger):
                 u"[](/derpydance"
             ]) + u' "%s")' % re.search(
                 basic_woo,
-                trigger.raw,
+                unicode(trigger),
                 flags=re.I
             ).group()
         )
@@ -205,12 +205,12 @@ def slapped(bot, trigger):
     if bot.memory['shush']:
         return
 
-    if trigger.owner and not trigger.raw.startswith('!'):
+    if trigger.owner and not unicode(trigger).startswith('!'):
             badbot(bot, trigger)
             return
     time.sleep(random.uniform(1, 3))
 
-    match = re.search(r'^[^!]*\swith\san?\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', trigger.raw, re.I)
+    match = re.search(r'^[^!]*\swith\san?\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', unicode(trigger), re.I)
     if match:
         plural = False
         if match.groups()[-1].endswith('s'):
@@ -277,7 +277,7 @@ def isbot(bot, trigger):
         return
     time.sleep(random.uniform(1, 2))
 
-    if re.search('person', trigger.raw, flags=re.I):
+    if re.search('person', unicode(trigger), flags=re.I):
         bot.say(random.choice(
                 [u"Yeah, I'm just fast.",
                  u"Yeah, I just type really fast and know a lot.",
@@ -339,13 +339,13 @@ def night(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if re.match(u'.*?night', trigger.raw):
+    if re.match(u'.*?night', unicode(trigger)):
         message = random.choice([u"Goodnight", u"'Night", u"Later", u"Bye"])
     else:
         message = random.choice([u"Later", u"Bye"])
     punctuation = random.choice([u".", u"", u"!"])
     # Test statment to filter negetive statements
-    bot.debug(__file__, log.format(trigger.raw), u"verbose")
+    bot.debug(__file__, log.format(unicode(trigger)), u"verbose")
     # Use a set intersection to filter triggering lines by keyword
     if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at', u'almost', u'soon'])):
         time.sleep(1)
@@ -376,9 +376,9 @@ def nick(bot, trigger):
     if bot.memory['shush']:
         return
     message = trigger.nick
-    if re.match(bot.nick.upper(), trigger.raw):
+    if re.match(bot.nick.upper(), unicode(trigger)):
         message = message.upper()
-    if re.findall('!', trigger.raw):
+    if re.findall('!', unicode(trigger)):
         bot.say(u'%s!' % message)
     else:
         bot.say(u'%s.' % message)
@@ -392,7 +392,7 @@ def flirt(bot, trigger):
     if trigger.nick != Identifier('hushmachine'):
         return
     time.sleep(random.uniform(2, 5))
-    if re.search("you come here often", trigger.raw):
+    if re.search("you come here often", unicode(trigger)):
         response = random.choice([
             (False, 'Oh, every now and then.'),
             (False, "I don't think I've seen you around."),
@@ -401,7 +401,7 @@ def flirt(bot, trigger):
             (False, "What's a nice boy like you doing in a place like this?"),
             (True, 'blushes and mumbles something')
         ])
-    elif re.search("see my collection", trigger.raw):
+    elif re.search("see my collection", unicode(trigger)):
         response = random.choice([
             (False, '[](/sbstare)'),
             (True, 'grabs the degausser and cackles maniacally.'),

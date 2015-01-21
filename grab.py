@@ -103,7 +103,7 @@ def grab(bot, trigger):
                     else:
                         grab_text = '<%s> %s' % (target, bot.memory['grab']['list'][target][1])
 
-                    if len(trigger.raw.split()[0]) == len('!grab'):
+                    if len(unicode(trigger).split()[0]) == len('!grab'):
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addquote %s' % grab_text)
                     else:
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addarttip %s' % grab_text)
@@ -129,10 +129,10 @@ def recent_watcher(bot, trigger):
     # bot.memory['grab']['list'][nick] = (is_action, text)
     with bot.memory['grab']['lock']:
         if trigger.sender.startswith('#'):
-            if trigger.raw.startswith('\001ACTION'):
-                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, trigger.raw[8:])
+            if unicode(trigger).startswith('\001ACTION'):
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, unicode(trigger)[8:])
             else:
-                bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, trigger.raw)
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, unicode(trigger))
 
 
 @commands('grab_clear')
