@@ -368,9 +368,6 @@ def clear(bot, trigger):
 
 @interval(1000)
 def clear_when_dead(bot):
-    bot.debug(__file__, log.format('Checking TOD list for inactivity.'), 'verbose')
-    bot.debug(__file__, log.format('last activity was %s' % bot.memory['tod']['lastactivity']), 'verbose')
-    bot.debug(__file__, log.format('now is %s' % time.time()), 'verbose')
     if bot.memory['tod']['list'] and bot.memory['tod']['lastactivity'] and bot.memory['tod']['lastactivity'] < time.time() - _EXPIRY:
         bot.debug(__file__, log.format('Clearing TOD list due to inactivity'), 'verbose')
         bot.memory['tod']['list'] = []
