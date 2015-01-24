@@ -132,7 +132,6 @@ def list_nicks(bot, trigger):
 @event('311')
 @unblockable
 @priority('high')
-@thread(False)  # Don't remove this or you'll break the bot.raw call
 def whois_catcher(bot, trigger):
     '''Parses whois responses'''
     try:
@@ -167,8 +166,8 @@ def names(bot, trigger):
     time.sleep(1)
     try:
         # Refresh list of nicks
-        with bot.memory['nick_lock']:
-            for id in list_all_nicks(bot):
+        for id in list_all_nicks(bot):
+            with bot.memory['nick_lock']:
                 n = NickPlus(id, None)
                 if n not in bot.memory['nicks']:  # If they're in it, they're already whois'd
                     whois(bot, n)
