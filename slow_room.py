@@ -111,21 +111,15 @@ def fetch_rss(bot, feed_url):
         try:
             feedparser.parse(url)
         except:
-            bot.debug(__file__, log.format(u"Could not update feed, using cached version."), u"verbose")
+            bot.debug(__file__, log.format(u"Could not update feed, using cached version."), u"warning")
             return
         bot.memory["fetch_rss"][feed_url] = []
         bot.memory["fetch_rss"][feed_url].append(time.time())
         bot.memory["fetch_rss"][feed_url].append(feedparser.parse(feed_url))
-        bot.debug(__file__, log.format(u"Updated feed and stored cached version."), u"verbose")
     with bot.memory["fetch_rss_lock"]:
         # {feed_url: [time, feed]}
-        bot.debug(__file__, log.format('Checking feed url %s' % feed_url), 'verbose')
         if feed_url in bot.memory["fetch_rss"]:
-            bot.debug(__file__, log.format(u"Found cached RSS feed, checking age."), u"verbose")
-            bot.debug(__file__, log.format(bot.memory["fetch_rss"][feed_url][0]), 'verbose')
-            if bot.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
-                bot.debug(__file__, log.format(u"Feed is young, using cached version"), u"verbose")
-            else:
+            if not bot.memory["fetch_rss"][feed_url][0] > time.time() - (60 * 60 * 48):  # refresh every 48 hours
                 refresh_feed(bot, feed_url)
         else:  # No cached version, try to get new
             refresh_feed(bot, feed_url)
