@@ -1,3 +1,4 @@
+# coding=utf8
 """
 choose.py - A simple willie module that chooses randomly between arguments
 Copyright 2013, Tim Dreyer
