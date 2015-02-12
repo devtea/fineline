@@ -15,6 +15,7 @@ import random
 import re
 from socket import timeout
 import threading
+import traceback
 import time
 from string import Template
 
@@ -37,6 +38,7 @@ _util_html = HTMLParser.HTMLParser()
 # Bots to be ignored go here
 _excluded_commenters = []
 SUB_LIMIT = 50
+_RETRYS = 3
 
 # Use multiprocess handler for multiple bots/threads on same server
 praw_multi = praw.handlers.MultiprocessHandler()
@@ -559,18 +561,36 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
         else:
             bot.debug(__file__, log.format(u"Grabbing last 1000 comments"), u"warning")
-            bot.reply("Okay, this *will* take a few minutes. I will message you with the results.")
-            comments = [i for i in mlpds.get_comments(limit=1000)]
+            bot.reply("Okay, this is a slow process (reddit api is slooooow) and can take up to an hour if reddit isn't behaving. I will message you with the results.")
+
+            successful = None
+            trials = 0
+            while not successful and trials < _RETRYS:
+                try:
+                    comments = [i for i in mlpds.get_comments(limit=1000)]
+                    successful = True
+                except:
+                    bot.debug(__file__, log.format(u"Exception when grabbing list of comments"), u"warning")
+                    print(traceback.format_exc())
+                    time.sleep(5)
+                    trials += 1
             filtered_comments = []
 
             # Filter deleted comments
             bot.debug(__file__, log.format(u"Filtering deleted comments"), u"warning")
             for comment in comments:
-                try:
-                    if comment.author:
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        if comment.author:
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering for deleted comment %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -581,11 +601,18 @@ def reddit_contest(bot, trigger):
             if last_month == 0:
                 last_month = 12
             for comment in comments:
-                try:
-                    if datetime.datetime.utcfromtimestamp(comment.created_utc).month == last_month:
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        if datetime.datetime.utcfromtimestamp(comment.created_utc).month == last_month:
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering by date %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -593,12 +620,20 @@ def reddit_contest(bot, trigger):
             # filter by submission to exclude commonly excluded posts
             bot.debug(__file__, log.format(u"Filtering by submission"), u"warning")
             for comment in comments:
-                try:
-                    include = filter_posts(bot, [comment.submission], ignore=False)
-                    if include:
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                bot.debug(__file__, log.format(u"checking %s" % comment.id), u"warning")
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        include = filter_posts(bot, [comment.submission], ignore=False)
+                        if include:
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering by submission %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -607,11 +642,18 @@ def reddit_contest(bot, trigger):
             # comment date
             bot.debug(__file__, log.format(u"Filtering on time difference between post and comment"), u"warning")
             for comment in comments:
-                try:
-                    if comment.created_utc - comment.submission.created_utc < 10 * 24 * 60 * 60:  # 10 day diff
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        if comment.created_utc - comment.submission.created_utc < 10 * 24 * 60 * 60:  # 10 day diff
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering on time diff %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -619,16 +661,23 @@ def reddit_contest(bot, trigger):
             # Filter self comments on posts
             bot.debug(__file__, log.format(u"Filtering self replies"), u"warning")
             for comment in comments:
-                try:
-                    commenter = comment.author.name
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
                     try:
-                        poster = comment.submission.author.name
-                    except AttributeError:
-                        poster = None  # Submission was probably deleted, we can safely assume self replies probably were too...
-                    if commenter != poster:
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                        commenter = comment.author.name
+                        try:
+                            poster = comment.submission.author.name
+                        except AttributeError:
+                            poster = None  # Submission was probably deleted, we can safely assume self replies probably were too...
+                        if commenter != poster:
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering self replies %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -641,11 +690,18 @@ def reddit_contest(bot, trigger):
             # filter by comment length or inclusion of link
             bot.debug(__file__, log.format(u"Filtering by length OR link"), u"warning")
             for comment in comments:
-                try:
-                    if len(comment.body.split()) > 100 or markup_link.search(comment.body):
-                        filtered_comments.append(comment)
-                except timeout:
-                    continue
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        if len(comment.body.split()) > 100 or markup_link.search(comment.body):
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering by length or link %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -653,8 +709,18 @@ def reddit_contest(bot, trigger):
             # Only keep top level or first reply comments
             bot.debug(__file__, log.format(u"Filtering based on top comment and thread participation"), u"warning")
             for comment in comments:
-                if include_comment(rc, comment):
-                    filtered_comments.append(comment)
+                successful = None
+                trials = 0
+                while not successful and trials < _RETRYS:
+                    try:
+                        if include_comment(rc, comment):
+                            successful = True
+                            filtered_comments.append(comment)
+                    except:
+                        bot.debug(__file__, log.format(u"Exception when filtering by top comment and thread participation %s" % comment.id), u"warning")
+                        print(traceback.format_exc())
+                        time.sleep(5)
+                        trials += 1
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -751,7 +817,7 @@ def reddit_contest(bot, trigger):
 
         try:
             with open(bot.memory['rmlpds']['export_location'], 'w') as f:
-                f.write(page_content)
+                f.write(page_content.encode('utf-8', 'replace'))
         except IOError:
             bot.debug(__file__, log.format('IO error writing contest file. check file permissions.'), 'warning')
             return
