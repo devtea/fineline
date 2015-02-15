@@ -263,7 +263,7 @@ def join_watcher(bot, trigger):
                         LOGGER.info(log.format("NOTICE send: %s | msg: %s"), trigger.nick, bot.memory['greet']['ings'][channel][1])
                         bot.write(['NOTICE', trigger.nick], '%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
         except:
-            LOGGER.error(log.format('[greeting] Unhandled exception in hostname watcher! [%s]'), trigger, exec_info=True)
+            LOGGER.error(log.format('[greeting] Unhandled exception in hostname watcher! [%s]'), trigger, exc_info=True)
 
 
 @commands('greet_add', 'greeting_add')

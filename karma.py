@@ -304,13 +304,13 @@ def karma_export(bot, trigger):
                         previous_links = ''.join(f.readlines())
                 except IOError:
                     previous_links = ''
-                    LOGGER.error(log.format('IO error grabbing karma.html file contents. File may not exist yet'), exec_info=True)
+                    LOGGER.error(log.format('IO error grabbing karma.html file contents. File may not exist yet'), exc_info=True)
                 if previous_links != link_page:
                     with open(LINK_FILE, 'w') as f:
                         LOGGER.info(log.format('writing link file'))
                         f.write(link_page)
             except IOError:
-                LOGGER.error(log.format('IO error. check file permissions for karma export output.'), exec_info=True)
+                LOGGER.error(log.format('IO error. check file permissions for karma export output.'), exc_info=True)
                 return
 
             # wait 60s for web server to update

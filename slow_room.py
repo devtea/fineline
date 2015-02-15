@@ -98,7 +98,7 @@ def slow_room(bot):
                 # It appears a bad file descriptor can be cached when the bot
                 # disconnects and reconnects. We need to flush these.
                 # del bot.memory["slow_timer"][key]
-                LOGGER.error('Caught exception in slow room module.', exec_info=True)
+                LOGGER.error('Caught exception in slow room module.', exc_info=True)
                 bot.memory["slow_timer"] = {}
 
 

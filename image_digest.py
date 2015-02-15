@@ -250,7 +250,7 @@ def setup(bot):
         try:
             bot.memory['digest']['templatehtml'] = Template(f.read().decode('utf-8', 'replace'))
         except:
-            LOGGER.error(log.format('Unable to load template.'), exec_info=True)
+            LOGGER.error(log.format('Unable to load template.'), exc_info=True)
             raise
 
     with bot.memory['digest']['lock']:
@@ -320,7 +320,7 @@ def imgur_get_medium(bot, url):
         else:
             return url
     except:
-        LOGGER.error(log.format('Unhandled exception in the imgur medium url formatter.'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception in the imgur medium url formatter.'), exc_info=True)
         return url
 
 
@@ -396,7 +396,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             urls = _re_tumblr.findall(html)  # just a simple pattern search for certain urls
         except:
-            LOGGER.error(log.format('Unhandled exception in the tumblr parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the tumblr parser.'), exc_info=True)
             return None
         if urls:
             return {'url': urls[0], 'format': 'standard'}  # Just return the first, I guess?
@@ -410,7 +410,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            LOGGER.error(log.format('Unhandled exception in the tinygrab parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the tinygrab parser.'), exc_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -421,7 +421,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            LOGGER.error(log.format('Unhandled exception in the steam parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the steam parser.'), exc_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -432,7 +432,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            LOGGER.error(log.format('Unhandled exception in the 500px parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the 500px parser.'), exc_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -447,7 +447,7 @@ def image_filter(bot, url):
                 return None  # No match, no image.
             thumbnail = re.sub('(\d+_\w+)\.(\w+)$', '\g<1>_n.\g<2>', base_url)
         except:
-            LOGGER.error(log.format('Unhandled exception in the flickr parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the flickr parser.'), exc_info=True)
             return None
         return {'url': thumbnail, 'format': 'standard'}
 
@@ -467,7 +467,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            LOGGER.error(log.format('Unhandled exception in the DA parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the DA parser.'), exc_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -507,13 +507,13 @@ def image_filter(bot, url):
                     processed_url = re.sub('gallery/([a-zA-Z0-9]{5,})(.*)', '\g<1>', url)
                     img = process_url(bot, processed_url)
                 except:
-                    LOGGER.error(log.format('Unhandled exception in the imgur parser.'), exec_info=True)
+                    LOGGER.error(log.format('Unhandled exception in the imgur parser.'), exc_info=True)
                     return None
         else:
             try:
                 img = process_url(bot, url)
             except:
-                LOGGER.error(log.format('Unhandled exception in the imgur parser.'), exec_info=True)
+                LOGGER.error(log.format('Unhandled exception in the imgur parser.'), exc_info=True)
                 return None
 
         if img:
@@ -537,7 +537,7 @@ def image_filter(bot, url):
             else:
                 return None
         except:
-            LOGGER.error(log.format('Unhandled exception in the dropbox parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the dropbox parser.'), exc_info=True)
             return None
 
     def e621(url):
@@ -555,7 +555,7 @@ def image_filter(bot, url):
             else:
                 return None
         except:
-            LOGGER.error(log.format('Unhandled exception in the e621 parser.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception in the e621 parser.'), exc_info=True)
             return None
 
     def gfycat(url):
@@ -716,7 +716,7 @@ def db_refresh(bot):
         cur.execute('delete from digest')
         dbcon.commit()
     except:
-        LOGGER.error(log.format('Unhandled database exception when clearing table.'), exec_info=True)
+        LOGGER.error(log.format('Unhandled database exception when clearing table.'), exc_info=True)
     finally:
         cur.close()
     # Write every image item to the database
@@ -744,8 +744,8 @@ def write_to_db(bot, item):
                           item['html']))
         dbcon.commit()
     except:
-        LOGGER.error(log.format('Unhandled database exception when inserting image.'), exec_info=True)
-        LOGGER.error('raw item', pp(item), exec_info=True)
+        LOGGER.error(log.format('Unhandled database exception when inserting image.'), exc_info=True)
+        LOGGER.error('raw item', pp(item), exc_info=True)
     finally:
         cur.close()
 
@@ -776,7 +776,7 @@ def clean_links(bot):
             cur.execute('delete from digest where time < ?', (t,))
             dbcon.commit()
         except:
-            LOGGER.error(log.format('Unhandled database exception when cleaning up old links.'), exec_info=True)
+            LOGGER.error(log.format('Unhandled database exception when cleaning up old links.'), exc_info=True)
         finally:
             cur.close()
 
@@ -881,7 +881,7 @@ def build_html(bot, trigger):
             previous_html = ''.join(f.readlines())
     except IOError:
         previous_html = ''
-        LOGGER.warning(log.format('IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), exec_info=True)
+        LOGGER.warning(log.format('IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), exc_info=True)
 
     # Generate HTML
     # TODO Add check to see if the image is still available and remove those
@@ -970,7 +970,7 @@ def report(bot, trigger):
                                 (parsebool(True), target, target))
                     dbcon.commit()
                 except:
-                    LOGGER.error(log.format('Unhandled database exception when reporting link.'), exec_info=True)
+                    LOGGER.error(log.format('Unhandled database exception when reporting link.'), exc_info=True)
                     bad_stuff_happened = True
                 finally:
                     cur.close()
@@ -1007,7 +1007,7 @@ def unreport(bot, trigger):
                                 (parsebool(False), target, target))
                     dbcon.commit()
                 except:
-                    LOGGER.error(log.format('Unhandled database exception when reporting link.'), exec_info=True)
+                    LOGGER.error(log.format('Unhandled database exception when reporting link.'), exc_info=True)
                     bad_stuff_happened = True
                 finally:
                     cur.close()
@@ -1032,7 +1032,7 @@ def remove(bot, trigger):
                 cur.execute('delete from digest where url = ? or image = ?', (link, link))
                 dbcon.commit()
             except:
-                LOGGER.error(log.format('Unhandled database exception when reporting link.'), exec_info=True)
+                LOGGER.error(log.format('Unhandled database exception when reporting link.'), exc_info=True)
                 return False
             else:
                 return True

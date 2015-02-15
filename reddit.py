@@ -273,7 +273,7 @@ def announce_posts(bot, trigger=None):
                     else:
                         bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
         except:
-            LOGGER.error(log.format('Unhandled exception announcing new reddit posts'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception announcing new reddit posts'), exc_info=True)
 
 
 @interval(_fetch_interval)
@@ -298,7 +298,7 @@ def fetch_reddits(bot, trigger=None):
                     LOGGER.warning(log.format('Timeout when fetching from reddit for auto announce'))
                     continue
                 except:
-                    LOGGER.error(log.format('Unhandled exception when fetching posts: [%s]'), trigger, exec_info=True)
+                    LOGGER.error(log.format('Unhandled exception when fetching posts: [%s]'), trigger, exc_info=True)
                     continue
                 posts.reverse()
                 if not bot.memory['reddit-announce'][channel][sub]:
@@ -342,7 +342,7 @@ def fetch_reddits(bot, trigger=None):
                         bot.memory['reddit_link_history'].append(p.url)
                         LOGGER.info(log.format('%s %s %s'), _util_html.unescape(p.title.encode('utf-8')), p.author, p.url)
     except:
-        LOGGER.error(log.format('Unhandled exception fetching new reddit posts'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception fetching new reddit posts'), exc_info=True)
 
 
 def link_parser(subm, url=False, new=False):
@@ -595,7 +595,7 @@ def reddit_post(bot, trigger):
             LOGGER.warning(log.format("Matched URL is invalid"))
             # fail silently
     except:
-        LOGGER.error(log.format('Unhandled exception parsing reddit link: %s'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception parsing reddit link: %s'), exc_info=True)
 
 
 if __name__ == "__main__":

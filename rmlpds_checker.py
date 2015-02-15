@@ -573,7 +573,7 @@ def reddit_contest(bot, trigger):
                     comments = [i for i in mlpds.get_comments(limit=1000)]
                     successful = True
                 except:
-                    LOGGER.error(log.format("Exception when grabbing list of comments"), exec_info=True)
+                    LOGGER.error(log.format("Exception when grabbing list of comments"), exc_info=True)
                     time.sleep(5)
                     trials += 1
             filtered_comments = []
@@ -589,7 +589,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering for deleted comment %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering for deleted comment %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -610,7 +610,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering by date %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by date %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -630,7 +630,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering by submission %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by submission %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -649,7 +649,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering on time diff %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering on time diff %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -672,7 +672,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering self replies %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering self replies %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -695,7 +695,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering by length or link %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by length or link %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -713,7 +713,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format("Exception when filtering by top comment and thread participation %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by top comment and thread participation %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -814,7 +814,7 @@ def reddit_contest(bot, trigger):
             with open(bot.memory['rmlpds']['export_location'], 'w') as f:
                 f.write(page_content.encode('utf-8', 'replace'))
         except IOError:
-            LOGGER.error(log.format('IO error writing contest file. check file permissions.'), exec_info=True)
+            LOGGER.error(log.format('IO error writing contest file. check file permissions.'), exc_info=True)
             return
         time.sleep(5)  # wait a bit for file syncing and shit so the new page is available
         LOGGER.info(log.format('Finished processing list.'))

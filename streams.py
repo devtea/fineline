@@ -212,7 +212,7 @@ class livestream(stream):
                 LOGGER.warning(log.format('Livestream Error: 503 Service Unavailable'))
                 raise ValueError('503 Service Unavailable')
             else:
-                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exec_info=True)
+                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exc_info=True)
                 LOGGER.warning("Raw data:")
                 LOGGER.warning(self._results)
                 raise
@@ -246,7 +246,7 @@ class livestream(stream):
                 LOGGER.warning(log.format('Livestream Error: 503 Service Unavailable'))
                 raise ValueError('503 Service Unavailable')
             else:
-                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exec_info=True)
+                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exc_info=True)
                 LOGGER.warning("Raw data:")
                 LOGGER.warning(self._results)
                 raise
@@ -321,7 +321,7 @@ class picarto(stream):
             else:
                 self._live = False
         except:
-            LOGGER.warning(log.format("Bad Json loaded from picarto.tv"), exec_info=True)
+            LOGGER.warning(log.format("Bad Json loaded from picarto.tv"), exc_info=True)
             LOGGER.warning("Raw data:")
             LOGGER.warning(self._results)
             self._live = False
@@ -404,7 +404,7 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            LOGGER.error(log.format("Bad Json loaded from twitch.tv"), exec_info=True)
+            LOGGER.error(log.format("Bad Json loaded from twitch.tv"), exc_info=True)
             LOGGER.error("Raw data is:")
             LOGGER.error(self._results)
             raise
@@ -548,13 +548,13 @@ def setup(bot):
             bot.memory['streamSet']['help_file_dest']
         )
     except:
-        LOGGER.error(log.format('Unable to copy help file. Check configuration.'), exec_info=True)
+        LOGGER.error(log.format('Unable to copy help file. Check configuration.'), exc_info=True)
         raise
     with open(bot.memory['streamSet']['list_template_path']) as f:
         try:
             bot.memory['streamListT'] = Template(''.join(f.readlines()))
         except:
-            LOGGER.error(log.format('Unable to load list template.'), exec_info=True)
+            LOGGER.error(log.format('Unable to load list template.'), exc_info=True)
             raise
 
     LOGGER.info(log.format('Starting stream setup, this may take a bit.'))
@@ -629,7 +629,7 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(
                 bot.memory['streamFac'].newStream(c, s, a))
         except:
-            LOGGER.error(log.format('Failed to initialize livestream: %s, %s, %s'), c, s, a, exec_info=True)
+            LOGGER.error(log.format('Failed to initialize livestream: %s, %s, %s'), c, s, a, exc_info=True)
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
@@ -1505,7 +1505,7 @@ def picarto_updater(bot):
             time.sleep(0.25)
         LOGGER.info(log.format('picarto.tv updater complete in %s seconds.'), (time.time() - now))
     except:
-        LOGGER.error(log.format('Unhandled exception in the picarto updater.'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception in the picarto updater.'), exc_info=True)
 
 
 def info():

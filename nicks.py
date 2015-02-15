@@ -147,7 +147,7 @@ def whois_catcher(bot, trigger):
             #    [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['chan_nicks'][chan]]
             bot.memory['nicks'] = [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['nicks']]
     except:
-        LOGGER.error(log.format('Error in whois catcher.'), exec_info=True)
+        LOGGER.error(log.format('Error in whois catcher.'), exc_info=True)
 
 
 def list_all_nicks(bot):
@@ -171,7 +171,7 @@ def names(bot, trigger):
                     whois(bot, n)
                     bot.memory['nicks'].append(n)
     except:
-        LOGGER.error(log.format('Error in the names processing.'), exec_info=True)
+        LOGGER.error(log.format('Error in the names processing.'), exc_info=True)
 
 
 @rule('.*')
@@ -191,7 +191,7 @@ def join(bot, trigger):
             # erronious hostname matching
             bot.memory['nicks'].append(name)
     except:
-        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exec_info=True)
+        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exc_info=True)
 
 
 @rule('.*')
@@ -211,7 +211,7 @@ def nick(bot, trigger):
             bot.memory['nicks'].remove(old_nick)
             bot.memory['nicks'].append(new_nick)
     except:
-        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exec_info=True)
+        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exc_info=True)
 
 
 @rule('.*')
@@ -231,7 +231,7 @@ def quit(bot, trigger):
             else:
                 LOGGER.info(log.format('%s not found to remove'), name)
     except:
-        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exec_info=True)
+        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exc_info=True)
 
 
 @rule('.*')
@@ -256,7 +256,7 @@ def kick(bot, trigger):
             else:
                 bot.memory['nicks'].remove(name)
     except:
-        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exec_info=True)
+        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exc_info=True)
 
 
 @rule('.*')
@@ -276,7 +276,7 @@ def part(bot, trigger):
                 else:
                     bot.memory['nicks'].remove(name)
     except:
-        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exec_info=True)
+        LOGGER.error(log.format('ERROR: bot nick list is unsynced from server'), exc_info=True)
 
 
 if __name__ == "__main__":

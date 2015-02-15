@@ -66,7 +66,7 @@ def setup(bot):
     try:
         file_list = os.listdir(bot.memory['streaming']['source_dir'])
     except OSError:
-        LOGGER.error(log.format('Unable to load list of files.'), exec_info=True)
+        LOGGER.error(log.format('Unable to load list of files.'), exc_info=True)
         raise
     else:
         file_list.sort()
@@ -75,7 +75,7 @@ def setup(bot):
         try:
             bot.memory['streaming']['listTemplate'] = Template(f.read())
         except:
-            LOGGER.error(log.format('Unable to load template.'), exec_info=True)
+            LOGGER.error(log.format('Unable to load template.'), exc_info=True)
             raise
     publish_list(bot)
 
