@@ -1,4 +1,4 @@
-# encoding=utf8
+# coding=utf8
 """
 tell.py - Willie Tell and Ask Module
 Copyright 2008, Sean B. Palmer, inamidst.com, Tim Dreyer
@@ -16,7 +16,7 @@ import sys
 import willie.tools
 from willie.logger import get_logger
 from willie.tools import Identifier, iterkeys
-from willie.module import commands, nickname_commands, rule, priority
+from willie.module import commands, nickname_commands, rule, priority, example
 
 LOGGER = get_logger(__name__)
 
@@ -120,6 +120,7 @@ def setup(self):
 
 @commands('tell', 'ask')
 @nickname_commands('tell', 'ask')
+@example('!tell some_user butts are cool.')
 def f_remind(bot, trigger):
     """Give someone a message the next time they're seen"""
     # Filter when certain other bots are present
