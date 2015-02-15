@@ -52,7 +52,7 @@ STYLES = {
 
 
 def colorize(text, colors=[], styles=[]):
-    assert isinstance(text, basestring), "No string provided."
+    assert isinstance(text, str), "No string provided."
     assert text, "Text is empty."
     assert type(colors) is ListType, "Colors must be in a list."
     assert type(styles) is ListType, "Styles must be in a list."
@@ -102,7 +102,7 @@ def colorize(text, colors=[], styles=[]):
 
 
 def rainbow(text):
-    assert isinstance(text, basestring), "No string provided."
+    assert isinstance(text, str), "No string provided."
     assert text, "Text is empty."
     rainbow = ['green', 'red', 'dark red', 'purple', 'orange', 'teal', 'magenta']
     message = ''

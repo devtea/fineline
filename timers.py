@@ -70,7 +70,7 @@ def new_timer(bot, trigger):
  remaining for the reminder. Add the word 'quiet' to have the reminder and
  announcement sent in pm.'''
     def parse_time(time_string):
-        assert isinstance(time_string, basestring)
+        assert isinstance(time_string, str)
         if _rtime.match(time_string):
             times = time_string.split(':')
             if len(times) == 1:
@@ -89,8 +89,8 @@ def new_timer(bot, trigger):
 
     def add_timer(src, target, end_time_unix, reminder=None, quiet=False):
         # Assume exists bot.memory['user_timers']['source']
-        assert isinstance(src, basestring)
-        assert isinstance(target, basestring)
+        assert isinstance(src, str)
+        assert isinstance(target, str)
         assert type(end_time_unix) is FloatType
         assert type(reminder) is IntType or reminder is None
         assert type(quiet) is BooleanType

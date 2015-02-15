@@ -54,7 +54,7 @@ class NickPlus(Identifier):
 
     @hostname.setter
     def hostname(self, value):
-        assert isinstance(value, basestring) or value is None
+        assert isinstance(value, str) or value is None
         self._hostname = value
 
     def __eq__(self, other):

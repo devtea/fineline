@@ -163,7 +163,7 @@ class stream(object):
 
     @alias.setter
     def alias(self, value):
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         self._alias = value
 
     @alias.deleter
@@ -640,7 +640,7 @@ def load_from_db(bot, trigger=None):
 
 
 def alias(bot, switch, channel, value=None):
-    assert isinstance(channel, basestring) or type(channel) is tuple
+    assert isinstance(channel, str) or type(channel) is tuple
     try:
         c, s = parse_service(channel)
     except TypeError:
@@ -697,7 +697,7 @@ def alias(bot, switch, channel, value=None):
 
 
 def nsfw(bot, switch, channel, quiet=None):
-    assert isinstance(channel, basestring) or type(channel) is tuple
+    assert isinstance(channel, str) or type(channel) is tuple
     try:
         c, s = parse_service(channel)
     except TypeError:
@@ -907,7 +907,7 @@ def sceencasting(bot, trigger):
 
 def parse_service(service):
     '''Takes a url string or tuple and returns (chan, service)'''
-    assert isinstance(service, basestring) or type(service) is tuple
+    assert isinstance(service, str) or type(service) is tuple
     if type(service) is tuple:
         if service[0] in _services:
             return (service[1], service[0])
@@ -931,7 +931,7 @@ def parse_service(service):
 
 
 def add_stream(bot, user):
-    assert isinstance(user, basestring) or type(user) is tuple
+    assert isinstance(user, str) or type(user) is tuple
 
     try:
         u, s = parse_service(user)
@@ -1149,7 +1149,7 @@ def services(bot, trigger):
 
 
 def remove_stream(bot, user):
-    assert isinstance(user, basestring) or type(user) is tuple
+    assert isinstance(user, str) or type(user) is tuple
 
     try:
         u, s = parse_service(user)
@@ -1206,7 +1206,7 @@ def update_streams(bot, trigger):
 
 
 def feature(bot, switch, channel, quiet=False):
-    assert isinstance(channel, basestring) or type(channel) is tuple
+    assert isinstance(channel, str) or type(channel) is tuple
     try:
         u, s = parse_service(channel)
     except TypeError:
@@ -1288,8 +1288,8 @@ def feature(bot, switch, channel, quiet=False):
 
 
 def subscribe(bot, switch, channel, nick, quiet=False):
-    assert isinstance(channel, basestring) or type(channel) is tuple
-    assert isinstance(switch, basestring)
+    assert isinstance(channel, str) or type(channel) is tuple
+    assert isinstance(switch, str)
     assert isinstance(nick, Identifier)
     try:
         u, s = parse_service(channel)

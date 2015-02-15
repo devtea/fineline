@@ -110,12 +110,12 @@ def setup(bot):
 def seen_insert(bot, nick, data):
     # TODO change data imput to dict
 
-    assert isinstance(nick, basestring)
+    assert isinstance(nick, str)
     assert type(data) is TupleType
     assert len(data) == 3
     assert type(data[0]) is FloatType, '%r is not float' % data[0]
-    assert isinstance(data[1], basestring)
-    assert isinstance(data[2], basestring)
+    assert isinstance(data[1], str)
+    assert isinstance(data[2], str)
     nn = Identifier(nick)
     dict = {}
     dict['time'] = str(data[0])
