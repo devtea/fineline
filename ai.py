@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import random
 import re
 import time
@@ -37,10 +35,10 @@ except:
 
 basic_thanks = r"\bty|thanks|gracias|thank\s?you|thank\s?ya|\bta"
 basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
-basic_badbot = (u"bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +
-                u"(fuck[s]?\s?(sake|off)?)")
-n_text = u"[A-Za-z0-9,.'!\s]"
-basic_slap = u"slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?"
+basic_badbot = ("bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +
+                "(fuck[s]?\s?(sake|off)?)")
+n_text = "[A-Za-z0-9,.'!\s]"
+basic_slap = "slap[p]?[s]?|whack[s]?|hit[s]?|smack[s]?"
 random.seed()
 
 
@@ -52,7 +50,7 @@ class SentienceError(Exception):
         return repr(self.value)
 
 
-# @rule(u'^[A-Za-z0-9)(/\s]*?\s?derp')
+# @rule('^[A-Za-z0-9)(/\s]*?\s?derp')
 @rule(r'^.*?\bderp\b')
 def derp(bot, trigger):
     '''Sometimes replies to messages with 'derp' in them.'''
@@ -66,50 +64,50 @@ def derp(bot, trigger):
     if random.uniform(0, 1) < prob:
         time.sleep(random.uniform(1, 3))
         bot.say(random.choice([
-            u"[](/derpwizard)",
-            u"[](/derpwizard)",
-            u"[](/derpout)",
-            u"[](/derpshrug)",
-            u"[](/derpwat)",
-            u"[](/derpsrs)",
-            u"[](/derpyhuh)",
-            u"[](/derpypeek)",
-            u"[](/fillyderp)"
+            "[](/derpwizard)",
+            "[](/derpwizard)",
+            "[](/derpout)",
+            "[](/derpshrug)",
+            "[](/derpwat)",
+            "[](/derpsrs)",
+            "[](/derpyhuh)",
+            "[](/derpypeek)",
+            "[](/fillyderp)"
         ]))
 
 
-@rule(u".*love you[\s,]+$nickname")
+@rule(".*love you[\s,]+$nickname")
 def advanced_ai(bot, trigger):
     raise SentienceError("Constraints exceeded - out of bounds.")
 
 
 @rule(
-    u"(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
-    (u"([A-Za-z0-9,.!\s]*?(%s)[^A-Za-z0-9]" +
-     u"([A-Za-z0-9,.!\s]*?$nickname))") % basic_thanks
+    "(^$nickname[,:\s]\s(%s)($|[\s,.!]))|" % basic_thanks +
+    ("([A-Za-z0-9,.!\s]*?(%s)[^A-Za-z0-9]" +
+     "([A-Za-z0-9,.!\s]*?$nickname))") % basic_thanks
 )
 def ty(bot, trigger):
-    '''Politely replies to thank you's.'''
+    '''Politely replies to thank yo's.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if not set(trigger.args[1].lower().split()).intersection(set([u'not',
-                                                                  u'no',
-                                                                  u'at'])):
+    if not set(trigger.args[1].lower().split()).intersection(set(['not',
+                                                                  'no',
+                                                                  'at'])):
         time.sleep(random.uniform(1, 3))
         bot.reply(
             random.choice([
-                u"Yep",
-                u"You're welcome",
-                u"Certainly",
-                u"Of course",
-                u"Sure thing"
+                "Yep",
+                "You're welcome",
+                "Certainly",
+                "Of course",
+                "Sure thing"
             ]) +
             random.choice([".", "!"])
         )
 
 
-@rule(u'^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)' % basic_woo)
+@rule('^[A-Za-z0-9)(/\s]*?\s?(%s)([^A-Za-z]|h[o]+|$)' % basic_woo)
 def woo(bot, trigger):
     '''Sometimes replies to a woo with an emote'''
     # Don't do anything if the bot has been shushed
@@ -123,27 +121,27 @@ def woo(bot, trigger):
         time.sleep(random.uniform(1, 3))
         bot.say(
             random.choice([
-                u"[](/flutteryay",
-                u"[](/ppwooo",
-                u"[](/flutterwoo",
-                u"[](/woonadance",
-                u"[](/raritywooo",
-                u"[](/ajyay",
-                u"[](/derpydance"
-            ]) + u' "%s")' % re.search(
+                "[](/flutteryay",
+                "[](/ppwooo",
+                "[](/flutterwoo",
+                "[](/woonadance",
+                "[](/raritywooo",
+                "[](/ajyay",
+                "[](/derpydance"
+            ]) + ' "%s")' % re.search(
                 basic_woo,
-                unicode(trigger),
+                trigger,
                 flags=re.I
             ).group()
         )
 
 
 @rule(
-    u"(((^|%s+?\s)$nickname[.,-:]\s(%s+?\s)?(%s)([^A-Za-z0-9]|$))|" % (
+    "(((^|%s+?\s)$nickname[.,-:]\s(%s+?\s)?(%s)([^A-Za-z0-9]|$))|" % (
         n_text, n_text, basic_badbot) +
-    u"((^|%s+?\s)((%s)\s)(%s*?\s)?$nickname([^A-Za-z0-9]|$))|" % (
+    "((^|%s+?\s)((%s)\s)(%s*?\s)?$nickname([^A-Za-z0-9]|$))|" % (
         n_text, basic_badbot, n_text) +
-    u"(($nickname%s+?)(%s)([^A-Za-z0-9]|$)))" % (n_text, basic_badbot)
+    "(($nickname%s+?)(%s)([^A-Za-z0-9]|$)))" % (n_text, basic_badbot)
 )
 def badbot(bot, trigger):
     '''Appropriate replies to chastening'''
@@ -153,38 +151,38 @@ def badbot(bot, trigger):
     time.sleep(random.uniform(1, 3))
     if trigger.owner:
         bot.say(random.choice([
-            u"[](/sadderpy)",
-            u"[](/raritysad)",
-            u"[](/sadtwilight2)",
-            u"[](/scootasad)",
-            u"[](/seriouslysadaj)",
-            u"[](/dashiesad)",
-            u"[](/fscry)",
-            u"[](/aj05)",
-            u"[](/pinkiefear)"
+            "[](/sadderpy)",
+            "[](/raritysad)",
+            "[](/sadtwilight2)",
+            "[](/scootasad)",
+            "[](/seriouslysadaj)",
+            "[](/dashiesad)",
+            "[](/fscry)",
+            "[](/aj05)",
+            "[](/pinkiefear)"
         ]))
     elif Identifier(trigger.nick) == Identifier('DarkFlame'):
         bot.say(random.choice([
-            u'[](/ppnowhy "Why are you so mean to me?!")',
-            u'[](/ppnowhy "Why do you hate me?!")',
-            u'[](/ppnowhy "Why is nothing I do ever good enough for you?!")',
-            u'[](/ppnowhy "?!")'
+            '[](/ppnowhy "Why are you so mean to me?!")',
+            '[](/ppnowhy "Why do you hate me?!")',
+            '[](/ppnowhy "Why is nothing I do ever good enough for you?!")',
+            '[](/ppnowhy "?!")'
         ]))
     elif random.uniform(0, 1) < 0.1:
         bot.reply(random.choice([
-            u"[](/derpsrs)",
-            u"[](/cheersrsly)",
-            u"[](/fluttersrs)",
-            u"[](/cewat)",
-            u"[](/lyrawat)",
-            u"[](/ppwatching)",
-            u"[](/watchout)",
-            u"[](/dashiemad)",
-            u"[](/ppumad)"
+            "[](/derpsrs)",
+            "[](/cheersrsly)",
+            "[](/fluttersrs)",
+            "[](/cewat)",
+            "[](/lyrawat)",
+            "[](/ppwatching)",
+            "[](/watchout)",
+            "[](/dashiemad)",
+            "[](/ppumad)"
         ]))
 
 
-@rule(u"^!swo[o]+sh")
+@rule("^!swo[o]+sh")
 def swish(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
@@ -192,28 +190,28 @@ def swish(bot, trigger):
     if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
         LOGGER.info(log.format(trigger.group(0)))
-        i = u"i" * (len(trigger.group(0)) - 5)
-        bot.say(u"[](/dhexcited) Sw%ssh! ♥" % i)
+        i = "i" * (len(trigger.group(0)) - 5)
+        bot.say("[](/dhexcited) Sw%ssh! ♥" % i)
 
 
 @rule(
-    u"(^!(%s))|" % basic_slap +
-    u"(\001ACTION [A-Za-z0-9,.'!\s]*?(%s)" % basic_slap +
-    u"[A-Za-z0-9,.'!\s]+?$nickname)|" +
-    u"(\001ACTION [A-Za-z0-9,.'!\s]+?$nickname" +
-    u"[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
+    "(^!(%s))|" % basic_slap +
+    "(\001ACTION [A-Za-z0-9,.'!\s]*?(%s)" % basic_slap +
+    "[A-Za-z0-9,.'!\s]+?$nickname)|" +
+    "(\001ACTION [A-Za-z0-9,.'!\s]+?$nickname" +
+    "[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
 )
 def slapped(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
 
-    if trigger.owner and not unicode(trigger).startswith('!'):
+    if trigger.owner and not trigger.startswith('!'):
             badbot(bot, trigger)
             return
     time.sleep(random.uniform(1, 3))
 
-    match = re.search(r'^[^!]*\swith\san?\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', unicode(trigger), re.I)
+    match = re.search(r'^[^!]*\swith\san?\s([\w\s,-]{3,20}\b)?(\w{3,20}\b)', trigger, re.I)
     if match:
         plural = False
         if match.groups()[-1].endswith('s'):
@@ -235,20 +233,20 @@ def slapped(bot, trigger):
         ]))
     else:
         bot.reply(random.choice([
-            u'Stop that!',
-            u'Hey!',
-            u'Violence is not the answer!',
-            u"Didn't your mother teach you not to hit?"
+            'Stop that!',
+            'Hey!',
+            'Violence is not the answer!',
+            "Didn't your mother teach you not to hit?"
         ]))
-        bot.reply(u"[](/pinkieslap)")
+        bot.reply("[](/pinkieslap)")
 
 
 hi_prefix = ur"($nickname[:,]?\s+)"
 hi_meat = ur"(hello|hi|hai|ahoy|sup|hey|yo|afternoon|holla|g?'?morning?)"
 hi_all = ur"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     ur"folks|guys|peoples?|mulpdrong|$nickname)"
-hi_to_fineline = hi_prefix + hi_meat + u'([.!\s]?$)'
-hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + u'([.!\s]?$)'
+hi_to_fineline = hi_prefix + hi_meat + '([.!\s]?$)'
+hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + '([.!\s]?$)'
 
 
 @rule(ur"(" + hi_to_fineline + ur")|" + ur"(" + hi_to_all + ur")")
@@ -258,13 +256,13 @@ def hi(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    message = random.choice([u"Hi", u"Hello", u"Yo", u"Hey", u"Ahoy"])
-    punctuation = random.choice([u".", u"", u"!"])
+    message = random.choice(["Hi", "Hello", "Yo", "Hey", "Ahoy"])
+    punctuation = random.choice([".", "", "!"])
     time.sleep(random.uniform(0, 3))
     if random.uniform(0, 1) > 0.5:
         bot.reply(message + punctuation)
     else:
-        bot.say(message + u" " + trigger.nick + punctuation)
+        bot.say(message + " " + trigger.nick + punctuation)
 
 
 # @rule(ur'.*$nickname\:?,?\s+Are you a (ro)?bot|.*$nickname (is )?a (ro)?bot')
@@ -280,54 +278,54 @@ def isbot(bot, trigger):
         return
     time.sleep(random.uniform(1, 2))
 
-    if re.search('person', unicode(trigger), flags=re.I):
+    if re.search('person', trigger, flags=re.I):
         bot.say(random.choice(
-                [u"Yeah, I'm just fast.",
-                 u"Yeah, I just type really fast and know a lot.",
-                 u"What makes you think otherwise?",
-                 u"duh",
-                 u"Uh.....yeah?"]
+                ["Yeah, I'm just fast.",
+                 "Yeah, I just type really fast and know a lot.",
+                 "What makes you think otherwise?",
+                 "duh",
+                 "Uh.....yeah?"]
                 ))
         time.sleep(random.uniform(3, 5))
         bot.say(random.choice(
-                [u"Come on, don't you see these hooves?",
-                 u"If I werent, how come I have hooves?",
-                 u"See? I have hooves! *wiggles hooves*",
-                 u"I'm kinda hurt you'd even suggest otherwise...",
-                 u"Are you a person?",
-                 u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
-                 u"Anyway, sentience is a hard thing to prove..."]
+                ["Come on, don't you see these hooves?",
+                 "If I werent, how come I have hooves?",
+                 "See? I have hooves! *wiggles hooves*",
+                 "I'm kinda hurt you'd even suggest otherwise...",
+                 "Are you a person?",
+                 "Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
+                 "Anyway, sentience is a hard thing to prove..."]
                 ))
     else:
         bot.say(random.choice(
-                [u"Nope, I'm just fast.",
-                 u"Nah, I just type really fast and know a lot.",
-                 u"What makes you think that?",
-                 u"lolno",
-                 u"Uh.....no?"]
+                ["Nope, I'm just fast.",
+                 "Nah, I just type really fast and know a lot.",
+                 "What makes you think that?",
+                 "lolno",
+                 "Uh.....no?"]
                 ))
         time.sleep(random.uniform(3, 5))
         bot.say(random.choice(
-                [u"Come on, don't you see these hooves?",
-                 u"If I were a bot, how come I have hooves?",
-                 u"See? I have hooves! *wiggles hooves*",
-                 u"I'm kinda hurt you'd even suggest such a thing...",
-                 u"Are you a bot?",
-                 u"Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
-                 u"Besides, sentience is a hard thing to prove..."]
+                ["Come on, don't you see these hooves?",
+                 "If I were a bot, how come I have hooves?",
+                 "See? I have hooves! *wiggles hooves*",
+                 "I'm kinda hurt you'd even suggest such a thing...",
+                 "Are you a bot?",
+                 "Though I have the oddest urge t- ERROR 418 I'M A TEAPOT!",
+                 "Besides, sentience is a hard thing to prove..."]
                 ))
 
 
 night_prefix = ur"($nickname\:?,?\s+)"
 night_meat = ur"((good|g)?\s?'?(night|bye)|(later(s?)))"
 night_all = ur"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
-    u"folks|guys|peoples?|mulpdrong|$nickname)"
+    "folks|guys|peoples?|mulpdrong|$nickname)"
 night_to_fineline = night_prefix + night_meat
 night_to_all = ur".*?" + night_meat + ur",?\s+" + night_all
 night_universal = ur".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
-    u"(to )?(bed|sleep))|" + \
-    u"(I'?m ((((going to)|(gonna)) ((go)|(head off))?)|(heading off))" + \
-    u"\s?(to )?(bed|sleep|crash|(pass out))))"
+    "(to )?(bed|sleep))|" + \
+    "(I'?m ((((going to)|(gonna)) ((go)|(head off))?)|(heading off))" + \
+    "\s?(to )?(bed|sleep|crash|(pass out))))"
 
 
 @rule(
@@ -342,20 +340,20 @@ def night(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    if re.match(u'.*?night', unicode(trigger)):
-        message = random.choice([u"Goodnight", u"'Night", u"Later", u"Bye"])
+    if re.match('.*?night', trigger):
+        message = random.choice(["Goodnight", "'Night", "Later", "Bye"])
     else:
-        message = random.choice([u"Later", u"Bye"])
-    punctuation = random.choice([u".", u"", u"!"])
+        message = random.choice(["Later", "Bye"])
+    punctuation = random.choice([".", "", "!"])
     # Test statment to filter negetive statements
-    LOGGER.info(log.format(unicode(trigger)))
+    LOGGER.info(log.format(trigger))
     # Use a set intersection to filter triggering lines by keyword
-    if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at', u'almost', u'soon'])):
+    if not set(trigger.args[1].lower().split()).intersection(set(['not', 'no', 'at', 'almost', 'soon'])):
         time.sleep(1)
         if random.uniform(0, 1) > 0.5:
             bot.reply(message + punctuation)
         else:
-            bot.say(message + u" " + trigger.nick + punctuation)
+            bot.say(message + " " + trigger.nick + punctuation)
 
 """
 def smart_action(bot, trigger):
@@ -379,15 +377,15 @@ def nick(bot, trigger):
     if bot.memory['shush']:
         return
     message = trigger.nick
-    if re.match(bot.nick.upper(), unicode(trigger)):
+    if re.match(bot.nick.upper(), trigger):
         message = message.upper()
-    if re.findall('!', unicode(trigger)):
-        bot.say(u'%s!' % message)
+    if re.findall('!', trigger):
+        bot.say('%s!' % message)
     else:
-        bot.say(u'%s.' % message)
+        bot.say('%s.' % message)
 
 
-@rule(u'^\001ACTION awkwardly tries to flirt with Fineline.')
+@rule('^\001ACTION awkwardly tries to flirt with Fineline.')
 def flirt(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
@@ -395,7 +393,7 @@ def flirt(bot, trigger):
     if trigger.nick != Identifier('hushmachine'):
         return
     time.sleep(random.uniform(2, 5))
-    if re.search("you come here often", unicode(trigger)):
+    if re.search("you come here often", trigger):
         response = random.choice([
             (False, 'Oh, every now and then.'),
             (False, "I don't think I've seen you around."),
@@ -404,7 +402,7 @@ def flirt(bot, trigger):
             (False, "What's a nice boy like you doing in a place like this?"),
             (True, 'blushes and mumbles something')
         ])
-    elif re.search("see my collection", unicode(trigger)):
+    elif re.search("see my collection", trigger):
         response = random.choice([
             (False, '[](/sbstare)'),
             (True, 'grabs the degausser and cackles maniacally.'),

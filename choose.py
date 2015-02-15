@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import bisect
 import random
 import time
@@ -59,16 +57,16 @@ def setup(bot):
 
 
 def allocate(bot, nick, returns, choices):
-    LOGGER.info(log.format(u'Allocating %s for %s from %s.'), returns, nick, choices)
+    LOGGER.info(log.format('Allocating %s for %s from %s.'), returns, nick, choices)
     if returns == 1:
         if nick not in bot.memory['choose'] or time.time() - bot.memory['choose'][nick] > TIME_LIMIT:
-            LOGGER.info(log.format(u'Nick not in list or plenty of time has passed.'))
+            LOGGER.info(log.format('Nick not in list or plenty of time has passed.'))
             choice = weighted_choice(bot, choices)
         else:
-            LOGGER.info(log.format(u'Nick has choosen recently'))
+            LOGGER.info(log.format('Nick has choosen recently'))
             choice = unweighted_choice(choices, returns)
     else:
-        LOGGER.info(log.format(u'Defaulting to unweighted choice.'))
+        LOGGER.info(log.format('Defaulting to unweighted choice.'))
         choice = unweighted_choice(choices, returns)
     return choice
 
@@ -94,26 +92,26 @@ def weighted_choice(bot, unweighted):
            'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but', 'dum', 'freak',
            'freaks', 'freaky', 'silly', 'älä']
 
-    LOGGER.info(log.format(u'Weighting choices from %s.'), unweighted)
+    LOGGER.info(log.format('Weighting choices from %s.'), unweighted)
     weighted = []
     while unweighted:
         i = unweighted.pop()
-        LOGGER.info(log.format(u'Processing choice "%s"".'), i)
+        LOGGER.info(log.format('Processing choice "%s"".'), i)
         if set(i.split()).intersection(good):
             if set(i.split()).intersection(bad):
-                LOGGER.info(log.format(u'  Found choice in bad list.'))
+                LOGGER.info(log.format('  Found choice in bad list.'))
                 weighted.append((i, 1))
             else:
-                LOGGER.info(log.format(u'  Found choice in good list.'))
+                LOGGER.info(log.format('  Found choice in good list.'))
                 weighted.append((i, 525))
         else:
-            LOGGER.info(log.format(u'  Normal choice.'))
+            LOGGER.info(log.format('  Normal choice.'))
             weighted.append((i, 75))
-    LOGGER.info(log.format(u'Weighted list is %s.'), weighted)
+    LOGGER.info(log.format('Weighted list is %s.'), weighted)
 
     i = choose(weighted)
-    LOGGER.info(log.format(u'got index %s'), i)
-    LOGGER.info(log.format(u'Returning "%s"'), weighted[i][0])
+    LOGGER.info(log.format('got index %s'), i)
+    LOGGER.info(log.format('Returning "%s"'), weighted[i][0])
     return [weighted[i][0]]
 
 
@@ -131,7 +129,7 @@ def unweighted_choice(unweighted, choices):
         return None
 
 
-@commands(u'choose', 'pick', 'select')
+@commands('choose', 'pick', 'select')
 @example(ur"!choose 2, The Hobbit, Ender's Game, The Golden Compass")
 def choose(bot, trigger):
     """Returns a selection of comma separated items provided to it.
@@ -145,11 +143,11 @@ def choose(bot, trigger):
 
     # Parse the provided arguments into a list of strings
     LOGGER.info(log.format("Trigger args: ", trigger.args))
-    __, __, list = trigger.args[1].partition(u' ')
+    __, __, list = trigger.args[1].partition(' ')
     # Test for csv or space separated values
-    if u',' in trigger.args[1]:
+    if ',' in trigger.args[1]:
         LOGGER.info(log.format('list: ', list))
-        args = list.split(u',')
+        args = list.split(',')
         LOGGER.info(log.format('args: ', args))
     else:
         args = list.split()
@@ -161,7 +159,7 @@ def choose(bot, trigger):
         caller = nicks.Identifier(trigger.nick)
         # If the first argument is an int, we'll want to use it
         if args[0].isdigit():
-            LOGGER.info(log.format(u"First arg is a number."))
+            LOGGER.info(log.format("First arg is a number."))
             # Cast the string to an int so it's usable
             choices = int(float(args.pop(0)))
 
@@ -169,28 +167,28 @@ def choose(bot, trigger):
 
             if choice:
                 if len(choice) > 1:
-                    bot.reply(u', '.join(choice))
+                    bot.reply(', '.join(choice))
                 else:
                     bot.reply(choice[0])
             else:
-                bot.reply(u"Hmm, how about everything?")
+                bot.reply("Hmm, how about everything?")
 
         else:
             # Just choose one item since no number was specified
-            LOGGER.info(log.format(u"First arg is not a number."))
+            LOGGER.info(log.format("First arg is not a number."))
             # choice = random.choice(args)
             choice = allocate(bot, caller, 1, args)
             if choice:
                 bot.reply(choice[0])
             else:
-                bot.reply(u"Hmm, how about everything?")
+                bot.reply("Hmm, how about everything?")
     else:
         # <=1 items is not enough to choose from!
-        bot.reply(u"You didn't give me enough to choose from!")
+        bot.reply("You didn't give me enough to choose from!")
 
     bot.memory['choose'][nicks.Identifier(trigger.nick)] = now
-    LOGGER.info(log.format(u"Updated last choose time for nick."))
-    LOGGER.info(log.format(u"=" * 20))
+    LOGGER.info(log.format("Updated last choose time for nick."))
+    LOGGER.info(log.format("=" * 20))
 
 
 if __name__ == "__main__":

@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 from collections import deque
 import os
 import random
@@ -53,11 +51,11 @@ def setup(bot):
     bot.memory['streaming']['dest'] = "%sstreaming.html" % bot.config.general.hosted_path
     bot.memory['streaming']['url'] = "%sstreaming.html" % bot.config.general.hosted_domain
     bot.memory['streaming']['use_html'] = False
-    bot.memory['streaming']['avconv_command'] = u"avconv -re -i " + \
-        u"%s" % bot.memory['streaming']['source_dir'] + \
-        u"%s.flv -acodec copy -vcodec copy " + \
-        u"-f flv rtmp://live-dfw.twitch.tv/app/" + \
-        u"%s" % bot.memory['streaming']['stream_key']
+    bot.memory['streaming']['avconv_command'] = "avconv -re -i " + \
+        "%s" % bot.memory['streaming']['source_dir'] + \
+        "%s.flv -acodec copy -vcodec copy " + \
+        "-f flv rtmp://live-dfw.twitch.tv/app/" + \
+        "%s" % bot.memory['streaming']['stream_key']
     if bot.config.has_option('streaming', 'use_html'):
         if bot.config.streaming.use_html == 'True':
             bot.memory['streaming']['use_html'] = True
@@ -77,7 +75,7 @@ def setup(bot):
         try:
             bot.memory['streaming']['listTemplate'] = Template(f.read())
         except:
-            LOGGER.error(log.format(u'Unable to load template.'), exec_info=True)
+            LOGGER.error(log.format('Unable to load template.'), exec_info=True)
             raise
     publish_list(bot)
 
@@ -94,7 +92,7 @@ def start_stream(bot, ep):
     for channel in [x for x in bot.channels if x in _include]:
         bot.msg(
             channel,
-            u'Starting stream of %s at %s' % (
+            'Starting stream of %s at %s' % (
                 ep,
                 bot.memory['streaming']['loc']
             )
@@ -118,7 +116,7 @@ def stream(bot, trigger):
  see the videos queued for streaming.'''
     def scrub(i):
         '''Scrub input for safe REGEX'''
-        return re.sub(u'[\\\.\?|^$*+([{]', u'', i)
+        return re.sub('[\\\.\?|^$*+([{]', '', i)
 
     def process(name):
         '''returns a normalized video name.'''
@@ -138,42 +136,42 @@ def stream(bot, trigger):
 
     if len(trigger.args[1].split()) == 2:  # E.G. "!stream s01e01"
         arg_1 = trigger.args[1].split()[1].upper()
-        if arg_1 == u'QUEUE' or arg_1 == u'QUE':
+        if arg_1 == 'QUEUE' or arg_1 == 'QUE':
             get_queue(bot)
-        elif arg_1 == u'LIST':
+        elif arg_1 == 'LIST':
             list_media(bot, trigger)
         else:
             enqueue(bot, process(arg_1))
     elif len(trigger.args[1].split()) == 3:  # E.G. "!stream add s01e01"
         arg_1 = trigger.args[1].split()[1].upper()
         arg_2 = trigger.args[1].split()[2].upper()
-        if arg_1 == u'ADD':
+        if arg_1 == 'ADD':
             enqueue(bot, process(arg_2))
-        elif arg_1 == u'DEL':
+        elif arg_1 == 'DEL':
             dequeue(bot, process(arg_2))
         else:
-            LOGGER.info(log.format(u"insane args"))
-            bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                      u"stream'")
+            LOGGER.info(log.format("insane args"))
+            bot.reply("I don't understand that. Try '%s: help " % bot.nick +
+                      "stream'")
     elif len(trigger.args[1].split()) > 3:
-        LOGGER.info(log.format(u"too many args"))
-        bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
-                  u"stream'")
+        LOGGER.info(log.format("too many args"))
+        bot.reply("I don't understand that. Try '%s: help " % bot.nick +
+                  "stream'")
     else:
-        bot.reply(u'Stream what?! Try !help stream for details.')
-        LOGGER.info(log.format(u"Not enough args"))
+        bot.reply('Stream what?! Try !help stream for details.')
+        LOGGER.info(log.format("Not enough args"))
 
 
 def enqueue(bot, ep):
     '''Adds a video to the queue.'''
     if not ep:
-        bot.reply(u"Sorry, I don't seem to have that.")
+        bot.reply("Sorry, I don't seem to have that.")
         return
     if len(bot.memory['streaming']['deque']) <= 4:
         bot.memory['streaming']['deque'].append(ep)
-        bot.say(u'Added %s to the queue.' % ep)
+        bot.say('Added %s to the queue.' % ep)
     else:
-        bot.reply(u"Sorry, the queue is full.")
+        bot.reply("Sorry, the queue is full.")
 
 
 def dequeue(bot, video):
@@ -181,9 +179,9 @@ def dequeue(bot, video):
     try:
         bot.memory['streaming']['deque'].remove(video)
     except ValueError:
-        bot.reply(u"I don't have that in my queue.")
+        bot.reply("I don't have that in my queue.")
     else:
-        bot.reply(u"%s removed." % video)
+        bot.reply("%s removed." % video)
 
 
 def promote():
@@ -200,9 +198,9 @@ def demote():
 
 def get_queue(bot):
     if len(bot.memory['streaming']['deque']) == 0:
-        bot.reply(u'The stream queue is currently empty.')
+        bot.reply('The stream queue is currently empty.')
     else:
-        bot.reply(u'Currently queued: %s' % ', '.join(
+        bot.reply('Currently queued: %s' % ', '.join(
             bot.memory['streaming']['deque'])
         )
 
@@ -210,12 +208,12 @@ def get_queue(bot):
 def list_media(bot, trigger):
     LOGGER.info(log.format(bot.memory['streaming']['use_html']))
     if bot.memory['streaming']['use_html']:
-        bot.reply(u'The list of available videos is up at %s' %
+        bot.reply('The list of available videos is up at %s' %
                   bot.memory['streaming']['url'])
     else:
-        bot.reply(u'Sending you the list in PM.')
+        bot.reply('Sending you the list in PM.')
         for line in textwrap.wrap(
-                u'Available videos: %s' % ', '.join(
+                'Available videos: %s' % ', '.join(
                     [os.path.splitext(i)[0]
                         for i in bot.memory['streaming']['ep_list']]),
                 390):
@@ -226,12 +224,12 @@ def list_media(bot, trigger):
 def streaming(bot, trigger):
     '''Lists the currently streaming video. To manage videos or get information, see !stream.'''
     if bot.memory['streaming']['live']:
-        bot.reply(u'Now playing at %s - %s' % (
+        bot.reply('Now playing at %s - %s' % (
             bot.memory['streaming']['loc'],
             bot.memory['streaming']['title'],
         ))
     else:
-        bot.reply(u'Nothing streaming right now.')
+        bot.reply('Nothing streaming right now.')
 
 
 def publish_list(bot):
@@ -243,7 +241,7 @@ def publish_list(bot):
             previous_full_list = ''.join(f.readlines())
     except IOError:
         previous_full_list = ''
-        LOGGER.warning(log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
+        LOGGER.warning(log.format('IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
 
     # Generate full list HTML
     contents = bot.memory['streaming']['listTemplate'].substitute(
@@ -255,7 +253,7 @@ def publish_list(bot):
         with open(bot.memory['streaming']['dest'], 'w') as f:
             f.write(contents)
     else:
-        LOGGER.debug(log.format(u'No chage in list html file, skipping.'))
+        LOGGER.debug(log.format('No chage in list html file, skipping.'))
 
 
 @commands('bob')

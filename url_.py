@@ -10,8 +10,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://willie.dftba.net
 """
-from __future__ import unicode_literals
-
 import re
 from socket import timeout
 
@@ -181,7 +179,7 @@ def title_auto(bot, trigger):
         bot.memory['last_seen_url'][trigger.sender] = urls[-1]
 
     for title, domain in results[:4]:
-        if domain in unicode(trigger):
+        if domain in trigger:
             message = '[ %s ]' % title
         else:
             message = '[ %s ] - %s' % (title, domain)
@@ -287,7 +285,7 @@ def find_title(url):
     title_l = title.split()
     if len(title_l) > 10:
         title_l = title_l[:10]
-        title_l.append(u'...')
+        title_l.append('...')
     title = ' '.join(title_l)
 
     # More cryptic regex substitutions. This one looks to be myano's invention.

@@ -5,19 +5,21 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from willie.module import commands, example
-from willie import web
 import re
 import sys
 from socket import timeout
+
 if sys.version_info.major < 3:
     import HTMLParser
 else:
     import html.parser as HTMLParser
 
+from willie.module import commands, example
+from willie import web
 
-@commands(u'wa', u'wolfram', u'wolframalpha')
-@example(u'!wolframalpha 2 + 2')
+
+@commands('wa', 'wolfram', 'wolframalpha')
+@example('!wolframalpha 2 + 2')
 def wolframalpha(bot, trigger):
     if not trigger.group(2):
         return bot.reply("Usage: !wolframalpha [expression]")

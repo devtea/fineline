@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import random
 import re
 import threading
@@ -69,13 +67,13 @@ def get_ep(bot, se):
         return
     if len(se) == 2 and se[0] in bot.memory['episodes'] and se[1] in bot.memory['episodes'][se[0]]:
             title = bot.memory['episodes'][se[0]][se[1]]
-            return u"The episode is season %i, episode %i, %s." % (
+            return "The episode is season %i, episode %i, %s." % (
                 se[0], se[1], title)
-    return u"I can't seem to find that episode."
+    return "I can't seem to find that episode."
 
 
-@commands(u'ep-del')
-@example(u'!ep-del SO1E03')
+@commands('ep-del')
+@example('!ep-del SO1E03')
 def ep_del(bot, trigger):
     """ADMIN: Deletes a specified episode from the database."""
     # test the arguments returned, e.g. ['.episode', 'S01E03']
@@ -88,7 +86,7 @@ def ep_del(bot, trigger):
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):
-            season, __, ep = trigger.args[1].split()[1].upper().partition(u"E")
+            season, __, ep = trigger.args[1].split()[1].upper().partition("E")
             season = int(season[1:])
             ep = int(ep)
             with bot.memory['ep_lock']:
@@ -103,32 +101,32 @@ def ep_del(bot, trigger):
                                     WHERE season = ? and episode = ?''', (season, ep))
                         dbcon.commit()
                     else:
-                        bot.reply(u'That episode doesn\'t exist!')
+                        bot.reply('That episode doesn\'t exist!')
                         return
                     del bot.memory['episodes'][season][ep]
                     if len(bot.memory['episode'][season]) == 0:
                         del bot.memory['episode'][season]
-                    bot.reply(u'Episode deleted.')
+                    bot.reply('Episode deleted.')
                 finally:
                     cur.close()
         else:
-            bot.reply(u"I don't understand that. Try something like !ep-del s02e01")
+            bot.reply("I don't understand that. Try something like !ep-del s02e01")
     elif len(trigger.args[1].split()) > 2:
-        bot.reply(u"I don't understand that, too many args.")
+        bot.reply("I don't understand that, too many args.")
     else:
-        bot.reply(u"Try something like !ep-del s02e01")
+        bot.reply("Try something like !ep-del s02e01")
 
 
-@commands(u'ep-add')
-@example(u'!ep-add S00E00 This is not a title')
+@commands('ep-add')
+@example('!ep-add S00E00 This is not a title')
 def add_ep(bot, trigger):
     """ADMIN: Adds an episode to the database."""
     if not trigger.owner:
-        LOGGER.warning(log.format(u'%s just tried to add an episode!'), trigger.nick)
+        LOGGER.warning(log.format('%s just tried to add an episode!'), trigger.nick)
         return
-    LOGGER.info(log.format(u"add_ep triggered"))
+    LOGGER.info(log.format("add_ep triggered"))
     if not trigger.admin:
-        LOGGER.warning(log.format(u'%s just tried to add an episode!'), trigger.nick)
+        LOGGER.warning(log.format('%s just tried to add an episode!'), trigger.nick)
         return
         # assume input is SxxExx title~~~~~~
         # eg ['!test', 'S01E01', 'Title', ...]
@@ -139,15 +137,15 @@ def add_ep(bot, trigger):
                     command[1],
                     flags=re.IGNORECASE
                     ):
-            LOGGER.info(log.format(u"Ep is sane"))
+            LOGGER.info(log.format("Ep is sane"))
             season, __, ep = trigger.args[1].split()[1].upper().partition("E")
             season = int(season.lstrip("S"))
             ep = int(ep)
-            title = u' '.join(i for i in command if command.index(i) > 1)
-            LOGGER.info(log.format(u'Season %i, episode %i'), season, ep)
+            title = ' '.join(i for i in command if command.index(i) > 1)
+            LOGGER.info(log.format('Season %i, episode %i'), season, ep)
             message = get_ep(bot, [season, ep])
-            if message.startswith(u'T'):
-                bot.reply(u"That episode already exists!")
+            if message.startswith('T'):
+                bot.reply("That episode already exists!")
                 bot.reply(message)
             else:
                 with bot.memory['ep_lock']:
@@ -162,29 +160,29 @@ def add_ep(bot, trigger):
                                         values (?, ?, ?)''', (season, ep, title))
                             dbcon.commit()
                         else:
-                            bot.reply(u'That episode already exists')
+                            bot.reply('That episode already exists')
                         if season not in bot.memory['episodes']:
                             bot.memory['episodes'][season] = {}
                         bot.memory['episodes'][season][ep] = title
-                        bot.reply(u"Successfully added!")
+                        bot.reply("Successfully added!")
                     finally:
                         cur.close()
         else:
-            LOGGER.info(log.format(u"Argument is insane"))
-            bot.reply(u"I don't understand that.")
+            LOGGER.info(log.format("Argument is insane"))
+            bot.reply("I don't understand that.")
     else:
-        LOGGER.info(log.format(u"Not enough args"))
-        bot.reply(u"Uh, what episode?")
+        LOGGER.info(log.format("Not enough args"))
+        bot.reply("Uh, what episode?")
 
 
-@commands(u'episode', u'ep')
-@example(u'!episode S02E11')
+@commands('episode', 'ep')
+@example('!episode S02E11')
 def episode(bot, trigger):
     """Returns a specified episode by season and episode."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    LOGGER.info(log.format(u"Triggered"))
+    LOGGER.info(log.format("Triggered"))
     # test the arguments returned, e.g. ['.episode', 'S01E03']
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
@@ -192,28 +190,28 @@ def episode(bot, trigger):
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):
-            LOGGER.info(log.format(u"Argument is sane"))
-            season, __, ep = trigger.args[1].split()[1].upper().partition(u"E")
-            bot.reply(get_ep(bot, [int(season.lstrip(u"S")), int(ep)]))
+            LOGGER.info(log.format("Argument is sane"))
+            season, __, ep = trigger.args[1].split()[1].upper().partition("E")
+            bot.reply(get_ep(bot, [int(season.lstrip("S")), int(ep)]))
         else:
-            LOGGER.info(log.format(u"Argument is insane"))
-            bot.reply((u"I don't understand that. Try '%s: help " +
-                       u"episode'") % bot.nick)
+            LOGGER.info(log.format("Argument is insane"))
+            bot.reply(("I don't understand that. Try '%s: help " +
+                       "episode'") % bot.nick)
     elif len(trigger.args[1].split()) > 2:
-        LOGGER.info(log.format(u"too many args"))
-        bot.reply(u"I don't understand that. Try '%s: help episode'" % bot.nick)
+        LOGGER.info(log.format("too many args"))
+        bot.reply("I don't understand that. Try '%s: help episode'" % bot.nick)
     else:
-        LOGGER.info(log.format(u"Not enough args"))
+        LOGGER.info(log.format("Not enough args"))
         randep(bot, trigger)
 
 
-@commands(u'randep', u'rep', u'randomep', u'randomepisode')
+@commands('randep', 'rep', 'randomep', 'randomepisode')
 def randep(bot, trigger):
     """Returns a random episode."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    LOGGER.info(log.format(u"Triggered"))
+    LOGGER.info(log.format("Triggered"))
     season = random.randint(1, len(bot.memory['episodes']))
     episode = random.randint(1, len(bot.memory['episodes'][season]))
     bot.reply(get_ep(bot, [season, episode]))

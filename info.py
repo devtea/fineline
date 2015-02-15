@@ -8,8 +8,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function, unicode_literals
-
 import os.path
 import re
 import urlparse
@@ -192,21 +190,21 @@ def generate_help_lists(bot):
             previous_html = ''.join(f.readlines())
     except IOError:
         previous_html = ''
-        LOGGER.warning(log.format(u'IO error grabbing previous user help file contents. File may not exist yet'))
+        LOGGER.warning(log.format('IO error grabbing previous user help file contents. File may not exist yet'))
     try:
         with open(bot.memory['help']['admin_path'], 'r') as f:
             previous_admin_html = ''.join(f.readlines())
     except IOError:
         previous_admin_html = ''
-        LOGGER.warning(log.format(u'IO error grabbing previous admin help file contents. File may not exist yet'))
+        LOGGER.warning(log.format('IO error grabbing previous admin help file contents. File may not exist yet'))
 
     if previous_html != html:
-        LOGGER.info(log.format(u'User help file is different, writing.'))
+        LOGGER.info(log.format('User help file is different, writing.'))
         with open(bot.memory['help']['user_path'], 'w') as f:
             f.write(html)
 
     if previous_admin_html != admin_html:
-        LOGGER.info(log.format(u'Admin help file is different, writing.'))
+        LOGGER.info(log.format('Admin help file is different, writing.'))
         with open(bot.memory['help']['admin_path'], 'w') as f:
             f.write(admin_html)
 

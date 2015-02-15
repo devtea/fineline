@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 # TODO user aliases
-from __future__ import print_function
-
 import random
 import threading
 
@@ -70,9 +68,9 @@ _front = ['any', 'some']
 _back = ['one', 'body', 'pony', 'poni', 'pone']
 _anyone = [a + b for a in _front for b in _back]
 _everyone = ['every' + b for b in _back]
-_defaults = [('boop', u'boops %s'),
-             ('all', u'Yells "BOOP" and giggles to herself'),
-             ('self', u'looks funny as she crosses her eyes and tries to boop herself')]
+_defaults = [('boop', 'boops %s'),
+             ('all', 'Yells "BOOP" and giggles to herself'),
+             ('self', 'looks funny as she crosses her eyes and tries to boop herself')]
 
 
 def setup(bot):
@@ -123,8 +121,8 @@ def setup(bot):
             bot.memory['boop']['lists'][l].append(nicks.NickPlus(n, h))
 
 
-@commands(u'boop-add')
-@example(u'!boop-add self boops herself!')
+@commands('boop-add')
+@example('!boop-add self boops herself!')
 def boop_add(bot, trigger):
     '''ADMIN: Adds boops. First argument should be one of 'self', 'boop', or 'all' '''
     if not trigger.owner:
@@ -141,7 +139,7 @@ def boop_add(bot, trigger):
         bot.reply("You must supply exactly one string substitution (%s) for the boop")
         return
 
-    boop = u' '.join(arguments[1:])
+    boop = ' '.join(arguments[1:])
     if boop not in bot.memory['boop'][arguments[0]]:
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
@@ -151,7 +149,7 @@ def boop_add(bot, trigger):
             dbcon.commit()
             bot.memory['boop'][arguments[0]].append(boop)
         except:
-            LOGGER.error(log.format(u'Unable to insert boop'), exc_info=True)
+            LOGGER.error(log.format('Unable to insert boop'), exc_info=True)
             bot.reply('Error inserting!')
         else:
             bot.reply('Added.')
@@ -162,8 +160,8 @@ def boop_add(bot, trigger):
         bot.reply('That already exists.')
 
 
-@commands(u'boop-del')
-@example(u'!boop-del self boops %s')
+@commands('boop-del')
+@example('!boop-del self boops %s')
 def boop_del(bot, trigger):
     '''ADMIN: attempts to delete boops. First argument should be one of 'self', 'boop', or 'all' '''
     if not trigger.owner:
@@ -176,7 +174,7 @@ def boop_del(bot, trigger):
     if len(arguments) < 2 or arguments[0] not in ('self', 'boop', 'all'):
         bot.reply("malformed arguments")
         return
-    boop = u' '.join(arguments[1:])
+    boop = ' '.join(arguments[1:])
 
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -191,13 +189,13 @@ def boop_del(bot, trigger):
                        AND boop like ?""", (arguments[0], boop))
         dbcon.commit()
     except:
-        LOGGER.error(log.format(u'ERROR: error removing boop'), exc_info=True)
+        LOGGER.error(log.format('ERROR: error removing boop'), exc_info=True)
         bot.reply("Error removing boops, probably malformed text provided for the like '?' portion of the SQL query.")
     else:
         bot.reply('%s boop(s) removed.' % count)
 
 
-@commands(u'boop')
+@commands('boop')
 def boop(bot, trigger):
     """Boops, what else?"""
     # Don't do anything if the bot has been shushed
@@ -222,7 +220,7 @@ def boop(bot, trigger):
                 target = random.choice(nick_list)
             bot.action(random.choice(bot.memory['boop']['boop']) % target)
         elif target in _excludes:
-            bot.say(u"I'm not doing that.")
+            bot.say("I'm not doing that.")
         elif nicks.in_chan(bot, trigger.sender, target):
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
@@ -231,7 +229,7 @@ def boop(bot, trigger):
             # TODO small chance to boop random person
             bot.action(random.choice(bot.memory['boop']['boop']) % target)
         elif target.lower() in bot.memory['boop']['lists'] and len(bot.memory['boop']['lists'][target.lower()]) > 0:
-            message = u' '.join(trigger.args[1].split()[2:])
+            message = ' '.join(trigger.args[1].split()[2:])
             msg = 'boops'
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
@@ -248,23 +246,23 @@ def boop(bot, trigger):
                         pass
             msg = msg.strip(',')
             if msg != 'boops':
-                msg = "%s %s" % (msg, '[%s]' % colors.colorize(target.lower(), [u'orange']))
+                msg = "%s %s" % (msg, '[%s]' % colors.colorize(target.lower(), ['orange']))
 
                 # TODO account for really long messages
                 if message:
                     msg = "%s %s" % (msg, '| <%s> %s')
-                    bot.action(msg % (colors.colorize(trigger.nick, [u'purple']),
-                                      colors.colorize(message, [u'green'])
+                    bot.action(msg % (colors.colorize(trigger.nick, ['purple']),
+                                      colors.colorize(message, ['green'])
                                       ))
                 else:
                     bot.action(msg)
             else:
                 bot.reply("Sorry, I don't see anyone from that list here right now.")
         else:
-            bot.reply(u'Sorry, I don\'t see %s around here.' % target)
+            bot.reply('Sorry, I don\'t see %s around here.' % target)
 
 
-@commands(u'optin')
+@commands('optin')
 def optin(bot, trigger):
     """Opt into being pinged/booped for a list."""
     if len(trigger.args[1].split()) > 2:
@@ -283,7 +281,7 @@ def optin(bot, trigger):
         else:
             name = nicks.NickPlus(trigger.nick, trigger.host)
             if target in _listexclude:
-                bot.reply(u'You can\'t opt into that...')
+                bot.reply('You can\'t opt into that...')
                 return
             elif target in bot.memory['boop']['lists']:
                 if Identifier(trigger.nick) not in bot.memory['boop']['lists'][target]:
@@ -291,19 +289,19 @@ def optin(bot, trigger):
                     cur.execute('''insert into boop_lists (list, nick, host)
                                 values (?, ?, ?)''', (target, trigger.nick, trigger.host))
                     dbcon.commit()
-                bot.reply('You are on the %s list.' % colors.colorize(target, [u'orange']))
+                bot.reply('You are on the %s list.' % colors.colorize(target, ['orange']))
             else:
                 bot.memory['boop']['lists'][target] = [nicks.NickPlus(trigger.nick)]
                 cur.execute('''insert into boop_lists (list, nick, host)
                                values (?, ?, ?)''', (target, trigger.nick, trigger.host))
                 dbcon.commit()
-                bot.reply('You are on the %s list.' % colors.colorize(target, [u'orange']))
+                bot.reply('You are on the %s list.' % colors.colorize(target, ['orange']))
         finally:
             cur.close()
             dbcon.close()
 
 
-@commands(u'optout')
+@commands('optout')
 def optout(bot, trigger):
     """Opt out from being pinged/booped for a list."""
     if len(trigger.args[1].split()) > 2:
@@ -328,7 +326,7 @@ def optout(bot, trigger):
                                    )
                                ''', (target, trigger.nick.lower(), trigger.host.lower()))
                 dbcon.commit()
-                bot.reply('You have been removed from the %s list.' % colors.colorize(target, [u'orange']))
+                bot.reply('You have been removed from the %s list.' % colors.colorize(target, ['orange']))
             elif target in ['all', 'everything']:
                 for i in bot.memory['boop']['lists']:
                     try:
@@ -350,7 +348,7 @@ def optout(bot, trigger):
             dbcon.close()
 
 
-@commands(u'opts', u'opt')
+@commands('opts', 'opt')
 def opts(bot, trigger):
     # TODO list opts lists
     pass

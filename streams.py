@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import json
 import re
 import shutil
@@ -95,7 +93,7 @@ class stream(object):
         return '%s on %s' % (self.name, self.service)
 
     def __unicode__(self):
-        return u'%s on %s' % (self.name, self.service)
+        return '%s on %s' % (self.name, self.service)
 
     def __repr__(self):
         return self._name
@@ -193,7 +191,7 @@ class livestream(stream):
         super(livestream, self).__init__(name, alias)
         self._safename = re.sub('_', '-', self._name)
         try:
-            self._results = web.get(u'x%sx%sinfo.json' % (
+            self._results = web.get('x%sx%sinfo.json' % (
                 self._safename, self._base_url))
         except timeout:
             raise
@@ -228,7 +226,7 @@ class livestream(stream):
 
     def update(self):
         try:
-            self._results = web.get(u'x%sx%slivestatus.json' % (
+            self._results = web.get('x%sx%slivestatus.json' % (
                 self._safename, self._base_url))
         except timeout:
             raise
@@ -269,7 +267,7 @@ class ustream(stream):
 
     def __init__(self, name, alias=None):
         super(ustream, self).__init__(name, alias)
-        self._results = web.get(u'%s/channel/%s/getInfo?key=%s' % (
+        self._results = web.get('%s/channel/%s/getInfo?key=%s' % (
             self._base_url, self._name, _ustream_dev_key))
         self._form_j = json.loads(self._results)
         if self._form_j['error']:
@@ -281,7 +279,7 @@ class ustream(stream):
         # No integrated NSFW flags to parse
 
     def update(self):
-        self._results = web.get(u'%s/channel/%s/getValueOf/status?key=%s' % (
+        self._results = web.get('%s/channel/%s/getValueOf/status?key=%s' % (
             self._base_url, self._name, _ustream_dev_key))
         self._form_j = json.loads(self._results)
         if self._form_j['error']:
@@ -399,7 +397,7 @@ class twitchtv(stream):
         super(twitchtv, self).__init__(name, alias)
         # Update channel info
         try:
-            self._results = web.get(u'%schannels/%s' % (
+            self._results = web.get('%schannels/%s' % (
                 self._base_url, self._name), headers=self._header_info)
         except timeout:
             raise
@@ -434,7 +432,7 @@ class twitchtv(stream):
 
     def update(self):
         try:
-            self._results = web.get(u'%sstreams/%s' % (
+            self._results = web.get('%sstreams/%s' % (
                 self._base_url, self._name), headers=self._header_info)
         except timeout:
             raise
@@ -550,16 +548,16 @@ def setup(bot):
             bot.memory['streamSet']['help_file_dest']
         )
     except:
-        LOGGER.error(log.format(u'Unable to copy help file. Check configuration.'), exec_info=True)
+        LOGGER.error(log.format('Unable to copy help file. Check configuration.'), exec_info=True)
         raise
     with open(bot.memory['streamSet']['list_template_path']) as f:
         try:
             bot.memory['streamListT'] = Template(''.join(f.readlines()))
         except:
-            LOGGER.error(log.format(u'Unable to load list template.'), exec_info=True)
+            LOGGER.error(log.format('Unable to load list template.'), exec_info=True)
             raise
 
-    LOGGER.info(log.format(u'Starting stream setup, this may take a bit.'))
+    LOGGER.info(log.format('Starting stream setup, this may take a bit.'))
     # TODO consider making these unique sets
     if 'url_exclude' not in bot.memory:
         bot.memory['url_exclude'] = []
@@ -610,7 +608,7 @@ def load_from_db(bot, trigger=None):
     """ADMIN: Reload live streams from database."""
     if trigger and not trigger.owner:
         return
-    LOGGER.info(log.format(u'Reloading from DB'))
+    LOGGER.info(log.format('Reloading from DB'))
     bot.memory['streams'] = []
     bot.memory['feat_streams'] = []
     dbcon = bot.db.connect()  # sqlite3 connection
@@ -631,14 +629,14 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(
                 bot.memory['streamFac'].newStream(c, s, a))
         except:
-            LOGGER.error(log.format(u'Failed to initialize livestream: %s, %s, %s'), c, s, a, exec_info=True)
+            LOGGER.error(log.format('Failed to initialize livestream: %s, %s, %s'), c, s, a, exec_info=True)
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
         subscribe(bot, 'subscribe', (c, s), Identifier(n), quiet=True)
-    LOGGER.info(log.format(u'Done.'))
+    LOGGER.info(log.format('Done.'))
 
 
 def alias(bot, switch, channel, value=None):
@@ -666,10 +664,10 @@ def alias(bot, switch, channel, value=None):
                 finally:
                     cur.close()
                     dbcon.close()
-                bot.say(u'Set alias for %s to %s.' % (c, value))
+                bot.say('Set alias for %s to %s.' % (c, value))
                 return
             else:
-                bot.say(u"I don't have that stream.")
+                bot.say("I don't have that stream.")
         elif switch == 'unalias':
             i = None
             for i in [a for a in bot.memory['streams']
@@ -686,16 +684,16 @@ def alias(bot, switch, channel, value=None):
                     finally:
                         cur.close()
                         dbcon.close()
-                    bot.say(u'Removed alias for %s.' % c)
+                    bot.say('Removed alias for %s.' % c)
                     return
                 else:
-                    bot.say(u"That doesn't have an alias.")
+                    bot.say("That doesn't have an alias.")
                     return
             else:
-                bot.say(u"I don't have that stream.")
+                bot.say("I don't have that stream.")
         else:
-            bot.say(u"Uh, that wasn't supposed to happen.")
-            bot.say(u"!tell tdreyer1 HEEEEEEEEEEELLLLLLP!")
+            bot.say("Uh, that wasn't supposed to happen.")
+            bot.say("!tell tdreyer1 HEEEEEEEEEEELLLLLLP!")
 
 
 def nsfw(bot, switch, channel, quiet=None):
@@ -703,7 +701,7 @@ def nsfw(bot, switch, channel, quiet=None):
     try:
         c, s = parse_service(channel)
     except TypeError:
-        msg = u'Bad url or channel/service pair. See !help services.'
+        msg = 'Bad url or channel/service pair. See !help services.'
         if not quiet:
             bot.say(msg)
         else:
@@ -727,7 +725,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 finally:
                     cur.close()
                     dbcon.close()
-                msg = u'Set NSFW tag for %s.' % c
+                msg = 'Set NSFW tag for %s.' % c
                 if not quiet:
                     bot.say(msg)
                 else:
@@ -735,7 +733,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 return
 
             else:
-                msg = u"I don't have that stream."
+                msg = "I don't have that stream."
                 if not quiet:
                     bot.say(msg)
                 else:
@@ -762,27 +760,27 @@ def nsfw(bot, switch, channel, quiet=None):
                     finally:
                         cur.close()
                         dbcon.close()
-                    msg = u'Removed NSFW tag for %s.' % c
+                    msg = 'Removed NSFW tag for %s.' % c
                     if not quiet:
                         bot.say(msg)
                     else:
                         LOGGER.info(log.format(msg))
                     return
                 else:
-                    msg = u"That doesn't have a NSFW tag."
+                    msg = "That doesn't have a NSFW tag."
                     if not quiet:
                         bot.say(msg)
                     else:
                         LOGGER.info(log.format(msg))
                     return
             else:
-                msg = u"I don't have that stream."
+                msg = "I don't have that stream."
                 if not quiet:
                     bot.say(msg)
                 else:
                     LOGGER.info(log.format(msg))
         else:
-            msg = u"Uh oh, something broke..."
+            msg = "Uh oh, something broke..."
             if not quiet:
                 bot.say(msg)
             else:
@@ -790,7 +788,7 @@ def nsfw(bot, switch, channel, quiet=None):
 
 
 def more_help(bot, trigger):
-    bot.reply(u'For detailed help, see %s' %
+    bot.reply('For detailed help, see %s' %
               bot.memory['streamSet']['help_file_url'])
 
 
@@ -845,7 +843,7 @@ def sceencasting(bot, trigger):
                 feature(bot, arg1, arg2)
                 return
             else:
-                bot.reply(u"Sorry, that's an admin only command.")
+                bot.reply("Sorry, that's an admin only command.")
                 return
         elif arg1 == 'list':
             list_streams(bot, arg2, Identifier(trigger.nick))
@@ -877,7 +875,7 @@ def sceencasting(bot, trigger):
                 feature(bot, arg1, (arg2, arg3))
                 return
             else:
-                bot.reply(u"Sorry, that's an admin only command.")
+                bot.reply("Sorry, that's an admin only command.")
                 return
         elif arg1 == 'list':
             list_streams(bot, arg2, Identifier(trigger.nick))
@@ -941,7 +939,7 @@ def add_stream(bot, user):
         bot.say('Bad url or channel/service pair. See !help services.')
         return
     if [a for a in bot.memory['streams'] if a.name == u and a.service == s]:
-        bot.reply(u'I already have that one.')
+        bot.reply('I already have that one.')
         return
     else:
         # TODO may need a try block here
@@ -953,37 +951,37 @@ def add_stream(bot, user):
                     bot.memory['streamFac'].newStream(u, s))
             except ValueError as txt:
                 if str(txt) == '400 Bad Request':
-                    bot.reply(u'Oops, I did something bad so that did not ' +
-                              u'work.')
+                    bot.reply('Oops, I did something bad so that did not ' +
+                              'work.')
                     bot.say('!tell tdreyer1 FIX IT FIX IT FIX IT FIX IT!')
                     return
                 elif str(txt) == '404 Not Found':
-                    bot.reply(u'Channel not found.')
+                    bot.reply('Channel not found.')
                     return
                 elif str(txt) == '500 Internal Server Error':
-                    bot.reply(u'Service returned internal server error, try' +
-                              u' again later.')
+                    bot.reply('Service returned internal server error, try' +
+                              ' again later.')
                     return
                 # Twitch.tv - user does not exist
                 elif str(txt).startswith('404 Not Found: Channel'):
-                    bot.reply(u'Channel not found.')
+                    bot.reply('Channel not found.')
                     return
                 else:
-                    bot.reply(u'There was an unknown error, check your ' +
-                              u'spelling and try again later')
+                    bot.reply('There was an unknown error, check your ' +
+                              'spelling and try again later')
                     LOGGER.info(log.format(txt))
                     return
             except timeout as txt:
                 LOGGER.info(log.format(txt))
-                bot.reply(u'Oops, the request to the service timed out! ' +
-                          u'Try again later.')
+                bot.reply('Oops, the request to the service timed out! ' +
+                          'Try again later.')
                 return
             try:
                 cur.execute('''SELECT COUNT(*) FROM streams
                                WHERE channel = ?
                                AND service = ?''', (u, s))
                 if cur.fetchone()[0] == 0:
-                    LOGGER.info(log.format(u'ADD: count was != 0'))
+                    LOGGER.info(log.format('ADD: count was != 0'))
                     cur.execute('''INSERT INTO streams (channel, service)
                                    VALUES (?, ?)''', (u, s))
                     dbcon.commit()
@@ -1020,7 +1018,7 @@ def list_streams(bot, arg=None, nick=None):
             bot.say("You aren't subscribed to anything.")
             return
         s = None
-        bot.reply(u'Sending you the list in pm.')
+        bot.reply('Sending you the list in pm.')
         for s in [a for a in bot.memory['streamSubs']
                   for n in bot.memory['streamSubs'][a] if n == nick]:
             _tmp_list.append(format_stream(s))
@@ -1060,13 +1058,13 @@ def list_streams(bot, arg=None, nick=None):
             bot.msg(nick, format_stream(i))
         return
     else:
-        bot.say(u"I don't understand what you want me to list!")
+        bot.say("I don't understand what you want me to list!")
 
 
 def publish_lists(bot, trigger=None):
     def format_html(st):
         def wrap_link(link):
-            return u'<a href = "%s">%s</a>' % (link, link)
+            return '<a href = "%s">%s</a>' % (link, link)
 
         if st.alias:
             name = '%s on %s' % (st.alias, st.service)
@@ -1085,14 +1083,14 @@ def publish_lists(bot, trigger=None):
             previous_full_list = ''.join(f.readlines())
     except IOError:
         previous_full_list = ''
-        LOGGER.warning(log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
+        LOGGER.warning(log.format('IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
 
     try:
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'r') as f:
             previous_feat_list = ''.join(f.readlines())
     except IOError:
         previous_feat_list = ''
-        LOGGER.info(log.format(u'IO error grabbing "list_feat_dest_path" file contents. File may not exist yet'))
+        LOGGER.info(log.format('IO error grabbing "list_feat_dest_path" file contents. File may not exist yet'))
 
     # Generate full list HTML
     live_list = []
@@ -1113,7 +1111,7 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_full_list != contents:
-        LOGGER.info(log.format(u'Found change in full list html file.'))
+        LOGGER.info(log.format('Found change in full list html file.'))
         with open(bot.memory['streamSet']['list_main_dest_path'], 'w') as f:
             f.write(contents)
     # Generate featured list HTML
@@ -1135,7 +1133,7 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_feat_list != contents:
-        LOGGER.info(log.format(u'Found change in featured list html file.'))
+        LOGGER.info(log.format('Found change in featured list html file.'))
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'w') as f:
             f.write(contents)
     return
@@ -1188,10 +1186,10 @@ def remove_stream(bot, user):
                 # Stream is not in the subscription list
                 pass
             bot.memory['streams'].remove(i)
-            bot.say(u'Stream removed.')
+            bot.say('Stream removed.')
             return
         else:
-            bot.say(u"I don't have that stream.")
+            bot.say("I don't have that stream.")
 
 
 @commands('update', 'reload', 'refresh')
@@ -1200,11 +1198,11 @@ def update_streams(bot, trigger):
     if not trigger.owner:
         return
     with bot.memory['streamLock']:
-        bot.reply(u'updating streams')
+        bot.reply('updating streams')
         for i in bot.memory['streams']:
             i.update()
             time.sleep(0.25)
-        bot.reply(u'Streams updated')
+        bot.reply('Streams updated')
 
 
 def feature(bot, switch, channel, quiet=False):
@@ -1212,7 +1210,7 @@ def feature(bot, switch, channel, quiet=False):
     try:
         u, s = parse_service(channel)
     except TypeError:
-        msg = u'Bad url or channel/service pair. See !help services.'
+        msg = 'Bad url or channel/service pair. See !help services.'
         if not quiet:
             bot.say(msg)
         else:
@@ -1225,7 +1223,7 @@ def feature(bot, switch, channel, quiet=False):
             for i in [a for a in bot.memory['streams']
                       if a.name.lower() == u.lower() and a.service == s]:
                 if i in bot.memory['feat_streams']:
-                    msg = u"That's already featured!"
+                    msg = "That's already featured!"
                     if not quiet:
                         bot.say(msg)
                     else:
@@ -1245,13 +1243,13 @@ def feature(bot, switch, channel, quiet=False):
                         cur.close()
                         dbcon.close()
                     bot.memory['feat_streams'].append(i)
-                    msg = u'Stream featured.'
+                    msg = 'Stream featured.'
                     if not quiet:
                         bot.say(msg)
                     else:
                         LOGGER.info(log.format(msg))
                     return
-            msg = u"Not a channel or that channel hasn't been added yet!"
+            msg = "Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
@@ -1269,20 +1267,20 @@ def feature(bot, switch, channel, quiet=False):
                     cur.close()
                     dbcon.close()
                 bot.memory['feat_streams'].remove(i)
-                msg = u'Stream unfeatured.'
+                msg = 'Stream unfeatured.'
                 if not quiet:
                     bot.say(msg)
                 else:
                     LOGGER.info(log.format(msg))
                 return
-            msg = u"Not a channel or that channel hasn't been added yet!"
+            msg = "Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
                 LOGGER.info(log.format(msg))
             return
         else:
-            msg = u"Oh shit, I don't know what just happened."
+            msg = "Oh shit, I don't know what just happened."
             if not quiet:
                 bot.reply(msg)
             else:
@@ -1296,7 +1294,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
     try:
         u, s = parse_service(channel)
     except TypeError:
-        msg = u'Bad url or channel/service pair. See !help services.'
+        msg = 'Bad url or channel/service pair. See !help services.'
         if not quiet:
             bot.say(msg)
         else:
@@ -1324,14 +1322,14 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                         cur.close()
                         dbcon.commit()
                     bot.memory['streamSubs'][i].append(nick)
-                    msg = u'Subscription added.'
+                    msg = 'Subscription added.'
                     if not quiet:
                         bot.reply(msg)
                     else:
                         LOGGER.info(log.format(msg))
                     return
                 else:
-                    msg = u"You're already subscribed to that channel!"
+                    msg = "You're already subscribed to that channel!"
                     if not quiet:
                         bot.reply(msg)
                     else:
@@ -1349,19 +1347,19 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                             cur.close()
                             dbcon.close()
                         bot.memory['streamSubs'][i].remove(nick)
-                        msg = u'Subscription removed.'
+                        msg = 'Subscription removed.'
                         if not quiet:
                             bot.reply(msg)
                         else:
                             LOGGER.info(log.format(msg))
                         return
-                msg = u"You weren't subscribed to that or that doesn't exist."
+                msg = "You weren't subscribed to that or that doesn't exist."
                 if not quiet:
                     bot.reply(msg)
                 else:
                     LOGGER.info(log.format(msg))
             else:
-                msg = u"Oh shit, I don't know what just happened."
+                msg = "Oh shit, I don't know what just happened."
                 if not quiet:
                     bot.reply(msg)
                 else:
@@ -1385,7 +1383,7 @@ def announcer(bot):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    LOGGER.debug(log.format(u'Announcer waking up'))
+    LOGGER.debug(log.format('Announcer waking up'))
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
@@ -1428,7 +1426,7 @@ def announcer(bot):
                     # Chan was msg'd about stream too recently. The stream may
                     # be experiencing trouble so we don't want to spam
                     pass
-    LOGGER.debug(log.format(u'Announcer sleeping'))
+    LOGGER.debug(log.format('Announcer sleeping'))
 
 
 # Livestream limits access to the following limits
@@ -1438,7 +1436,7 @@ def announcer(bot):
 #    10000 requests per day ( ~1 / 9sec )
 @interval(223)
 def livestream_updater(bot):
-    LOGGER.info(log.format(u'Starting livestream.com updater.'))
+    LOGGER.info(log.format('Starting livestream.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         try:
@@ -1447,33 +1445,33 @@ def livestream_updater(bot):
         except ValueError:
             pass
         time.sleep(0.25)
-    LOGGER.info(log.format(u'livestream.com updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.info(log.format('livestream.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(227)
 def twitchtv_updater(bot):
-    LOGGER.info(log.format(u'Starting twitch.tv updater.'))
+    LOGGER.info(log.format('Starting twitch.tv updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
-    LOGGER.info(log.format(u'twitch.tv updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.info(log.format('twitch.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(229)
 def youtube_updater(bot):
-    LOGGER.info(log.format(u'Starting youtube.com updater.'))
+    LOGGER.info(log.format('Starting youtube.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
         s.update()
         time.sleep(0.25)
-    LOGGER.info(log.format(u'youtube.com updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.info(log.format('youtube.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(239)
 def ustream_updater(bot):
-    LOGGER.info(log.format(u'Starting ustream.tv updater.'))
+    LOGGER.info(log.format('Starting ustream.tv updater.'))
     now = time.time()
     # channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
     # if len(channel_list) == 0:
@@ -1493,21 +1491,21 @@ def ustream_updater(bot):
         s.update()
         time.sleep(0.25)
         '''
-    LOGGER.info(log.format(u'ustream.tv updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.info(log.format('ustream.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(161)
 def picarto_updater(bot):
-    LOGGER.info(log.format(u'Starting picarto.tv updater.'))
+    LOGGER.info(log.format('Starting picarto.tv updater.'))
     try:
         now = time.time()
         for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
             # TODO handle timeout, misc exceptions
             s.update()
             time.sleep(0.25)
-        LOGGER.info(log.format(u'picarto.tv updater complete in %s seconds.'), (time.time() - now))
+        LOGGER.info(log.format('picarto.tv updater complete in %s seconds.'), (time.time() - now))
     except:
-        LOGGER.error(log.format(u'Unhandled exception in the picarto updater.'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception in the picarto updater.'), exec_info=True)
 
 
 def info():
@@ -1526,9 +1524,9 @@ def stats(bot):
     # number of featured, number of subs, steams by service
     bot.say('I am tracking %s streams, %s of which are featured.' %
             (len(bot.memory['streams']), len(bot.memory['feat_streams'])))
-    bot.say((u'There are %s from livestream.com, '
-             u'%s from twitch.tv, %s from youtube.com, %s '
-             u'from ustream.tv, and %s from picarto.tv.') % (
+    bot.say(('There are %s from livestream.com, '
+             '%s from twitch.tv, %s from youtube.com, %s '
+             'from ustream.tv, and %s from picarto.tv.') % (
             len([i for i in bot.memory['streams']
                 if i.service == 'livestream.com']),
             len([i for i in bot.memory['streams']
@@ -1540,7 +1538,7 @@ def stats(bot):
             len([i for i in bot.memory['streams']
                 if i.service == 'picarto.tv'])
             ))
-    bot.say(u'There are %s individual subscriptions.' %
+    bot.say('There are %s individual subscriptions.' %
             len(bot.memory['streamSubs']))
 
 

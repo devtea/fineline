@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import bisect
 import random
 import threading
@@ -54,33 +52,33 @@ except:
 _front = ['any', 'some']
 _back = ['one', 'body', 'pony', 'poni', 'pone']
 _anyone = [a + b for a in _front for b in _back]
-_reply_list = [u'%s x %s',
-               u'%s and %s didn\'t choose the huglife, the huglife chose them.',
-               u'%s and %s can\'t keep their hooves off each other',
-               u'%s and %s are suddenly and inexplicably attracted to each other...',
-               u'%s gets unceremoniously stuffed into a shipping container with %s.',
-               u'%s and %s set sail.',
-               u'%s and %s sail the seven seas.',
-               u'%s and %s are caught redhoofed.',
-               u'%s and %s will deny it, but everypony knows...',
-               u'%s writes a self-insert fanfic about %s.',
-               u'%s and %s take the midnight train going anywhere.',
-               u'%s and %s "accidentally" find themselves together in a hotel room... Alone...',
-               u'That\'s right, %s and %s...',
-               u'%s and %s find some creative ways to entertain themselves.',
-               u'%s and %s forgot to leave room for Jesus!',
-               u'%s and %s have a party of two.',
-               u'%s and %s have more in common than they thought!',
-               u'%s sets aside some "special hugging" time for %s',
-               u'%s brings the duct tape, %s brings the WD40...',
-               u'%s could not get any closer to %s right now.',
-               u'%s stares at %s, lost forever in their dreamy eyes.',
-               u'%s blushes as %s leans in for a peck.',
-               u'%s nearly faints when %s senpai finally notices them~',
-               u'%s isn\'t the only one chasing after %s',
-               u'%s only has eyes for %s',
-               u'It\'s hard to tell where %s ends and %s begins.',
-               u'%s has a super secret diary just filled with pictures of %s.'
+_reply_list = ['%s x %s',
+               '%s and %s didn\'t choose the huglife, the huglife chose them.',
+               '%s and %s can\'t keep their hooves off each other',
+               '%s and %s are suddenly and inexplicably attracted to each other...',
+               '%s gets unceremoniously stuffed into a shipping container with %s.',
+               '%s and %s set sail.',
+               '%s and %s sail the seven seas.',
+               '%s and %s are caught redhoofed.',
+               '%s and %s will deny it, but everypony knows...',
+               '%s writes a self-insert fanfic about %s.',
+               '%s and %s take the midnight train going anywhere.',
+               '%s and %s "accidentally" find themselves together in a hotel room... Alone...',
+               'That\'s right, %s and %s...',
+               '%s and %s find some creative ways to entertain themselves.',
+               '%s and %s forgot to leave room for Jesus!',
+               '%s and %s have a party of two.',
+               '%s and %s have more in common than they thought!',
+               '%s sets aside some "special hugging" time for %s',
+               '%s brings the duct tape, %s brings the WD40...',
+               '%s could not get any closer to %s right now.',
+               '%s stares at %s, lost forever in their dreamy eyes.',
+               '%s blushes as %s leans in for a peck.',
+               '%s nearly faints when %s senpai finally notices them~',
+               '%s isn\'t the only one chasing after %s',
+               '%s only has eyes for %s',
+               'It\'s hard to tell where %s ends and %s begins.',
+               '%s has a super secret diary just filled with pictures of %s.'
                ]
 
 
@@ -118,7 +116,7 @@ def weighted_choice(weighted):
     return bisect.bisect_right(sum_steps, random.uniform(0, sum))
 
 
-@commands(u'ship')
+@commands('ship')
 def ship(bot, trigger):
     """Returns a somewhat random shipping pair."""
     # Don't do anything if the bot has been shushed
@@ -189,7 +187,7 @@ def ship(bot, trigger):
         pair = [i1, i2]
     else:
         # match nick with pony!
-        while unicode(i2) == unicode(i1):
+        while i2 == i1:
             i2 = weighted_choice(bot.memory['pony_list'])
         if not isinstance(i1, IntType):
             pair = [i1, bot.memory['pony_list'][i2][0]]
@@ -199,13 +197,13 @@ def ship(bot, trigger):
     bot.reply(random.choice(_reply_list) % (pair[0], pair[1]))
 
 
-@commands(u'ship_delname')
-@example(u'!ship_delname some name')
+@commands('ship_delname')
+@example('!ship_delname some name')
 def delname(bot, trigger):
     '''ADMIN: Removes a pony from the database. Admin only.'''
     if not trigger.admin:
         return
-    name = ' '.join(trigger.split(u' ')[1:]).lower()
+    name = ' '.join(trigger.split(' ')[1:]).lower()
     LOGGER.info(log.format(name))
     with bot.memory['pony_list_lock']:
         dbcon = bot.db.connect()
@@ -213,21 +211,21 @@ def delname(bot, trigger):
         try:
             cur.execute('select name, weight from prompt_ponies where lower(name) = ?', (name,))
             rows = cur.fetchall()
-            LOGGER.info(log.format(u'%s'), rows)
+            LOGGER.info(log.format('%s'), rows)
             if rows:
                 cur.execute('delete from prompt_ponies where lower(name) = ?', (name,))
                 dbcon.commit()
                 bot.memory['pony_list'] = [x for x in bot.memory['pony_list'] if x[0].lower() != name]
-                bot.reply(u'Deleted %s (%s) from the list.' % (rows[0][0], rows[0][1]))
+                bot.reply('Deleted %s (%s) from the list.' % (rows[0][0], rows[0][1]))
             else:
-                bot.reply(u'%s was not found in the list.' % name)
+                bot.reply('%s was not found in the list.' % name)
         finally:
             cur.close()
             dbcon.close()
 
 
-@commands(u'ship_addname')
-@example(u'!ship_addname some name 1000')
+@commands('ship_addname')
+@example('!ship_addname some name 1000')
 def addname(bot, trigger):
     '''Adds a character name and weight to the database. Admin only.'''
     if not trigger.admin:
@@ -252,7 +250,7 @@ def addname(bot, trigger):
                            values (?, ?)''', (name, weight))
             dbcon.commit()
             bot.memory['pony_list'].append((name, weight))
-            bot.reply(u'Done')
+            bot.reply('Done')
         finally:
             cur.close()
             dbcon.close()

@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://willie.dftba.net
 """
-from __future__ import unicode_literals
-
 import os.path
 import sys
 import time

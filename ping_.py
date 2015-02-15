@@ -8,11 +8,11 @@ http://bitbucket.org/tdreyer/fineline
 from willie.module import commands, priority, example
 
 
-@commands(u'ping')
-@priority(u'high')
-@example(u'!ping')
+@commands('ping')
+@priority('high')
+@example('!ping')
 def ping(bot, trigger):
-    bot.say(u'Pony!')
+    bot.say('Pony!')
 
 
 if __name__ == "__main__":

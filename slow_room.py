@@ -8,8 +8,6 @@ http://bitbucket.org/tdreyer/fineline
 
 """
 # todo add boop
-from __future__ import print_function
-
 import datetime
 import feedparser
 import random
@@ -40,7 +38,7 @@ except:
             fp.close()
 
 # Wait time in seconds before the bot will pipe up
-_INCLUDE = [u'#reddit-mlpds']
+_INCLUDE = ['#reddit-mlpds']
 _REFRESH_TIME = (5 * 60)  # Time between RSS refreshes
 # TODO move this to config file
 
@@ -114,7 +112,7 @@ def fetch_rss(bot, feed_url):
         try:
             feedparser.parse(url)
         except:
-            LOGGER.warning(log.format(u"Could not update feed, using cached version."))
+            LOGGER.warning(log.format("Could not update feed, using cached version."))
             return
         bot.memory["fetch_rss"][feed_url] = []
         bot.memory["fetch_rss"][feed_url].append(time.time())
@@ -131,8 +129,8 @@ def fetch_rss(bot, feed_url):
 
 def fzoo(bot, channel):
     x = random.uniform(0, 1)
-    oos = u'o' * int(50 * x ** 4 - x ** 3 - 5 * x ** 2 + 2)
-    bot.msg(channel, u"!fzo%s ♥" % oos)
+    oos = 'o' * int(50 * x ** 4 - x ** 3 - 5 * x ** 2 + 2)
+    bot.msg(channel, "!fzo%s ♥" % oos)
 
 
 def quote(bot, channel):
@@ -148,47 +146,47 @@ def arttip(bot, channel):
 
 def sing(bot, channel):
     bot.msg(channel, random.choice([
-        u"♫My little pony, my little pony!♪",
-        u"♫When I was a little filly and the sun was going down...♪",
-        u"♫Oh the Grand Galloping Gala is the best place for me!♪",
-        u"♫It's not very far; just move your little rump!♪",
-        u"♫She's an evil enchantress; She does evil dances!♪",
-        u"♫Three months of winter coolness and awesome holidays!♪",
-        u"♫Winter wrapup, winter wrapup!♪",
-        u"♫Cupcakes! Cupcakes, cupcakes, CUPCAKES!♪",
-        u"♫Thread by thread, stitching it together♪",
-        u"♫Hush now, quiet now; It's time to lay your sleepy head.♪",
-        u"♫What is this place, filled with so many wonders?♪",
-        u"♫This is your singing telegram, I hope it finds you well!♪",
-        u"♫At the Gala, at the Gala!♪",
-        u"♫Can't settle for less, 'cause I'm the best♪",
-        u"♫I'm the type of pony every pony, every pony should know♪",
-        u"♫The fire of friendship lives in our hearts♪",
-        u"♫The perfect stallion you and I must find♪",
-        u"♫'Cause I love to make you smile, smile, smile♪",
-        u"♫My big brother, best friend forever!♪",
-        u"♫This day is going to be perfect...♪",
-        u"♫Love is in bloom! A beautiful bride, a handsome groom♪",
-        u"♫I was prepared to do my best...♪",
-        u"♫We can save the Crystal Ponies with their history!♪",
-        u"♫Babs Seed, Babs Seed, what we gonna do?♪",
-        u"♫All we need to strive to be; Is part of the Apple family!♪",
-        u"♫Morning in Ponyville shimmers; Morning in Ponyville shines♪",
-        u"♫It's what my cutie mark is telling me♪",
-        u"♫I have to find a way, to make this all okay♪",
-        u"♫A True, True Friend helps a friend in need!♪",
-        u"♫You've come such a long, long way...♪",
-        u"♫We've got hearts as strong as horses♪",
-        u"♪You see one comin', you'd better run and hide!♫",
-        u"♫Oh, Manehattan, what you do to me♪",
-        u"♪We're Apples forever, Apples together; We're family, but so much more♫",
-        u"♫Today I planned a party, and it's just for you!♪",
-        u"♪For there's only one great party pony -- that is Pinkie Pie♫",
-        u"♫Time to make a wish, better make it right now!♪",
-        u"♪And the music makes your heart soar in reply♫",
-        u"♫When you find you've got the music; You've got to look inside and find♪",
-        u"♪Know that your time is coming soon; As the sun rises, so does the moon♫",
-        u"♫Let the rainbow remind you; That together we will always shine♪"
+        "♫My little pony, my little pony!♪",
+        "♫When I was a little filly and the sun was going down...♪",
+        "♫Oh the Grand Galloping Gala is the best place for me!♪",
+        "♫It's not very far; just move your little rump!♪",
+        "♫She's an evil enchantress; She does evil dances!♪",
+        "♫Three months of winter coolness and awesome holidays!♪",
+        "♫Winter wrapup, winter wrapup!♪",
+        "♫Cupcakes! Cupcakes, cupcakes, CUPCAKES!♪",
+        "♫Thread by thread, stitching it together♪",
+        "♫Hush now, quiet now; It's time to lay your sleepy head.♪",
+        "♫What is this place, filled with so many wonders?♪",
+        "♫This is your singing telegram, I hope it finds you well!♪",
+        "♫At the Gala, at the Gala!♪",
+        "♫Can't settle for less, 'cause I'm the best♪",
+        "♫I'm the type of pony every pony, every pony should know♪",
+        "♫The fire of friendship lives in our hearts♪",
+        "♫The perfect stallion you and I must find♪",
+        "♫'Cause I love to make you smile, smile, smile♪",
+        "♫My big brother, best friend forever!♪",
+        "♫This day is going to be perfect...♪",
+        "♫Love is in bloom! A beautiful bride, a handsome groom♪",
+        "♫I was prepared to do my best...♪",
+        "♫We can save the Crystal Ponies with their history!♪",
+        "♫Babs Seed, Babs Seed, what we gonna do?♪",
+        "♫All we need to strive to be; Is part of the Apple family!♪",
+        "♫Morning in Ponyville shimmers; Morning in Ponyville shines♪",
+        "♫It's what my cutie mark is telling me♪",
+        "♫I have to find a way, to make this all okay♪",
+        "♫A True, True Friend helps a friend in need!♪",
+        "♫You've come such a long, long way...♪",
+        "♫We've got hearts as strong as horses♪",
+        "♪You see one comin', you'd better run and hide!♫",
+        "♫Oh, Manehattan, what you do to me♪",
+        "♪We're Apples forever, Apples together; We're family, but so much more♫",
+        "♫Today I planned a party, and it's just for you!♪",
+        "♪For there's only one great party pony -- that is Pinkie Pie♫",
+        "♫Time to make a wish, better make it right now!♪",
+        "♪And the music makes your heart soar in reply♫",
+        "♫When you find yo've got the music; You've got to look inside and find♪",
+        "♪Know that your time is coming soon; As the sun rises, so does the moon♫",
+        "♫Let the rainbow remind you; That together we will always shine♪"
     ]))
 
 
@@ -200,22 +198,22 @@ def why_is_this_bot_singing(bot, trigger):
 
 
 def poke(bot, channel):
-    bot.msg(channel, u"\001ACTION pokes the chat\001")
+    bot.msg(channel, "\001ACTION pokes the chat\001")
     if random.uniform(0, 1) > 0.9:
         time.sleep(1)
-        bot.msg(channel, u"It's dead Jim.")
+        bot.msg(channel, "It's dead Jim.")
 
 
 def cute(bot, channel, is_timer=True):
     pics = []
     intro = [
-        u"It's a bit slow in here right now. How about a pony pic?",
-        u"I guess my owner likes this pic, but I'm not sure. What do you all think?",
-        u"Y'all are boring. Have a pony.",
-        random.choice([u"Pone!", u"Pony!", u"Poni!"]),
-        u"Pony should pony pony pony",
-        u"[](/ppwatching-r-90)",
-        u"\001ACTION yawns blearily and a URL pops out!\001"
+        "It's a bit slow in here right now. How about a pony pic?",
+        "I guess my owner likes this pic, but I'm not sure. What do you all think?",
+        "Y'all are boring. Have a pony.",
+        random.choice(["Pone!", "Pony!", "Poni!"]),
+        "Pony should pony pony pony",
+        "[](/ppwatching-r-90)",
+        "\001ACTION yawns blearily and a URL pops out!\001"
     ]
     feed = fetch_rss(bot, bot.memory["da_faves"])
     if feed:
@@ -226,39 +224,39 @@ def cute(bot, channel, is_timer=True):
             time.sleep(random.uniform(1, 3))
         bot.msg(channel, random.choice(pics))
     else:
-        bot.msg(channel, u"[](/derpyshock) Oh no, I was going to " +
-                         u"post from DA, but something went wrong!")
+        bot.msg(channel, "[](/derpyshock) Oh no, I was going to " +
+                         "post from DA, but something went wrong!")
 
 
 def features(bot, channel):
     bot.msg(channel, random.choice([
-        u"Looking for something to do? I'd be happy to !stream an episode or five.",
-        u'Want to know when a stream goes live? !live subscribe!',
-        u'Need a Bob Ross fix? !bob',
-        u"Don't forget that I'm a smart pony and can do lots of neat stuff like !stream, !timer, !prompt, !queue, and more!"
+        "Looking for something to do? I'd be happy to !stream an episode or five.",
+        'Want to know when a stream goes live? !live subscribe!',
+        'Need a Bob Ross fix? !bob',
+        "Don't forget that I'm a smart pony and can do lots of neat stuff like !stream, !timer, !prompt, !queue, and more!"
     ]))
 
 
-@rule(u'.*')
+@rule('.*')
 def last_activity(bot, trigger):
     """Keeps track of the last activity for a room"""
     if trigger.sender.startswith("#") and \
             trigger.sender in _INCLUDE:
         LOGGER.info(log.format(trigger.sender))
         if 'slow_timer_lock' not in bot.memory:
-            LOGGER.warning(log.format(u'WTF Devs'))
+            LOGGER.warning(log.format('WTF Devs'))
             setup(bot)
         with bot.memory["slow_timer_lock"]:
             bot.memory["slow_timer"][trigger.sender] = time.time()
 
 
-@commands(u'pony', u'pon[ie]')
+@commands('pony', 'pon[ie]')
 def pony(bot, trigger):
     '''Links to a random pony pic from a curated collection of quality art.'''
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    LOGGER.info(log.format(u'Triggered'))
+    LOGGER.info(log.format('Triggered'))
     LOGGER.info(log.format(trigger.sender))
     cute(bot, trigger.sender, is_timer=False)
 
@@ -295,7 +293,7 @@ def cd(bot, channel, is_timer=True):
     bot.msg(channel, parsed)
 
 
-@commands(u'countdown', u'cd')
+@commands('countdown', 'cd')
 def countdown(bot, trigger):
     '''Shows a countdown to a set date and time.'''
     cd(bot, trigger.sender, is_timer=False)

@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import time
 
 from willie.logger import get_logger
@@ -36,13 +34,13 @@ def setup(bot):
     bot.memory['shush'] = False
 
 
-@commands(u'shush', u'stfu')
+@commands('shush', 'stfu')
 def template(bot, trigger):
     """Quiets many bot functions for a while. Admin only."""
     if not trigger.admin and not trigger.owner and not trigger.isop:
         LOGGER.WARNING(log.format('%s just tried to shush me!'), trigger.nick)
         return
-    bot.reply(u'Okay.')
+    bot.reply('Okay.')
     LOGGER.info(log.format(r'%s just shushed me.'), trigger.nick)
     bot.memory['shush'] = True
     time.sleep(5 * 60)

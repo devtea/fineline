@@ -5,8 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import bisect
 import random
 
@@ -63,7 +61,7 @@ def setup(bot):
             for n, w in dbload:
                 bot.memory['prompt']['ponies'].append((n, w))
             dbload = None
-        LOGGER.info(log.format(u"Loaded %s weighted ponies."), str(len(bot.memory['prompt']['ponies'])))
+        LOGGER.info(log.format("Loaded %s weighted ponies."), str(len(bot.memory['prompt']['ponies'])))
 
         cur.execute('SELECT * FROM prompt_nouns')
         dbload = cur.fetchall()
@@ -71,7 +69,7 @@ def setup(bot):
             for n in dbload:
                 bot.memory['prompt']['nouns'].append(n[0])
             dbload = None
-        LOGGER.info(log.format(u"Loaded %s nouns."), str(len(bot.memory['prompt']['nouns'])))
+        LOGGER.info(log.format("Loaded %s nouns."), str(len(bot.memory['prompt']['nouns'])))
 
         cur.execute('SELECT * FROM prompt_verbs')
         dbload = cur.fetchall()
@@ -79,7 +77,7 @@ def setup(bot):
             for v in dbload:
                 bot.memory['prompt']['verbs'].append(v[0])
             dbload = None
-        LOGGER.info(log.format(u"Loaded %s verbs."), str(len(bot.memory['prompt']['verbs'])))
+        LOGGER.info(log.format("Loaded %s verbs."), str(len(bot.memory['prompt']['verbs'])))
     finally:
         cur.close()
         dbcon.close()
@@ -98,23 +96,23 @@ def weighted_choice(weighted):
     return bisect.bisect_right(sum_steps, random.uniform(0, sum))
 
 
-@commands(u'prompt')
+@commands('prompt')
 def prompt(bot, trigger):
     """Gives a simple drawing prompt using random words and ponies from the show."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
 
-    LOGGER.info(log.format(u"=============="))
-    LOGGER.info(log.format(u"Module started"))
+    LOGGER.info(log.format("=============="))
+    LOGGER.info(log.format("Module started"))
     # Make our random selections for our prompt construction
     index_no = weighted_choice(bot.memory['prompt']['ponies'])
-    sentence = [u"Your random prompt is: ",
+    sentence = ["Your random prompt is: ",
                 bot.memory['prompt']['ponies'][index_no][0],
                 random.choice(bot.memory['prompt']['verbs']).strip(),
-                random.choice(bot.memory['prompt']['nouns']).strip() + u"."
+                random.choice(bot.memory['prompt']['nouns']).strip() + "."
                 ]
-    bot.reply(u" ".join(sentence))
+    bot.reply(" ".join(sentence))
 
 
 if __name__ == "__main__":

@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-
 import datetime
 import HTMLParser
 import random
@@ -27,14 +25,14 @@ from willie.module import interval, commands, rate, example
 
 LOGGER = get_logger(__name__)
 
-_UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
+_UA = 'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
-_channels = [u'#reddit-mlpds', u'#fineline_testing']
+_channels = ['#reddit-mlpds', '#fineline_testing']
 _INCLUDE = ['#reddit-mlpds', '#fineline_testing', '#reddit-mlpds-bots']
-_bad_reddit_msg = u"That doesn't seem to exist on reddit."
-_bad_user_msg = u"That user doesn't seem to exist."
-_error_msg = u"That doesn't exist, or reddit is being squirrely."
-_timeout_message = u'Sorry, reddit is unavailable right now.'
+_bad_reddit_msg = "That doesn't seem to exist on reddit."
+_bad_user_msg = "That user doesn't seem to exist."
+_error_msg = "That doesn't exist, or reddit is being squirrely."
+_timeout_message = 'Sorry, reddit is unavailable right now.'
 _util_html = HTMLParser.HTMLParser()
 # Bots to be ignored go here
 _excluded_commenters = []
@@ -135,18 +133,18 @@ def setup(bot):
 def filter_posts(bot, posts, ignore=True):
     def is_livestream(post):
         livestreams = [
-            u'livestream.com',
-            u'twitch.tv',
-            u'justin.tv',
-            u'youtube.com',
-            u'ustream.tv',
-            u'picarto.tv',
-            u'nicovideo.jp'
+            'livestream.com',
+            'twitch.tv',
+            'justin.tv',
+            'youtube.com',
+            'ustream.tv',
+            'picarto.tv',
+            'nicovideo.jp'
         ]
         for s in livestreams:
             if post.url and re.findall(s, post.url):
                 return True
-        if post.title and re.search(u'\[stream\]', post.title, re.IGNORECASE):
+        if post.title and re.search('\[stream\]', post.title, re.IGNORECASE):
             return True
         if post.is_self and post.selftext and re.search(
                 ur'\b(live)?stream(ing)?\b',
@@ -244,7 +242,7 @@ def rmlpds(bot):
         return  # return if not enough time has elapsed since last full run
     with bot.memory["rmlpds"]["lock"]:
         try:
-            mlpds = rc.get_subreddit(u'MLPDrawingSchool')
+            mlpds = rc.get_subreddit('MLPDrawingSchool')
         except (InvalidSubreddit, HTTPError):
             sub_exists = False
         else:
@@ -254,7 +252,7 @@ def rmlpds(bot):
             bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            LOGGER.info(log.format(u"Sub exists."))
+            LOGGER.info(log.format("Sub exists."))
             new_posts = mlpds.get_new(limit=SUB_LIMIT)
             uncommented = []
             for post in new_posts:
@@ -266,11 +264,11 @@ def rmlpds(bot):
                     continue
                 if filter_comments(post, 0) > 0:
                     continue
-                # LOGGER.info(log.format(u"Adding post to list."))
+                # LOGGER.info(log.format("Adding post to list."))
                 uncommented.append(post)
             uncommented = filter_posts(bot, uncommented)
             if uncommented:
-                LOGGER.info(log.format(u"There are %i uncommented posts."), len(uncommented))
+                LOGGER.info(log.format("There are %i uncommented posts."), len(uncommented))
                 # There were posts, so set full timer
                 bot.memory["rmlpds"]["timer"] = time.time()
                 post = random.choice(uncommented)
@@ -278,21 +276,21 @@ def rmlpds(bot):
                 c_date = datetime.datetime.utcfromtimestamp(post.created_utc)
                 td = datetime.datetime.utcnow() - c_date
                 hr = td.total_seconds() / 60 / 60
-                t = u'%i hours ago' % hr
-                msg = u'Hey everyone, there is at least 1 post that might ' + \
-                      u'need critique! Use !queue to see them all.'
+                t = '%i hours ago' % hr
+                msg = 'Hey everyone, there is at least 1 post that might ' + \
+                      'need critique! Use !queue to see them all.'
                 if len(uncommented) > 1:
-                    msg = u'Hey everyone, there are at least %i ' % len(uncommented) + \
-                          u'posts that might need critique! Use !queue to see them all, but here is a random one:'
+                    msg = 'Hey everyone, there are at least %i ' % len(uncommented) + \
+                          'posts that might need critique! Use !queue to see them all, but here is a random one:'
                 for chan in _channels:
                     if chan in bot.channels:
-                        nsfw = u''
+                        nsfw = ''
                         if post.over_18:
-                            nsfw = u'[%s] ' % colors.colorize(u'NSFW', ['red'], ['b'])
+                            nsfw = '[%s] ' % colors.colorize('NSFW', ['red'], ['b'])
                         bot.msg(chan, msg)
                         bot.msg(
                             chan,
-                            u'%s%s posted %s – "%s" [ %s ] ' % (
+                            '%s%s posted %s – "%s" [ %s ] ' % (
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
                                 t,
@@ -305,12 +303,12 @@ def rmlpds(bot):
                 bot.memory["rmlpds"]["last"] = None  # clear the last post so no inadvertant ignoring takes place
                 bot.memory["rmlpds"]["timer"] = time.time() - \
                     (_check_interval * 3 / 4)
-                LOGGER.info(log.format(u"No uncommented posts found."))
+                LOGGER.info(log.format("No uncommented posts found."))
         else:
-            LOGGER.warning(log.format(u"Cannot check posts."))
+            LOGGER.warning(log.format("Cannot check posts."))
 
 
-@commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')
+@commands('queue', 'check', 'posts', 'que', 'crit', 'critique')
 @rate(120)
 def mlpds_check(bot, trigger):
     '''Checks for posts within the last 48h with fewer than 2 appropriate comments. Filters short comments and comments made by OP.'''
@@ -318,7 +316,7 @@ def mlpds_check(bot, trigger):
         return
     bot.reply("Okay, let me look. This may take a couple minutes.")
     try:
-        mlpds = rc.get_subreddit(u'MLPDrawingSchool')
+        mlpds = rc.get_subreddit('MLPDrawingSchool')
     except InvalidSubreddit:
         bot.say(_bad_reddit_msg)
         return
@@ -350,47 +348,47 @@ def mlpds_check(bot, trigger):
         if post_count > 4:
             spammy = True
         if spammy:
-            bot.reply(u"There are a few, I'll send them in pm.")
+            bot.reply("There are a few, I'll send them in pm.")
         for post in uncommented:
             if post.num_comments == 0:
-                num_com = u"There are no comments"
+                num_com = "There are no comments"
             elif post.num_comments == 1:
-                num_com = u"There is only 1 comment"
+                num_com = "There is only 1 comment"
             else:
-                num_com = u"There are %i comments" % post.num_comments
-            if post.author.name.lower()[len(post.author.name) - 1] == u's':
-                apos = u"'"
+                num_com = "There are %i comments" % post.num_comments
+            if post.author.name.lower()[len(post.author.name) - 1] == 's':
+                apos = "'"
             else:
-                apos = u"'s"
+                apos = "'s"
             c_date = datetime.datetime.utcfromtimestamp(post.created_utc)
-            f_date = c_date.strftime(u'%b %d')
+            f_date = c_date.strftime('%b %d')
             if spammy:
                 bot.msg(
                     trigger.nick,
-                    u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                    '%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
-                        colors.colorize(post.author.name, [u'purple']),
+                        colors.colorize(post.author.name, ['purple']),
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), [u'green'])
+                        colors.colorize(_util_html.unescape(post.title), ['green'])
                     )
                 )
             else:
                 bot.reply(
-                    u'%s on %s%s post (%s) on %s entitled "%s"' % (
+                    '%s on %s%s post (%s) on %s entitled "%s"' % (
                         num_com,
-                        colors.colorize(post.author.name, [u'purple']),
+                        colors.colorize(post.author.name, ['purple']),
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), [u'green'])
+                        colors.colorize(_util_html.unescape(post.title), ['green'])
                     )
                 )
     else:
-        bot.reply(u"I don't see any lonely posts. There could still be "
-                  u"posts that need critiquing, though: "
-                  u"http://mlpdrawingschool.reddit.com/"
+        bot.reply("I don't see any lonely posts. There could still be "
+                  "posts that need critiquing, though: "
+                  "http://mlpdrawingschool.reddit.com/"
                   )
 
 re_id = re.compile(r"(https?://)?(www\.|pay\.)?reddit.com/r/MLPdrawingschool/comments/([A-Za-z0-9]{4,10})/?")
@@ -434,7 +432,7 @@ def ignore(bot, trigger):
         except IndexError:
             # Grab the last announced post and ignore it
             if bot.memory["rmlpds"]["last"]:
-                post_id = unicode(bot.memory["rmlpds"]["last"])
+                post_id = bot.memory["rmlpds"]["last"]
             else:
                 bot.reply("Sorry, nothing has been announced recently.")
                 return
@@ -473,7 +471,7 @@ def ignore(bot, trigger):
         with bot.memory["rmlpds"]["lock"]:
             if bot.memory["rmlpds"]["vote_id"]:  # race condition fuckup
                 return
-            bot.memory["rmlpds"]["vote_id"] = unicode(post_id)
+            bot.memory["rmlpds"]["vote_id"] = post_id
             bot.memory["rmlpds"]["vote_count"] += 1
             bot.say("Ignore vote started for http://www.reddit.com/r/MLPdrawingschool/comments/%s/" % bot.memory["rmlpds"]["vote_id"])
             bot.say("%i more votes in the next five minutes are required." % (_IGNORE_VOTES - 1))
@@ -520,11 +518,11 @@ def reddit_contest(bot, trigger):
             if len(words) > 65:
                 short = words[:65]
                 short.append('...')
-                return u' '.join(short)
+                return ' '.join(short)
             else:
                 return text
         except:
-            return u'[Processing error]'
+            return '[Processing error]'
 
     markup_link = re.compile(r'\[(\s*[^\]]+\s*)\]\(([^\]/][^\)]*)\)')
 
@@ -544,28 +542,28 @@ def reddit_contest(bot, trigger):
     if bot.config.has_section('general') and bot.config.has_option('general', 'hosted_path') and \
             bot.config.has_option('general', 'hosted_domain'):
         tail = 'reddit_contest.html'
-        bot.memory['rmlpds']['export_location'] = u'%s%s' % (bot.config.general.hosted_path, tail)
-        bot.memory['rmlpds']['export_url'] = u'%s%s' % (bot.config.general.hosted_domain, tail)
+        bot.memory['rmlpds']['export_location'] = '%s%s' % (bot.config.general.hosted_path, tail)
+        bot.memory['rmlpds']['export_url'] = '%s%s' % (bot.config.general.hosted_domain, tail)
     else:
         bot.reply("This module is not configured properly. Please configure the hosted path and domain in the config file.")
         return
 
     with bot.memory['rmlpds']['lock']:
-        mlpds = rc.get_subreddit(u'MLPDrawingSchool')
+        mlpds = rc.get_subreddit('MLPDrawingSchool')
         now = time.time()
 
         # Caching
         if (not arguments or not arguments[0] == 'force') and 'fetch_time' in bot.memory['rmlpds'] and \
                 bot.memory['rmlpds']['fetch_time'][0] > time.time() - (7 * 24 * 60 * 60):
             # Load cached comments
-            LOGGER.info(log.format(u"using cached comments"))
+            LOGGER.info(log.format("using cached comments"))
             bot.reply("Okay, I checked recently so I will use what I found then. Use 'force' if you think I need to check again.")
             now = bot.memory['rmlpds']['fetch_time'][0]
             comments = bot.memory['rmlpds']['fetch_time'][1]
             all_comments = bot.memory['rmlpds']['fetch_time'][2]
             filtered_comments = []
         else:
-            LOGGER.info(log.format(u"Grabbing last 1000 comments"))
+            LOGGER.info(log.format("Grabbing last 1000 comments"))
             bot.reply("Okay, this is a slow process (reddit api is slooooow) and can take up to an hour if reddit isn't behaving. I will message you with the results.")
 
             successful = None
@@ -575,13 +573,13 @@ def reddit_contest(bot, trigger):
                     comments = [i for i in mlpds.get_comments(limit=1000)]
                     successful = True
                 except:
-                    LOGGER.error(log.format(u"Exception when grabbing list of comments"), exec_info=True)
+                    LOGGER.error(log.format("Exception when grabbing list of comments"), exec_info=True)
                     time.sleep(5)
                     trials += 1
             filtered_comments = []
 
             # Filter deleted comments
-            LOGGER.info(log.format(u"Filtering deleted comments"))
+            LOGGER.info(log.format("Filtering deleted comments"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -591,7 +589,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering for deleted comment %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering for deleted comment %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -599,7 +597,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Filter by date to include only comments made last month
-            LOGGER.info(log.format(u"Filtering by date"))
+            LOGGER.info(log.format("Filtering by date"))
             last_month = datetime.datetime.utcnow().month - 1
             if last_month == 0:
                 last_month = 12
@@ -612,7 +610,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering by date %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by date %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -620,9 +618,9 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # filter by submission to exclude commonly excluded posts
-            LOGGER.info(log.format(u"Filtering by submission"))
+            LOGGER.info(log.format("Filtering by submission"))
             for comment in comments:
-                LOGGER.info(log.format(u"checking %s"), comment.id)
+                LOGGER.info(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
@@ -632,7 +630,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering by submission %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by submission %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -641,7 +639,7 @@ def reddit_contest(bot, trigger):
 
             # Filter comment if submission date more than 10 days prior to
             # comment date
-            LOGGER.info(log.format(u"Filtering on time difference between post and comment"))
+            LOGGER.info(log.format("Filtering on time difference between post and comment"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -651,7 +649,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering on time diff %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering on time diff %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -659,7 +657,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Filter self comments on posts
-            LOGGER.info(log.format(u"Filtering self replies"))
+            LOGGER.info(log.format("Filtering self replies"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -674,7 +672,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering self replies %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering self replies %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -687,7 +685,7 @@ def reddit_contest(bot, trigger):
             all_comments.extend(comments)
 
             # filter by comment length or inclusion of link
-            LOGGER.info(log.format(u"Filtering by length OR link"))
+            LOGGER.info(log.format("Filtering by length OR link"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -697,7 +695,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering by length or link %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by length or link %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -705,7 +703,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Only keep top level or first reply comments
-            LOGGER.info(log.format(u"Filtering based on top comment and thread participation"))
+            LOGGER.info(log.format("Filtering based on top comment and thread participation"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -715,7 +713,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        LOGGER.error(log.format(u"Exception when filtering by top comment and thread participation %s"), comment.id, exec_info=True)
+                        LOGGER.error(log.format("Exception when filtering by top comment and thread participation %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -726,7 +724,7 @@ def reddit_contest(bot, trigger):
             bot.memory['rmlpds']['fetch_time'] = (now, comments, all_comments)
 
         # Build list by commenter
-        LOGGER.info(log.format(u"Building list"))
+        LOGGER.info(log.format("Building list"))
         commenters = {}
         for comment in comments:
             if comment.author.name not in commenters:
@@ -734,7 +732,7 @@ def reddit_contest(bot, trigger):
             commenters[comment.author.name].append(comment)
 
         # Filter commenters who have fewer than 3 applicable comments
-        LOGGER.info(log.format(u"Filtering less than three"))
+        LOGGER.info(log.format("Filtering less than three"))
         for commenter in commenters.keys():
             if len(commenters[commenter]) < 3:
                 del commenters[commenter]
@@ -768,7 +766,7 @@ def reddit_contest(bot, trigger):
         t_com_link = Template('''https://reddit.com/r/${subreddit}/comments/${sid}/x/${cid}?context=10''')
         t_sub_link = Template('''https://reddit.com/r/${subreddit}/comments/${sid}/''')
 
-        page_content = u''
+        page_content = ''
         for user in sorted_commenters:  # Remember, here 'user' is a tuple
             buf = ''
             for comment in commenters[user[0]]:

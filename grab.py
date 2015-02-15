@@ -5,9 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import threading
 import time
 
@@ -121,13 +118,13 @@ def grab(bot, trigger):
                     else:
                         grab_text = '<%s> %s' % (target, bot.memory['grab']['list'][target][1])
 
-                    if len(unicode(trigger).split()[0]) == len('!grab'):
+                    if len(trigger.split()[0]) == len('!grab'):
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addquote %s' % grab_text)
                     else:
                         bot.memory['grab']['request'][trigger.nick] = (target, '!addarttip %s' % grab_text)
                     time.sleep(3)
                     bot.reply(
-                        "You're trying to grab '%s' - To confirm, repeat this command within 15 seconds." %
+                        "Yo're trying to grab '%s' - To confirm, repeat this command within 15 seconds." %
                         colors.colorize(grab_text, ['orange']))
                 time.sleep(15)
                 with bot.memory['grab']['lock']:
@@ -147,10 +144,10 @@ def recent_watcher(bot, trigger):
     # bot.memory['grab']['list'][nick] = (is_action, text)
     with bot.memory['grab']['lock']:
         if trigger.sender.startswith('#'):
-            if unicode(trigger).startswith('\001ACTION'):
-                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, unicode(trigger)[8:])
+            if trigger.startswith('\001ACTION'):
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, trigger[8:])
             else:
-                bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, unicode(trigger))
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, trigger)
 
 
 @commands('grab_clear')

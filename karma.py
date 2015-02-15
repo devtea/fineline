@@ -5,9 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import csv
 import json
 import os.path
@@ -113,7 +110,7 @@ def karmaRule(bot, trigger):
         return
     if util.ignore_nick(bot, trigger.nick, trigger.host):
         return
-    obj = unicode(trigger).strip()
+    obj = trigger.strip()
     if not obj or len(obj) < 3:
         return
     shortobj = obj[:-2].lower().strip()
@@ -200,7 +197,7 @@ def karma(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    obj = unicode(trigger)[7:].lower().strip()
+    obj = trigger[7:].lower().strip()
     if not obj:
         return
     karm = modkarma(bot, obj, 0)

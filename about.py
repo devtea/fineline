@@ -5,7 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-
 import random
 import time
 
@@ -24,22 +23,22 @@ def about(bot, trigger):
 @commands('bugs', 'bug')
 def bugs(bot, trigger):
     """Shares bug reporting information for the bot."""
-    if len(unicode(trigger).strip()) > 5:
+    if len(trigger.strip()) > 5:
         return
     time.sleep(random.uniform(2, 4))
-    bot.say(u'Bugs?! I don\'t have any bugs!')
+    bot.say('Bugs?! I don\'t have any bugs!')
     time.sleep(random.uniform(2, 4))
     bot.say(u"But I guess if you think you've found one, you can " +
-            u"make a bug report at " +
-            u"https://bitbucket.org/tdreyer/fineline/issues")
+            "make a bug report at " +
+            "https://bitbucket.org/tdreyer/fineline/issues")
 
 
 @commands('source')
 def source(bot, trigger):
     """Links to the bot's source code"""
     time.sleep(random.uniform(2, 4))
-    bot.say(u"You can see my source at http://willie.dftba.net/ and " +
-            u"my plugins at http://bitbucket.org/tdreyer/fineline")
+    bot.say("You can see my source at http://willie.dftba.net/ and " +
+            "my plugins at http://bitbucket.org/tdreyer/fineline")
 
 
 if __name__ == "__main__":

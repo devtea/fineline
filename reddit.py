@@ -10,8 +10,6 @@ Depends on PRAW: https://github.com/praw-dev/praw
 """
 # TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
 # TODO add recency filter for announced reddit posts
-from __future__ import print_function
-
 from datetime import datetime
 import HTMLParser
 import re
@@ -29,16 +27,16 @@ from willie.module import commands, rule, interval, example
 
 LOGGER = get_logger(__name__)
 
-_url = u'(reddit\.com|redd\.it)'
+_url = '(reddit\.com|redd\.it)'
 _reurl = re.compile(_url, flags=re.I)
 _partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
 _util_html = HTMLParser.HTMLParser()
 _TIMEOUT = 20
-_UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
-_timeout_message = u'Sorry, reddit is unavailable right now.'
-_error_msg = u"That doesn't exist, or reddit is being squirrely."
-_bad_reddit_msg = u"That doesn't seem to exist on reddit."
-_bad_user_msg = u"That user doesn't seem to exist."
+_UA = 'FineLine IRC bot 0.1 by /u/tdreyer1'
+_timeout_message = 'Sorry, reddit is unavailable right now.'
+_error_msg = "That doesn't exist, or reddit is being squirrely."
+_bad_reddit_msg = "That doesn't seem to exist on reddit."
+_bad_user_msg = "That user doesn't seem to exist."
 _re_shorturl = re.compile('.*?redd\.it/(\w+)')
 _fetch_interval = 100  # Seconds between checking reddit for new posts
 _announce_interval = 300  # Seconds between announcing found posts
@@ -149,17 +147,17 @@ def reddit_dump(bot, trigger):
     if not trigger.owner:
         return
     with bot.memory['reddit_lock']:
-        LOGGER.warning(log.format(u'reddit-announce length: %i' % len(bot.memory['reddit-announce'])))
+        LOGGER.warning(log.format('reddit-announce length: %i' % len(bot.memory['reddit-announce'])))
         for channel in bot.memory['reddit-announce']:
-            LOGGER.warning(log.format(u'Channel: %s' % channel))
-            LOGGER.warning(log.format(u'Channel length: %i' % len(bot.memory['reddit-announce'][channel])))
+            LOGGER.warning(log.format('Channel: %s' % channel))
+            LOGGER.warning(log.format('Channel length: %i' % len(bot.memory['reddit-announce'][channel])))
             for sub in bot.memory['reddit-announce'][channel]:
-                LOGGER.warning(log.format(u'Subreddit: %s' % sub),)
-                LOGGER.warning(log.format(u'Channel length: %i' % len(bot.memory['reddit-announce'][channel][sub])))
+                LOGGER.warning(log.format('Subreddit: %s' % sub),)
+                LOGGER.warning(log.format('Channel length: %i' % len(bot.memory['reddit-announce'][channel][sub])))
                 for id in bot.memory['reddit-announce'][channel][sub]:
                     LOGGER.warning(log.format(id))
-    # LOGGER.warning(log.format(u''))
-    bot.reply(u"done")
+    # LOGGER.warning(log.format(''))
+    bot.reply("done")
 
 
 @commands('reddit_list')
@@ -173,10 +171,10 @@ def reddit_list(bot, trigger):
             for c in bot.memory['reddit-announce']:
                 for s in bot.memory['reddit-announce'][c]:
                     subs.append(s)
-                bot.reply(u'Channel: %s Subs: %s' % (c, u', '.join(subs)))
+                bot.reply('Channel: %s Subs: %s' % (c, ', '.join(subs)))
                 subs = []
         else:
-            bot.reply(u'Not watching any subreddits.')
+            bot.reply('Not watching any subreddits.')
 
 
 @commands('reddit_add')
@@ -275,7 +273,7 @@ def announce_posts(bot, trigger=None):
                     else:
                         bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
         except:
-            LOGGER.error(log.format(u'Unhandled exception announcing new reddit posts'), exec_info=True)
+            LOGGER.error(log.format('Unhandled exception announcing new reddit posts'), exec_info=True)
 
 
 @interval(_fetch_interval)
@@ -300,7 +298,7 @@ def fetch_reddits(bot, trigger=None):
                     LOGGER.warning(log.format('Timeout when fetching from reddit for auto announce'))
                     continue
                 except:
-                    LOGGER.error(log.format(u'Unhandled exception when fetching posts: [%s]'), unicode(trigger), exec_info=True)
+                    LOGGER.error(log.format('Unhandled exception when fetching posts: [%s]'), trigger, exec_info=True)
                     continue
                 posts.reverse()
                 if not bot.memory['reddit-announce'][channel][sub]:
@@ -310,22 +308,22 @@ def fetch_reddits(bot, trigger=None):
                     continue
                 for p in posts:
                     if p.id in bot.memory['reddit-announce'][channel][sub]:
-                        LOGGER.info(log.format(u'found id %s in history'), p.id)
+                        LOGGER.info(log.format('found id %s in history'), p.id)
                         continue
                     elif p.created_utc < time.time() - (10 * 60 * 60):
-                        LOGGER.info(log.format(u'found id %s too old'), p.id)
+                        LOGGER.info(log.format('found id %s too old'), p.id)
                         while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     elif p.url in bot.memory['reddit_link_history']:
-                        LOGGER.info(log.format(u'found matching url for %s, probable crosspost or repost.'), p.id)
+                        LOGGER.info(log.format('found matching url for %s, probable crosspost or repost.'), p.id)
                         while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
                         continue
                     elif _reurl.search(p.url):
-                        LOGGER.info(log.format(u'found reddit url for %s, probably a crosspost.'), p.id)
+                        LOGGER.info(log.format('found reddit url for %s, probably a crosspost.'), p.id)
                         while len(bot.memory['reddit-announce'][channel][sub]) > 1000:
                             bot.memory['reddit-announce'][channel][sub].pop(0)  # Keep list from growing too large
                         bot.memory['reddit-announce'][channel][sub].append(p.id)
@@ -342,9 +340,9 @@ def fetch_reddits(bot, trigger=None):
                         while len(bot.memory['reddit_link_history']) > 1000:
                             bot.memory['reddit_link_history'].pop(0)
                         bot.memory['reddit_link_history'].append(p.url)
-                        LOGGER.info(log.format(u'%s %s %s'), _util_html.unescape(p.title.encode('utf-8')), p.author, p.url)
+                        LOGGER.info(log.format('%s %s %s'), _util_html.unescape(p.title.encode('utf-8')), p.author, p.url)
     except:
-        LOGGER.error(log.format(u'Unhandled exception fetching new reddit posts'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception fetching new reddit posts'), exec_info=True)
 
 
 def link_parser(subm, url=False, new=False):
@@ -353,61 +351,61 @@ def link_parser(subm, url=False, new=False):
        When new is True, the phrasing is appropriate for announcing a
        new post from a subscribed subreddit.
     '''
-    page_self = u'Link'
+    page_self = 'Link'
     if subm.is_self:
-        page_self = u'Self'
-    nsfw = u''
+        page_self = 'Self'
+    nsfw = ''
     if subm.over_18:
-        nsfw = u'[%s] ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
-    pname = u'[deleted]'
+        nsfw = '[%s] ' % colors.colorize("NSFW", ["red"], ["bold"])
+    pname = '[deleted]'
     if subm.author:
-        pname = colors.colorize(subm.author.name, [u'purple'])
-    score = u'(%s|%sc) ' % (
-        colors.colorize(u'↑%s' % str(subm.ups), [u'orange']),
+        pname = colors.colorize(subm.author.name, ['purple'])
+    score = '(%s|%sc) ' % (
+        colors.colorize('↑%s' % str(subm.ups), ['orange']),
         subm.num_comments
     )
-    short_url = u''
+    short_url = ''
     if url:
-        short_url = u'%s ' % subm.short_link
+        short_url = '%s ' % subm.short_link
     if new:
-        return u'/r/%s [ %s] %s%s' % (
+        return '/r/%s [ %s] %s%s' % (
             subm.subreddit.display_name,
             short_url,
             nsfw,
-            colors.colorize(_util_html.unescape(subm.title), [u'green'])
+            colors.colorize(_util_html.unescape(subm.title), ['green'])
         )
     else:
-        return u'%s%s post %sby %s to /r/%s — %s %s' % (
+        return '%s%s post %sby %s to /r/%s — %s %s' % (
             nsfw,
             page_self,
             score,
             pname,
             subm.subreddit.display_name,
-            colors.colorize(_util_html.unescape(subm.title), [u'green']),
+            colors.colorize(_util_html.unescape(subm.title), ['green']),
             short_url
         )
 
 
-@rule(u'(.*?%s)|(.*?%s)' % (_url, _partial))
+@rule('(.*?%s)|(.*?%s)' % (_url, _partial))
 def reddit_post(bot, trigger):
     """Posts basic info on reddit links"""
     # If you change these, you're going to have to update others too
     user = ur'(^|\s|reddit.com)/u(ser)?/[^/\s)"\'\}\]]{3,20}'
-    subm = (u'%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
-            u'(/[^/\s)]{4,}/?))') % _url
-    cmnt = (u'%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}' +
+    subm = ('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
+            '(/[^/\s)]{4,}/?))') % _url
+    cmnt = ('%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}' +
             '/[^/\s?]{3,}/?)(?:\?context=\d{,2})?') % _url
-    subr = u'%s/r/[^/\s)]+/?([\s.!?]|$)' % _url
+    subr = '%s/r/[^/\s)]+/?([\s.!?]|$)' % _url
 
     def trc(message, length=5):
         '''Truncates messages to a specific word length'''
         m_list = message.split()
         short = message
         if len(m_list) > length:
-            short = u' '.join([m_list[elem] for elem in range(length)])
-            short = u'%s...' % short.strip()
+            short = ' '.join([m_list[elem] for elem in range(length)])
+            short = '%s...' % short.strip()
         if len(short) > 100:
-            short = u'%s...' % short.strip('.')[:100]
+            short = '%s...' % short.strip('.')[:100]
         return short
 
     def date_aniv(aniv, day=datetime.now()):
@@ -416,19 +414,19 @@ def reddit_post(bot, trigger):
         def set_date(year, month, day):
             try:
                 date = datetime.strptime(
-                    u'%i %i %i' % (year, month, day),
-                    u'%Y %m %d'
+                    '%i %i %i' % (year, month, day),
+                    '%Y %m %d'
                 )
             except ValueError:
                 # Catch leap days and set them appropriately on off years
                 date = datetime.strptime(
-                    u'%i %i %i' % (year, month, day - 1),
-                    u'%Y %m %d'
+                    '%i %i %i' % (year, month, day - 1),
+                    '%Y %m %d'
                 )
             return date
-        y1, m1, d1 = aniv.strftime(u'%Y %m %d').split()
+        y1, m1, d1 = aniv.strftime('%Y %m %d').split()
         y1, m1, d1 = int(y1), int(m1), int(d1)
-        y2, m2, d2 = day.strftime(u'%Y %m %d').split()
+        y2, m2, d2 = day.strftime('%Y %m %d').split()
         y2, m2, d2 = int(y2), int(m2), int(d2)
         if m1 == m2 and d1 == d2:
             diff = 0
@@ -443,32 +441,32 @@ def reddit_post(bot, trigger):
             diff = aniv - day  # diff is timedelta object
             diff = int(diff.total_seconds() / (24 * 60 * 60))
         return diff
-    if re.match(bot.config.core.prefix, unicode(trigger)):
+    if re.match(bot.config.core.prefix, trigger):
         return
     try:
         if util.ignore_nick(bot, trigger.nick, trigger.host):
             return
 
         # Update pay.reddit.com links to work with praw
-        link = re.sub('pay\.reddit', 'reddit', unicode(trigger), flags=re.I)
+        link = re.sub('pay\.reddit', 'reddit', trigger, flags=re.I)
         link = re.sub('https', 'http', link, flags=re.I)
 
         # Fix links that are missing the www. Could be from typo or SSL link
         link = re.sub('://r', '://www.r', link, flags=re.I)
 
         # User Section
-        if re.match(u'.*?%s' % user, link):
-            LOGGER.info(log.format(u"URL is user"))
+        if re.match('.*?%s' % user, link):
+            LOGGER.info(log.format("URL is user"))
             full_url = re.search(
                 ur'(https?://)?(www\.)?%s?%s' % (_url, user),
                 link
             ).group(0)
-            if re.match(u'^/u', full_url):
-                full_url = u'http://reddit.com%s' % full_url
-            LOGGER.info(log.format(u'URL is %s'), full_url)
+            if re.match('^/u', full_url):
+                full_url = 'http://reddit.com%s' % full_url
+            LOGGER.info(log.format('URL is %s'), full_url)
             # If you change these, you're going to have to update others too
-            username = re.split(u"u(ser)?/", full_url)[2].strip(u'/')
-            LOGGER.info(log.format(u'Username is %s'), username)
+            username = re.split("u(ser)?/", full_url)[2].strip('/')
+            LOGGER.info(log.format('Username is %s'), username)
             try:
                 redditor = rc.get_redditor(username)
             except (InvalidUser):
@@ -484,32 +482,32 @@ def reddit_post(bot, trigger):
             cakeday = datetime.utcfromtimestamp(redditor.created_utc)
             diff_days = date_aniv(cakeday)
             if diff_days == 0:
-                cake_message = colors.rainbow(u'HAPPY CAKEDAY!')
+                cake_message = colors.rainbow('HAPPY CAKEDAY!')
             elif diff_days > 0:
-                cake_message = u"Cakeday in %i day(s)" % diff_days
+                cake_message = "Cakeday in %i day(s)" % diff_days
             else:
                 # oh shit, something went wrong
-                cake_message = u""
+                cake_message = ""
                 LOGGER.error(log.format('Date parsing broke!'))
-            bot.say(u"User %s: Link Karma %i, Comment karma %i, %s" % (
-                colors.colorize(redditor.name, [u'purple']),
+            bot.say("User %s: Link Karma %i, Comment karma %i, %s" % (
+                colors.colorize(redditor.name, ['purple']),
                 redditor.link_karma,
                 redditor.comment_karma, cake_message)
             )
 
         # Comment Section
-        elif re.match(u'.*?%s' % cmnt, link):
-            LOGGER.info(log.format(u"URL is comment"))
+        elif re.match('.*?%s' % cmnt, link):
+            LOGGER.info(log.format("URL is comment"))
             try:
-                full_url = u''.join(
+                full_url = ''.join(
                     re.search(ur'(https?://)?(www\.)?%s' % cmnt,
                               link
                               ).groups())
             except TypeError:
                 # no match
                 return
-            if not re.match(u'^http', full_url):
-                full_url = u'http://%s' % full_url
+            if not re.match('^http', full_url):
+                full_url = 'http://%s' % full_url
             try:
                 post = rc.get_submission(url=full_url)
             except HTTPError:
@@ -519,40 +517,40 @@ def reddit_post(bot, trigger):
                 bot.say(_timeout_message)
                 return
             comment = post.comments[0]
-            nsfw = u''
+            nsfw = ''
             if post.over_18:
-                nsfw = u'%s post: ' % colors.colorize(u"NSFW", [u"red"], [u"bold"])
+                nsfw = '%s post: ' % colors.colorize("NSFW", ["red"], ["bold"])
             snippet = comment.body
             match = re.compile(ur'\n')  # 2 lines to remove newline markup
-            snippet = match.sub(u' ', snippet)
+            snippet = match.sub(' ', snippet)
             bot.say(
-                u'Comment (↑%s) by %s on %s%s — "%s"' % (
-                    colors.colorize(str(comment.ups), [u'orange']),
-                    colors.colorize(comment.author.name, [u'purple']),
+                'Comment (↑%s) by %s on %s%s — "%s"' % (
+                    colors.colorize(str(comment.ups), ['orange']),
+                    colors.colorize(comment.author.name, ['purple']),
                     nsfw,
-                    trc(_util_html.unescape(colors.colorize(post.title, [u'green'])), 15),
-                    trc(_util_html.unescape(colors.colorize(snippet.strip(), [u'teal'])), 15)
+                    trc(_util_html.unescape(colors.colorize(post.title, ['green'])), 15),
+                    trc(_util_html.unescape(colors.colorize(snippet.strip(), ['teal'])), 15)
                 )
             )
 
         # Submission Section
-        elif re.match(u'.*?%s' % subm, link):
+        elif re.match('.*?%s' % subm, link):
             if util.ignore_nick(bot, trigger.nick, trigger.host):
                 return
-            LOGGER.info(log.format(u"URL is submission"))
+            LOGGER.info(log.format("URL is submission"))
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
                                  link
                                  ).group(0)
-            if not re.match(u'^http', full_url):
-                full_url = u'http://%s' % full_url
-            LOGGER.info(log.format(u"matched is %s"), full_url)
+            if not re.match('^http', full_url):
+                full_url = 'http://%s' % full_url
+            LOGGER.info(log.format("matched is %s"), full_url)
             results = _re_shorturl.search(full_url)
             if results:
-                LOGGER.info(log.format(u"URL is short"))
+                LOGGER.info(log.format("URL is short"))
                 post_id = results.groups()[0]
-                LOGGER.info(log.format(u'ID is %s'), post_id)
+                LOGGER.info(log.format('ID is %s'), post_id)
             else:
-                LOGGER.info(log.format(u'URL is %s'), full_url)
+                LOGGER.info(log.format('URL is %s'), full_url)
             try:
                 if results:
                     page = rc.get_submission(submission_id=post_id)
@@ -568,16 +566,16 @@ def reddit_post(bot, trigger):
             bot.say(msg)
 
         # Subreddit Section
-        elif re.match(u'.*?%s' % subr, link):
-            LOGGER.info(log.format(u"URL is subreddit"))
+        elif re.match('.*?%s' % subr, link):
+            LOGGER.info(log.format("URL is subreddit"))
             full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
                                  link
                                  ).group(0)
-            LOGGER.info(log.format(u'URL is %s'), full_url)
+            LOGGER.info(log.format('URL is %s'), full_url)
             # TODO pull back and display appropriate information for this.
             # I honestly don't know what useful info there is here!
             # So here's a stub
-            sub_name = full_url.strip(u'/').rpartition(u'/')[2]
+            sub_name = full_url.strip('/').rpartition('/')[2]
             LOGGER.info(log.format(sub_name))
             try:
                 # sub = rc.get_subreddit(sub_name)
@@ -594,10 +592,10 @@ def reddit_post(bot, trigger):
             # do stuff?
         # Invalid URL Section
         else:
-            LOGGER.warning(log.format(u"Matched URL is invalid"))
+            LOGGER.warning(log.format("Matched URL is invalid"))
             # fail silently
     except:
-        LOGGER.error(log.format(u'Unhandled exception parsing reddit link: %s'), exec_info=True)
+        LOGGER.error(log.format('Unhandled exception parsing reddit link: %s'), exec_info=True)
 
 
 if __name__ == "__main__":

@@ -5,9 +5,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import bisect
 import random
 import threading

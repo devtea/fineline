@@ -6,8 +6,6 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 
 """
-from __future__ import print_function
-
 from datetime import timedelta
 import re
 import threading
@@ -87,7 +85,7 @@ def new_timer(bot, trigger):
                 assert type(dur) is IntType
                 return dur
         else:
-            raise ValueError(u'Malformed time')
+            raise ValueError('Malformed time')
 
     def add_timer(src, target, end_time_unix, reminder=None, quiet=False):
         # Assume exists bot.memory['user_timers']['source']
@@ -113,34 +111,34 @@ def new_timer(bot, trigger):
             bot.memory['user_timers'][source] = {}
         if len(trigger.args[1].split()) <= 1:
             bot.reply(
-                (u"What timer? Try `%s: help timer` for help") % bot.nick
+                ("What timer? Try `%s: help timer` for help") % bot.nick
             )
             return
-        if trigger.args[1].split()[1].startswith(u'del'):
+        if trigger.args[1].split()[1].startswith('del'):
             timer_del(bot, trigger)
             return
-        if trigger.args[1].split()[1].startswith(u'status'):
+        if trigger.args[1].split()[1].startswith('status'):
             timer_status(bot, trigger)
             return
         if trigger.nick.lower() in bot.memory['user_timers'][source]:
             bot.reply(
-                (u"Sorry, %s, you already have a timer running. " +
-                    u"Use `!timer del` to remove.") % trigger.nick
+                ("Sorry, %s, you already have a timer running. " +
+                    "Use `!timer del` to remove.") % trigger.nick
             )
             return
         else:
             now = time()
-            LOGGER.info(log.format(u'now = %f'), now)
+            LOGGER.info(log.format('now = %f'), now)
             possible_timer = trigger.args[1].split()
             LOGGER.info(log.format(possible_timer))
             if len(possible_timer) > 4:
                 bot.reply(
-                    (u"Too many arguments! Try `%s: help timer` " +
-                        u"for help") % bot.nick
+                    ("Too many arguments! Try `%s: help timer` " +
+                        "for help") % bot.nick
                 )
                 return
             else:
-                LOGGER.debug(log.format(u'POP!'))
+                LOGGER.debug(log.format('POP!'))
                 possible_timer.pop(0)
                 LOGGER.info(log.format(possible_timer))
                 # ["00:00:00", "00:00:00", "quiet"]
@@ -159,14 +157,14 @@ def new_timer(bot, trigger):
                     end = parse_time(duration)
                 except ValueError:
                     bot.reply(
-                        (u"I don't understand! Try `%s: help timer` " +
-                            u"for help") % bot.nick
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % bot.nick
                     )
                     return
                 end_time = time() + end
                 if not possible_timer:
                     add_timer(source, trigger.nick, end_time)
-                    bot.reply(u"Timer added!")
+                    bot.reply("Timer added!")
                     return
 
                 next_argument = possible_timer.pop(0)
@@ -187,18 +185,18 @@ def new_timer(bot, trigger):
                             end_time,
                             reminder=rem
                         )
-                        bot.reply(u"Timer added!")
+                        bot.reply("Timer added!")
                         return
                 elif _rquiet.match(next_argument):
                     if not possible_timer:
                         add_timer(source, trigger.nick, end_time, quiet=True)
-                        bot.reply(u"Timer added! Watch for a /msg.")
+                        bot.reply("Timer added! Watch for a /msg.")
                         return
                     qu = True
                 else:
                     bot.reply(
-                        (u"I don't understand! Try `%s: help timer` " +
-                            u"for help") % bot.nick
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % bot.nick
                     )
                     return
 
@@ -213,7 +211,7 @@ def new_timer(bot, trigger):
                         reminder=rem,
                         quiet=qu
                     )
-                    bot.reply(u"Timer added! Watch for a /msg.")
+                    bot.reply("Timer added! Watch for a /msg.")
                     return
                 elif _rquiet.match(next_argument) and not qu:
                     add_timer(
@@ -223,18 +221,18 @@ def new_timer(bot, trigger):
                         reminder=rem,
                         quiet=True
                     )
-                    bot.reply(u"Timer added! Watch for a /msg.")
+                    bot.reply("Timer added! Watch for a /msg.")
                     return
                 else:
                     bot.reply(
-                        (u"I don't understand! Try `%s: help timer` " +
-                            u"for help") % bot.nick
+                        ("I don't understand! Try `%s: help timer` " +
+                            "for help") % bot.nick
                     )
                 return
 
 
-@rule(u'.*')
-@event(u'PART')
+@rule('.*')
+@event('PART')
 def auto_quiet_on_part(bot, trigger):
     source = trigger.args[0]
     with bot.memory['user_timers_lock']:
@@ -250,8 +248,8 @@ def auto_quiet_on_part(bot, trigger):
             )
 
 
-@event(u'QUIT')
-@rule(u'.*')
+@event('QUIT')
+@rule('.*')
 def auto_quiet_on_quit(bot, trigger):
     source = trigger.args[0]
     with bot.memory['user_timers_lock']:
@@ -272,28 +270,28 @@ def timer_check(bot):
     now = time()
     with bot.memory['user_timers_lock']:
         for chan in bot.memory['user_timers']:
-            LOGGER.debug(log.format(u"found channel %s"), chan)
+            LOGGER.debug(log.format("found channel %s"), chan)
             for user in bot.memory['user_timers'][chan]:
                 n, q, e, r = bot.memory['user_timers'][chan][user]
-                LOGGER.debug(log.format(u'nick=%s  quiet=%r, time=%f, remind=%r'), n, q, e, r)
+                LOGGER.debug(log.format('nick=%s  quiet=%r, time=%f, remind=%r'), n, q, e, r)
                 if e < now:
                     del bot.memory['user_timers'][chan][user]
                     if q:
-                        bot.msg(n, u'Time is up!')
+                        bot.msg(n, 'Time is up!')
                     else:
-                        bot.msg(chan, u'%s, time is up!' % n)
+                        bot.msg(chan, '%s, time is up!' % n)
                     return
                 elif r and r > e - now:
                     bot.memory['user_timers'][chan][user] = (n, q, e, None)
                     if q:
                         bot.msg(
                             n,
-                            u'You have %s remaining.' % format_sec(r)
+                            'You have %s remaining.' % format_sec(r)
                         )
                     else:
                         bot.msg(
                             chan,
-                            u'%s, you have %s remaining.' % (n, format_sec(r))
+                            '%s, you have %s remaining.' % (n, format_sec(r))
                         )
 
 
@@ -307,20 +305,20 @@ def timer_del(bot, trigger):
                     trigger.args[0]]:
                 del bot.memory['user_timers'][trigger.args[0]][
                     trigger.nick.lower()]
-                bot.reply(u"Your timer has been deleted.")
+                bot.reply("Your timer has been deleted.")
             else:
-                bot.reply(u"You don't have a timer.")
+                bot.reply("You don't have a timer.")
         elif len(cmd) > 2:
             bot.memory['user_timers'] = {}
-            bot.reply(u'All timers have been deleted.')
+            bot.reply('All timers have been deleted.')
     else:
         if trigger.nick.lower() in bot.memory['user_timers'][
                 trigger.args[0]]:
             del bot.memory['user_timers'][trigger.args[0]][
                 trigger.nick.lower()]
-            bot.reply(u"Your timer has been deleted.")
+            bot.reply("Your timer has been deleted.")
         else:
-            bot.reply(u"You don't have a timer.")
+            bot.reply("You don't have a timer.")
 
 
 def timer_status(bot, trigger):

@@ -6,12 +6,10 @@ import time
 
 
 def format(*args):
-    message = u''.join([unicode(i) for i in args])
-    return u'%s - %s' % (time.strftime("%Y-%m-%d %H:%M:%S"), unicode(message))
+    message = ''.join([i for i in args])
+    return '%s - %s' % (time.strftime("%Y-%m-%d %H:%M:%S"), message)
 '''
 Usage examples:
-
-from __future__ import print_function
 
 from willie.logger import get_logger
 
