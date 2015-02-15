@@ -8,7 +8,6 @@ http://bitbucket.org/tdreyer/fineline
 # TODO user aliases
 from __future__ import print_function
 
-import os.path
 import random
 import threading
 
@@ -25,6 +24,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -39,6 +39,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of colors"))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
@@ -52,6 +53,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])

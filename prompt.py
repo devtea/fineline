@@ -8,7 +8,6 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 import bisect
-import os.path
 import random
 
 from willie.logger import get_logger
@@ -23,6 +22,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])

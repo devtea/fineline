@@ -8,7 +8,6 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 import json
-import os.path
 import re
 import shutil
 from socket import timeout
@@ -30,6 +29,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -44,6 +44,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("Trying manual import of colors formatter."))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])

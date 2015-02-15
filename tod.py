@@ -9,7 +9,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import bisect
-import os.path
 import random
 import threading
 import time
@@ -26,6 +25,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -39,6 +39,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
@@ -52,6 +53,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of colors"))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
@@ -65,6 +67,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])

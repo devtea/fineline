@@ -14,9 +14,7 @@ from __future__ import print_function
 
 from datetime import datetime
 import HTMLParser
-import os.path
 import re
-import sys
 from socket import timeout
 import threading
 import time
@@ -55,6 +53,8 @@ try:
     import log
 except:
     import imp
+    import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -68,6 +68,8 @@ try:
     import colors
 except:
     import imp
+    import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of colors"))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
@@ -81,6 +83,8 @@ try:
     import nicks
 except:
     import imp
+    import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
@@ -93,6 +97,8 @@ try:
     import util
 except:
     import imp
+    import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
@@ -269,7 +275,7 @@ def announce_posts(bot, trigger=None):
                     else:
                         bot.msg(c, bot.memory['reddit_msg_queue'][c].pop(0))
         except:
-            LOGGER.error(log.format(u'Unhandled exception announcing new reddit posts: %s' % sys.exc_info()[0]), exec_info=True)
+            LOGGER.error(log.format(u'Unhandled exception announcing new reddit posts'), exec_info=True)
 
 
 @interval(_fetch_interval)

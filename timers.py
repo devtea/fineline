@@ -9,7 +9,6 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 from datetime import timedelta
-import os.path
 import re
 import threading
 from time import time
@@ -27,6 +26,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])

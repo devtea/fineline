@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import datetime
 import feedparser
-import os.path
 import random
 # from socket import EBADF
 import time
@@ -30,6 +29,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
