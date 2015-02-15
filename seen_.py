@@ -1,3 +1,4 @@
+# coding=utf8
 """
 seen.py - A simple Willie module to track nicks
 Copyright 2013, Tim Dreyer
@@ -5,7 +6,7 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import json
 import os
@@ -227,7 +228,7 @@ def seen_nuke(bot, trigger):
 @priority(u'low')
 @rule(u'.*')
 def seen_recorder(bot, trigger):
-    if not trigger.args[0].startswith(u'#') or trigger.sender in _EXCLUDE:
+    if trigger.is_privmsg or trigger.sender in _EXCLUDE:
         return  # ignore priv msg and excepted rooms
     nn = Identifier(trigger.nick)
     now = time()
