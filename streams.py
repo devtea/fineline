@@ -70,7 +70,6 @@ _re_pic = re.compile('(?<=picarto\.tv/live/channel.php\?watch=)[^/(){}[\]]+')
 _exc_regex.append(re.compile('picarto\.tv/'))
 # _url_finder = re.compile(r'(?u)(%s?(?:http|https)(?:://\S+))')
 _services = ['twitch.tv', 'livestream.com', 'youtube.com', 'ustream.tv', 'picarto.tv']
-_SUB = ('?',)  # This will be replaced in setup()
 # TODO move this to memory
 _include = ['#reddit-mlpds', '#fineline_testing']
 
@@ -579,8 +578,6 @@ def setup(bot):
         bot.memory['streamMsg'] = {}
 
     # database stuff
-    global _SUB
-    _SUB = (bot.db.substitution,)
     with bot.memory['streamLock']:
         dbcon = bot.db.connect()  # sqlite3 connection
         cur = dbcon.cursor()
@@ -661,10 +658,10 @@ def alias(bot, switch, channel, value=None):
                 i.alias = value
                 try:
                     cur.execute('''UPDATE streams
-                                    SET alias = %s
-                                    WHERE channel = %s
-                                    AND service = %s
-                                    ''' % (_SUB * 3), (value, c, s))
+                                    SET alias = ?
+                                    WHERE channel = ?
+                                    AND service = ?
+                                    ''', (value, c, s))
                     dbcon.commit()
                 finally:
                     cur.close()
@@ -682,9 +679,9 @@ def alias(bot, switch, channel, value=None):
                     try:
                         cur.execute('''UPDATE streams
                                         SET alias = NULL
-                                        WHERE channel = %s
-                                        AND service = %s
-                                        ''' % (_SUB * 2), (c, s))
+                                        WHERE channel = ?
+                                        AND service = ?
+                                        ''', (c, s))
                         dbcon.commit()
                     finally:
                         cur.close()
@@ -723,9 +720,9 @@ def nsfw(bot, switch, channel, quiet=None):
                 try:
                     cur.execute('''UPDATE streams
                                     SET m_nsfw = 1
-                                    WHERE channel = %s
-                                    AND service = %s
-                                    ''' % (_SUB * 2), (c, s))
+                                    WHERE channel = ?
+                                    AND service = ?
+                                    ''', (c, s))
                     dbcon.commit()
                 finally:
                     cur.close()
@@ -751,16 +748,16 @@ def nsfw(bot, switch, channel, quiet=None):
                     del i.m_nsfw
                     try:
                         cur.execute('''SELECT COUNT(*) FROM streams
-                                    WHERE channel = %s
-                                    AND service = %s
+                                    WHERE channel = ?
+                                    AND service = ?
                                     AND m_nsfw = 1
-                                    ''' % (_SUB * 2), (c, s))
+                                    ''', (c, s))
                         if cur.fetchone():
                             cur.execute('''UPDATE streams
                                         SET m_nsfw = 0
-                                        WHERE channel = %s
-                                        AND service = %s
-                                        ''' % (_SUB * 2), (c, s))
+                                        WHERE channel = ?
+                                        AND service = ?
+                                        ''', (c, s))
                         dbcon.commit()
                     finally:
                         cur.close()
@@ -983,12 +980,12 @@ def add_stream(bot, user):
                 return
             try:
                 cur.execute('''SELECT COUNT(*) FROM streams
-                               WHERE channel = %s
-                               AND service = %s''' % (_SUB * 2), (u, s))
+                               WHERE channel = ?
+                               AND service = ?''', (u, s))
                 if cur.fetchone()[0] == 0:
                     LOGGER.info(log.format(u'ADD: count was != 0'))
                     cur.execute('''INSERT INTO streams (channel, service)
-                                   VALUES (%s, %s)''' % (_SUB * 2), (u, s))
+                                   VALUES (?, ?)''', (u, s))
                     dbcon.commit()
             finally:
                 cur.close()
@@ -1168,14 +1165,14 @@ def remove_stream(bot, user):
                   if a.name.lower() == u.lower() and a.service == s]:
             try:
                 cur.execute('''DELETE FROM feat_streams
-                               WHERE lower(channel) = lower(%s)
-                               AND service = %s''' % (_SUB * 2), (u, s))
+                               WHERE lower(channel) = lower(?)
+                               AND service = ?''', (u, s))
                 cur.execute('''DELETE FROM streams
-                               WHERE lower(channel) = lower(%s)
-                               AND service = %s''' % (_SUB * 2), (u, s))
+                               WHERE lower(channel) = lower(?)
+                               AND service = ?''', (u, s))
                 cur.execute('''DELETE FROM sub_streams
-                               WHERE lower(channel) = lower(%s)
-                               and service = %s''' % (_SUB * 2), (u, s))
+                               WHERE lower(channel) = lower(?)
+                               and service = ?''', (u, s))
                 dbcon.commit()
             finally:
                 cur.close()
@@ -1237,14 +1234,12 @@ def feature(bot, switch, channel, quiet=False):
                 else:
                     try:
                         cur.execute('''SELECT COUNT(*) FROM feat_streams
-                                       WHERE lower(channel) = lower(%s)
-                                       AND service = %s''' % (_SUB * 2),
-                                    (u, s))
+                                       WHERE lower(channel) = lower(?)
+                                       AND service = ?''', (u, s))
                         if cur.fetchone()[0] == 0:
                             cur.execute('''INSERT INTO feat_streams
                                            (channel, service)
-                                           VALUES (%s, %s)''' % (_SUB * 2),
-                                        (u, s))
+                                           VALUES (?, ?)''', (u, s))
                             dbcon.commit()
                     finally:
                         cur.close()
@@ -1267,8 +1262,8 @@ def feature(bot, switch, channel, quiet=False):
                       if a.name.lower() == u.lower() and a.service == s]:
                 try:
                     cur.execute('''DELETE FROM feat_streams
-                                   WHERE lower(channel) = lower(%s)
-                                   AND service = %s''' % (_SUB * 2), (u, s))
+                                   WHERE lower(channel) = lower(?)
+                                   AND service = ?''', (u, s))
                     dbcon.commit()
                 finally:
                     cur.close()
@@ -1318,14 +1313,12 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                 if nick not in bot.memory['streamSubs'][i]:
                     try:
                         cur.execute('''SELECT COUNT(*) FROM sub_streams
-                                    WHERE lower(channel) = lower(%s)
-                                    AND service = %s''' % (_SUB * 2),
-                                    (u, s))
+                                    WHERE lower(channel) = lower(?)
+                                    AND service = ?''', (u, s))
                         if cur.fetchone()[0] == 0:
                             cur.execute('''INSERT INTO sub_streams
                                         (channel, service, nick)
-                                        VALUES (%s, %s, %s)''' % (_SUB * 3),
-                                        (u, s, nick))
+                                        VALUES (?, ?, ?)''', (u, s, nick))
                             dbcon.commit()
                     finally:
                         cur.close()
@@ -1348,10 +1341,9 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     if nick in bot.memory['streamSubs'][i]:
                         try:
                             cur.execute('''DELETE FROM sub_streams
-                                           WHERE lower(channel) = lower(%s)
-                                           AND service = %s
-                                           AND nick = %s''' % (_SUB * 3),
-                                        (u, s, nick))
+                                           WHERE lower(channel) = lower(?)
+                                           AND service = ?
+                                           AND nick = ?''', (u, s, nick))
                             dbcon.commit()
                         finally:
                             cur.close()
