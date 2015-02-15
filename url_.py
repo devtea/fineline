@@ -12,7 +12,6 @@ http://willie.dftba.net
 """
 from __future__ import unicode_literals
 
-import os.path
 import re
 from socket import timeout
 
@@ -29,6 +28,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
@@ -42,6 +42,7 @@ try:
 except:
     import imp
     import sys
+    import os.path
     try:
         LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
@@ -82,9 +83,14 @@ def configure(config):
     if config.option('Exclude certain URLs from automatic title display', False):
         if not config.has_section('url'):
             config.add_section('url')
-        config.add_list('url', 'exclude', 'Enter regular expressions for each URL you would like to exclude.',
+        config.add_list(
+            'url',
+            'exclude',
+            'Enter regular expressions for each URL you would like to exclude.',
             'Regex:')
-        config.interactive_add('url', 'exclusion_char',
+        config.interactive_add(
+            'url',
+            'exclusion_char',
             'Prefix to suppress URL titling', '!')
 
 
@@ -122,7 +128,7 @@ def setup(bot=None):
         exclusion_char = bot.config.url.exclusion_char
 
     url_finder = re.compile(r'(?u)(%s?(?:http|https|ftp)(?:://\S+))' %
-        (exclusion_char))
+                            (exclusion_char))
 
 
 @commands('title')
@@ -202,7 +208,7 @@ def process_urls(bot, trigger, urls):
         if not url.startswith(exclusion_char):
             # Magic stuff to account for international domain names
             try:
-                url = bot.web.iri_to_uri(url)
+                url = web.iri_to_uri(url)
             except:
                 pass
             # First, check that the URL we got doesn't match
@@ -261,7 +267,7 @@ def find_title(url):
     try:
         content, headers = web.get(url, return_headers=True, limit_bytes=max_bytes)
     except UnicodeDecodeError:
-        return # Fail silently when data can't be decoded
+        return  # Fail silently when data can't be decoded
 
     # Some cleanup that I don't really grok, but was in the original, so
     # we'll keep it (with the compiled regexes made global) for now.
