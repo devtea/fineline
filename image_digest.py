@@ -13,7 +13,6 @@ import os.path
 import re
 import threading
 import time
-import traceback
 import types
 import urlparse
 import urllib2
@@ -22,7 +21,10 @@ from pprint import pprint as pp
 from HTMLParser import HTMLParser
 from string import Template
 
+from willie.logger import get_logger
 from willie.module import commands, rule, interval, example
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -32,7 +34,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -45,7 +47,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -58,7 +60,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -248,7 +250,7 @@ def setup(bot):
         try:
             bot.memory['digest']['templatehtml'] = Template(f.read().decode('utf-8', 'replace'))
         except:
-            bot.debug(__file__, log.format(u'Unable to load template.'), u'always')
+            LOGGER.error(log.format(u'Unable to load template.'), exec_info=True)
             raise
 
     with bot.memory['digest']['lock']:
@@ -276,7 +278,7 @@ def setup(bot):
             cur.close()
             db.close()
         if query:
-            bot.debug(__file__, log.format('Reloading from database'), 'verbose')
+            LOGGER.info(log.format('Reloading from database'))
             bot.memory['digest']['digest'] = []
             for t, m, a, n, u, i, s, c, r, h in query:
                 item = {
@@ -318,8 +320,7 @@ def imgur_get_medium(bot, url):
         else:
             return url
     except:
-        bot.debug(__file__, log.format(u'Unhandled exception in the imgur medium url formatter.'), 'warning')
-        bot.debug(__file__, traceback.format_exc(), 'warning')
+        LOGGER.error(log.format(u'Unhandled exception in the imgur medium url formatter.'), exec_info=True)
         return url
 
 
@@ -386,8 +387,7 @@ def image_filter(bot, url):
             else:
                 return None
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the derpibooru parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the derpibooru parser.'))
             return None
 
     def tumblr(url):
@@ -396,8 +396,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             urls = _re_tumblr.findall(html)  # just a simple pattern search for certain urls
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the tumblr parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the tumblr parser.'), exec_info=True)
             return None
         if urls:
             return {'url': urls[0], 'format': 'standard'}  # Just return the first, I guess?
@@ -411,8 +410,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the tinygrab parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the tinygrab parser.'), exec_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -423,8 +421,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the steam parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the steam parser.'), exec_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -435,8 +432,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the 500px parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the 500px parser.'), exec_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -451,8 +447,7 @@ def image_filter(bot, url):
                 return None  # No match, no image.
             thumbnail = re.sub('(\d+_\w+)\.(\w+)$', '\g<1>_n.\g<2>', base_url)
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the flickr parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the flickr parser.'), exec_info=True)
             return None
         return {'url': thumbnail, 'format': 'standard'}
 
@@ -472,8 +467,7 @@ def image_filter(bot, url):
             html = content.read().decode('utf-8', 'replace')
             parser.feed(html)
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the DA parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the DA parser.'), exec_info=True)
             return None
         return {'url': parser.get_img(), 'format': 'standard'}
 
@@ -513,15 +507,13 @@ def image_filter(bot, url):
                     processed_url = re.sub('gallery/([a-zA-Z0-9]{5,})(.*)', '\g<1>', url)
                     img = process_url(bot, processed_url)
                 except:
-                    bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
-                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    LOGGER.error(log.format(u'Unhandled exception in the imgur parser.'), exec_info=True)
                     return None
         else:
             try:
                 img = process_url(bot, url)
             except:
-                bot.debug(__file__, log.format(u'Unhandled exception in the imgur parser.'), 'warning')
-                bot.debug(__file__, traceback.format_exc(), 'warning')
+                LOGGER.error(log.format(u'Unhandled exception in the imgur parser.'), exec_info=True)
                 return None
 
         if img:
@@ -545,8 +537,7 @@ def image_filter(bot, url):
             else:
                 return None
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the dropbox parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the dropbox parser.'), exec_info=True)
             return None
 
     def e621(url):
@@ -564,8 +555,7 @@ def image_filter(bot, url):
             else:
                 return None
         except:
-            bot.debug(__file__, log.format(u'Unhandled exception in the e621 parser.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled exception in the e621 parser.'), exec_info=True)
             return None
 
     def gfycat(url):
@@ -578,21 +568,21 @@ def image_filter(bot, url):
         # TODO make the custom format just take URL and HTML
         return {'url': url, 'html': _gfycat_iframe.substitute(id=id), 'format': 'custom'}
 
-    bot.debug(__file__, log.format("Filtering URL %s" % url), 'verbose')
+    LOGGER.info(log.format("Filtering URL %s"), url)
 
     parsed_url = urlparse.urlparse(url)
     domain = u'{uri.netloc}/'.format(uri=parsed_url).strip(u'/')
     # Regex replacements for certain domains
-    bot.debug(__file__, log.format("Unprocessed domain is: %s" % domain), 'verbose')
+    LOGGER.info(log.format("Unprocessed domain is: %s"), domain)
     for r in _dom_map:
         domain = _dom_map[r].sub(r, domain)
-    bot.debug(__file__, log.format("Processed domain is: %s" % domain), 'verbose')
+    LOGGER.info(log.format("Processed domain is: %s"), domain)
 
     if url.split('.')[-1] in FILELIST:
         # TODO Grab header and see if MIME type is sane before returning the
         # raw link
         if domain not in temp_preprocess:
-            bot.debug(__file__, log.format("Url %s appears a raw image link." % url), 'verbose')
+            LOGGER.info(log.format("Url %s appears a raw image link."), url)
             # For now, only imgur needs raw link modifications. If we do more
             # than just imgur, though, we'll need a lookup with functions.
             # Turn mobile urls into normal
@@ -608,7 +598,7 @@ def image_filter(bot, url):
     try:
         check = domains[domain]
     except KeyError:
-        bot.debug(__file__, log.format("Domain %s not found." % domain), 'verbose')
+        LOGGER.warning(log.format("Domain %s not found."), domain)
         return None
 
     # If we got a check function, use that to return the image url
@@ -651,8 +641,8 @@ def url_watcher(bot, trigger):
     try:
         matches = [i[0] for i in url.findall(unicode(trigger))]
     except IndexError:
-        bot.debug(__file__, log.format('Error finding all URLs in message - No urls found!'), 'warning')
-        bot.debug(__file__, log.format('Message was: %s' % unicode(trigger)), 'warning')
+        LOGGER.error(log.format('Error finding all URLs in message - No urls found!'))
+        LOGGER.error(('Message was: %s'), unicode(trigger))
         return
 
     time.sleep(20)  # Wait just a bit to grab post-link nsfw tagging context, but only once per message
@@ -692,7 +682,7 @@ def url_watcher(bot, trigger):
         with bot.memory['digest']['lock']:
             bot.memory['digest']['digest'].append(t)
             write_to_db(bot, t)
-        bot.debug(__file__, log.format(pp(t)), 'verbose')
+        LOGGER.info(log.format("raw object", pp(t)))
 
 
 @commands('digest_clear')
@@ -711,10 +701,10 @@ def digest_db_refresh(bot, trigger):
     '''Force overwrites the db with what's in memory. Admin only.'''
     if not trigger.owner:
         return
-    bot.debug(__file__, log.format('Starting db refresh.'), 'verbose')
+    LOGGER.info(log.format('Starting db refresh.'))
     with bot.memory['digest']['lock']:
         db_refresh(bot)
-    bot.debug(__file__, log.format('DB refresh complete.'), 'verbose')
+    LOGGER.info(log.format('DB refresh complete.'))
     bot.reply('Database refresh complete.')
 
 
@@ -726,8 +716,7 @@ def db_refresh(bot):
         cur.execute('delete from digest')
         dbcon.commit()
     except:
-        bot.debug(__file__, log.format(u'Unhandled database exception when clearing table.'), 'warning')
-        bot.debug(__file__, traceback.format_exc(), 'warning')
+        LOGGER.error(log.format(u'Unhandled database exception when clearing table.'), exec_info=True)
     finally:
         cur.close()
     # Write every image item to the database
@@ -755,9 +744,8 @@ def write_to_db(bot, item):
                           item['html']))
         dbcon.commit()
     except:
-        bot.debug(__file__, log.format(u'Unhandled database exception when inserting image.'), 'warning')
-        bot.debug(__file__, pp(item), 'warning')
-        bot.debug(__file__, traceback.format_exc(), 'warning')
+        LOGGER.error(log.format(u'Unhandled database exception when inserting image.'), exec_info=True)
+        LOGGER.error('raw item', pp(item), exec_info=True)
     finally:
         cur.close()
 
@@ -769,11 +757,11 @@ def digest_dump(bot, trigger):
         return
     with bot.memory['digest']['lock']:
         bot.reply(u'Dumping digest to logs.')
-        bot.debug(__file__, log.format('=' * 20), 'always')
-        bot.debug(__file__, log.format('time is %s' % time.time()), 'always')
+        LOGGER.debug(log.format('=' * 20))
+        LOGGER.debug(log.format('time is %s' % time.time()))
         for i in bot.memory['digest']['digest']:
-            bot.debug(__file__, log.format(pp(i)), 'always')
-        bot.debug(__file__, log.format('=' * 20), 'always')
+            LOGGER.debug(log.format(pp(i)))
+        LOGGER.debug(log.format('=' * 20))
 
 
 @interval(60)
@@ -788,8 +776,7 @@ def clean_links(bot):
             cur.execute('delete from digest where time < ?', (t,))
             dbcon.commit()
         except:
-            bot.debug(__file__, log.format(u'Unhandled database exception when cleaning up old links.'), 'warning')
-            bot.debug(__file__, traceback.format_exc(), 'warning')
+            LOGGER.error(log.format(u'Unhandled database exception when cleaning up old links.'), exec_info=True)
         finally:
             cur.close()
 
@@ -822,10 +809,10 @@ def url_dump(bot, trigger):
         return
     with bot.memory['digest']['lock']:
         bot.reply(u'Dumping digest urls to logs.')
-        bot.debug(__file__, log.format('=' * 20), 'always')
+        LOGGER.debug(log.format('=' * 20))
         for i in bot.memory['digest']['digest']:
-            bot.debug(__file__, log.format(i['image']), 'always')
-        bot.debug(__file__, log.format('=' * 20), 'always')
+            LOGGER.debug(log.format(i['image']))
+        LOGGER.debug(log.format('=' * 20))
 
 
 @commands('digest_build_html')
@@ -887,14 +874,14 @@ def build_html(bot, trigger):
     if trigger:
         if not trigger.owner:
             return
-        bot.debug(__file__, log.format(u'Building HTML on command'), 'warning')
+        LOGGER.info(log.format(u'Building HTML on command'))
 
     try:
         with open(bot.memory['digest']['destination'], 'r') as f:
             previous_html = ''.join(f.readlines())
     except IOError:
         previous_html = u''
-        bot.debug(__file__, log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), 'warning')
+        LOGGER.warning(log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'), exec_info=True)
 
     # Generate HTML
     # TODO Add check to see if the image is still available and remove those
@@ -950,7 +937,7 @@ def build_html(bot, trigger):
 
     html = bot.memory['digest']['templatehtml'].substitute(body=msg, head=simple_header)
     if previous_html.decode('utf-8', 'replace') != html:
-        bot.debug(__file__, log.format(u'Generated digest html file is different, writing.'), u'verbose')
+        LOGGER.info(log.format(u'Generated digest html file is different, writing.'))
         with open(bot.memory['digest']['destination'], 'w') as f:
             f.write(html.encode('utf-8', 'replace'))
 
@@ -983,8 +970,7 @@ def report(bot, trigger):
                                 (parsebool(True), target, target))
                     dbcon.commit()
                 except:
-                    bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
-                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    LOGGER.error(log.format(u'Unhandled database exception when reporting link.'), exec_info=True)
                     bad_stuff_happened = True
                 finally:
                     cur.close()
@@ -1021,8 +1007,7 @@ def unreport(bot, trigger):
                                 (parsebool(False), target, target))
                     dbcon.commit()
                 except:
-                    bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
-                    bot.debug(__file__, traceback.format_exc(), 'warning')
+                    LOGGER.error(log.format(u'Unhandled database exception when reporting link.'), exec_info=True)
                     bad_stuff_happened = True
                 finally:
                     cur.close()
@@ -1047,8 +1032,7 @@ def remove(bot, trigger):
                 cur.execute('delete from digest where url = ? or image = ?', (link, link))
                 dbcon.commit()
             except:
-                bot.debug(__file__, log.format(u'Unhandled database exception when reporting link.'), 'warning')
-                bot.debug(__file__, traceback.format_exc(), 'warning')
+                LOGGER.error(log.format(u'Unhandled database exception when reporting link.'), exec_info=True)
                 return False
             else:
                 return True

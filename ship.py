@@ -14,8 +14,11 @@ import threading
 from datetime import datetime
 from types import IntType
 
+from willie.logger import get_logger
 from willie.module import commands, example
 from willie.tools import Identifier
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -25,7 +28,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -39,7 +42,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -159,10 +162,10 @@ def ship(bot, trigger):
             i = nicks.in_chan(bot, trigger.sender).index(target)
             target = nick_list.pop(i)
 
-            bot.debug(__file__, log.format("target is: ", target), 'verbose')
+            LOGGER.info(log.format("target is: %s"), target)
             include_nicks = True
         else:
-            bot.debug(__file__, log.format('Target not found in room.'), 'verbose')
+            LOGGER.info(log.format('Target not found in room.'))
             target = None
 
     if target or include_nicks:
@@ -202,14 +205,14 @@ def delname(bot, trigger):
     if not trigger.admin:
         return
     name = ' '.join(trigger.split(u' ')[1:]).lower()
-    bot.debug(__file__, log.format(name), 'verbose')
+    LOGGER.info(log.format(name))
     with bot.memory['pony_list_lock']:
         dbcon = bot.db.connect()
         cur = dbcon.cursor()
         try:
             cur.execute('select name, weight from prompt_ponies where lower(name) = ?', (name,))
             rows = cur.fetchall()
-            bot.debug(__file__, log.format(u'%s' % rows), u'verbose')
+            LOGGER.info(log.format(u'%s'), rows)
             if rows:
                 cur.execute('delete from prompt_ponies where lower(name) = ?', (name,))
                 dbcon.commit()
@@ -239,7 +242,7 @@ def addname(bot, trigger):
         return
     command.pop(0)
     name = ' '.join(command)
-    bot.debug(__file__, log.format('name: "%s", weight: "%i"' % (name, weight)), 'verbose')
+    LOGGER.info(log.format('name: "%s", weight: "%i"'), name, weight)
     with bot.memory['pony_list_lock']:
         dbcon = bot.db.connect()
         cur = dbcon.cursor()

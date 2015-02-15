@@ -16,11 +16,12 @@ import os.path
 import re
 import threading
 import time
-import traceback
 
-
-from willie.tools import Identifier
+from willie.logger import get_logger
 from willie.module import rule, event, commands, unblockable, thread, priority
+from willie.tools import Identifier
+
+LOGGER = get_logger(__name__)
 
 re_hostname = re.compile(r':\S+\s311\s\S+\s(\S+)\s\S+\s(\S+)\s\*')
 
@@ -32,7 +33,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -99,7 +100,7 @@ def in_chan(bot, channel, nick=None):
     with bot.memory['nick_lock']:
         if not nick and channel in priv.keys():
             tmp = [i for i in bot.memory['nicks'] if i in priv[channel].keys()]
-            print(tmp)
+            LOGGER.info(log.format(tmp))
             return tmp
         elif nick and channel in priv.keys():
             return nick in priv[channel].keys()
@@ -123,9 +124,9 @@ def list_nicks(bot, trigger):
     if not trigger.owner and not trigger.admin and not trigger.isop:
         return
     with bot.memory['nick_lock']:
-        bot.debug(__file__, log.format(u'=== Nick List ==='), u'always')
+        LOGGER.warning(log.format(u'=== Nick List ==='))
         for i in bot.memory['nicks']:
-            print('(%s) %s, %s' % (type(i), i, i.hostname))
+            LOGGER.warning(log.format('(%s) %s, %s'), type(i), i, i.hostname)
 
 
 @rule('.*')
@@ -138,7 +139,7 @@ def whois_catcher(bot, trigger):
         # No more bot.raw in willie 5.0. trigger.raw seems usable
         n, h = re_hostname.search(trigger.raw).groups()
         who = NickPlus(n.lstrip('+%@&~'), h)
-        bot.debug(__file__, log.format(u'WHOIS %s: %s' % (who, h)), u'verbose')
+        LOGGER.info(log.format(u'Caught WHOIS %s: %s'), who, h)
         with bot.memory['nick_lock']:
             # Replace all matching nicks with the updated nick from the whois
             # query, but only if the existing doesn't have a hostname. This is
@@ -148,8 +149,7 @@ def whois_catcher(bot, trigger):
             #    [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['chan_nicks'][chan]]
             bot.memory['nicks'] = [who if i.lower() == who.lower() and i.hostname is None else i for i in bot.memory['nicks']]
     except:
-        bot.debug(__file__, log.format(u'Error in whois catcher.'), u'warning')
-        print(traceback.format_exc())
+        LOGGER.error(log.format(u'Error in whois catcher.'), exec_info=True)
 
 
 def list_all_nicks(bot):
@@ -173,8 +173,7 @@ def names(bot, trigger):
                     whois(bot, n)
                     bot.memory['nicks'].append(n)
     except:
-        bot.debug(__file__, log.format(u'Error in the names processing.'), u'warning')
-        print(traceback.format_exc())
+        LOGGER.error(log.format(u'Error in the names processing.'), exec_info=True)
 
 
 @rule(u'.*')
@@ -183,7 +182,7 @@ def names(bot, trigger):
 @thread(False)
 @priority('high')
 def join(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught JOIN by ', trigger.nick), u'verbose')
+    LOGGER.info(log.format(u'Caught JOIN by %s'), trigger.nick)
     try:
         if not trigger.sender.startswith('#'):
             # Only look at stuff from a channel
@@ -194,9 +193,7 @@ def join(bot, trigger):
             # erronious hostname matching
             bot.memory['nicks'].append(name)
     except:
-        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
-        print(traceback.format_exc())
-        bot.msg(bot.config.owner, u'A join by %s in %s just broke me. Check the logs for details.' % (trigger.nick, trigger.sender))
+        LOGGER.error(log.format(u'ERROR: bot nick list is unsynced from server'), exec_info=True)
 
 
 @rule(u'.*')
@@ -205,7 +202,7 @@ def join(bot, trigger):
 @thread(False)
 @priority('high')
 def nick(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught NICK by %s >> %s' % (trigger.nick, trigger)), u'verbose')
+    LOGGER.info(log.format(u'Caught NICK by %s >> %s'), trigger.nick, trigger)
     # Trigger doesn't come from channel. Any replies will be sent to user.
     # Old nick is in trigger.nick while new nick is in trigger and
     # trigger.sender
@@ -216,9 +213,7 @@ def nick(bot, trigger):
             bot.memory['nicks'].remove(old_nick)
             bot.memory['nicks'].append(new_nick)
     except:
-        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
-        print(traceback.format_exc())
-        bot.msg(bot.config.owner, u'A nick by %s just broke me. Check the logs for details.' % trigger.nick)
+        LOGGER.error(log.format(u'ERROR: bot nick list is unsynced from server'), exec_info=True)
 
 
 @rule(u'.*')
@@ -227,19 +222,18 @@ def nick(bot, trigger):
 @thread(False)
 @priority('high')
 def quit(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught QUIT by %s (%s)' % (trigger.nick, trigger)), u'verbose')
+    LOGGER.info(log.format(u'Caught QUIT by %s (%s)'),  trigger.nick, trigger)
     # Quitting nick is trigger.nick, trigger and trigger.sender contain quit reason.
     try:
         name = trigger.nick  # Note that we're not using a NickPlus w/ hostname here
         with bot.memory['nick_lock']:
             if name in bot.memory['nicks']:
-                bot.debug(__file__, log.format(u'Found %s in remove' % name), u'verbose')
+                LOGGER.info(log.format(u'Found %s in remove'), name)
                 bot.memory['nicks'].remove(name)
             else:
-                bot.debug(__file__, log.format(u'%s not found to remove' % name), u'verbose')
+                LOGGER.info(log.format(u'%s not found to remove'), name)
     except:
-        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
-        print(traceback.format_exc())
+        LOGGER.error(log.format(u'ERROR: bot nick list is unsynced from server'), exec_info=True)
 
 
 @rule(u'.*')
@@ -256,11 +250,7 @@ def kick(bot, trigger):
             target = bot.raw.split()[3]
         else:
             target = trigger.raw.split()[3]
-        bot.debug(
-            __file__,
-            log.format(u'Caught KICK of %s by %s in %s' % (
-                target, trigger.nick, trigger.sender)),
-            u'verbose')
+        LOGGER.info(log.format(u'Caught KICK of %s by %s in %s'), target, trigger.nick, trigger.sender)
         name = target
         with bot.memory['nick_lock']:
             if name == bot.nick:
@@ -268,9 +258,7 @@ def kick(bot, trigger):
             else:
                 bot.memory['nicks'].remove(name)
     except:
-        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
-        print(traceback.format_exc())
-        bot.msg(bot.config.owner, u'A kick of %s in %s just broke me. Check the logs for details.' % (name, trigger.sender))
+        LOGGER.error(log.format(u'ERROR: bot nick list is unsynced from server'), exec_info=True)
 
 
 @rule(u'.*')
@@ -279,7 +267,7 @@ def kick(bot, trigger):
 @thread(False)
 @priority('high')
 def part(bot, trigger):
-    bot.debug(__file__, log.format(u'Caught PART by %s from %s' % (trigger.nick, trigger.sender)), u'verbose')
+    LOGGER.info(log.format(u'Caught PART by %s from %s'), trigger.nick, trigger.sender)
     try:
         if not trigger.sender.startswith('#'):
             return
@@ -290,9 +278,7 @@ def part(bot, trigger):
                 else:
                     bot.memory['nicks'].remove(name)
     except:
-        bot.debug(__file__, log.format(u'ERROR: bot nick list is unsynced from server'), u'warning')
-        print(traceback.format_exc())
-        bot.msg(bot.config.owner, u'A part in %s just broke me. Check the logs for details.' % trigger.sender)
+        LOGGER.error(log.format(u'ERROR: bot nick list is unsynced from server'), exec_info=True)
 
 
 if __name__ == "__main__":

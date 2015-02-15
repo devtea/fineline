@@ -19,8 +19,11 @@ import random
 
 from bs4 import BeautifulSoup, SoupStrainer
 
-import willie.web as web
+from willie.logger import get_logger
 from willie.module import commands, example
+import willie.web as web
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -30,7 +33,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -59,7 +62,7 @@ def prbooru_search(bot, booru, tags=None, rand=True):
         try:
             page = web.get(url)
         except timeout:
-            bot.debug(__file__, log.format(u'Site timed out.'), u'warning')
+            LOGGER.warning(log.format(u'Site timed out.'))
             return None
         if page:
             try:
@@ -80,7 +83,7 @@ def prbooru_search(bot, booru, tags=None, rand=True):
         try:
             page = web.get(url)
         except timeout:
-            bot.debug(__file__, log.format(u'TIMEOUT'), u'verbose')
+            LOGGER.warning(log.format(u'Site timed out.'))
             return None
         if page:
             try:
@@ -94,35 +97,32 @@ def prbooru_search(bot, booru, tags=None, rand=True):
             soupy_links = soupy.find_all(u'a', id=re.compile(ur'p\d{1,6}'))
             links_list = []
             for i in soupy_links:
-                # bot.debug(__file__, log.format(i['href']), 'verbose')
+                # LOGGER.info(log.format(i['href']))
                 links_list.append(booru + i[u'href'])
             next = ''
             next_tag = soupy.find(u'a', alt=u'next', text=u'>')
             if next_tag:
                 next = booru + str(next_tag['href'])
-            bot.debug(__file__, log.format(u'"next" is ', next), u'verbose')
-            bot.debug(__file__, log.format(u'returning %i' % len(links_list)), u'verbose')
+            LOGGER.info(log.format(u'"next" is %s'), next)
+            LOGGER.info(log.format(u'returning %i'), len(links_list))
             return (links_list, next)
         else:
             return None  # Error so return none
 
-    bot.debug(__file__, log.format(tags), u'verbose')
+    LOGGER.info(log.format(tags))
     if tags:
         tag_blob = u'index.php?page=post&s=list&tags='
         tag_blob = u'%s%s' % (tag_blob, tags.pop(0))
         for tag in tags:
             tag_blob = u'%s+%s' % (tag_blob, tag)
-        bot.debug(__file__, log.format(booru, tag_blob), u'verbose')
+        LOGGER.info(log.format(booru, tag_blob))
         next_page = booru + tag_blob
         links = []
         while next_page:
             newlinks, next_page = get_pr_list(next_page)
             links = links + newlinks
-            bot.debug(__file__, log.format(u'links %i' % len(links)), u'verbose')
-        bot.debug(__file__,
-                  log.format(u'got back %i links' % len(links)),
-                  u'verbose'
-                  )
+            LOGGER.info(log.format(u'links %i'), len(links))
+        LOGGER.info(log.format(u'got back %i links'), len(links))
         try:
             if rand:
                 link = choice(links)
@@ -130,11 +130,11 @@ def prbooru_search(bot, booru, tags=None, rand=True):
                 link = links[0]
         except IndexError:
             return []  # No results so return empty
-        bot.debug(__file__, log.format(u'link is %s' % link), u'verbose')
+        LOGGER.info(log.format(u'link is %s'), link)
         pic = get_image_from_page(link)
         return pic
     else:
-        bot.debug(__file__, log.format(u'entered random section'), u'verbose')
+        LOGGER.info(log.format(u'entered random section'))
         tag_blob = u'index.php?page=post&s=random'
         return get_image_from_page(booru + tag_blob)
 
@@ -161,19 +161,19 @@ def prbooru(bot, trigger):
 
     booru = base_urls[weighted_choice(base_urls)][0]
 
-    bot.debug(__file__, log.format(u'-' * 20), u'verbose')
+    LOGGER.info(log.format(u'-' * 20))
     if not trigger.group(2):
         # TODO give help
-        bot.debug(__file__, log.format(u'No args, assuming random'), u'verbose')
+        LOGGER.info(log.format(u'No args, assuming random'))
         bot.reply(u'Try `%s: help pr`' % bot.nick)
         return
     tags_list = parse_tags(trigger.group(2))
-    bot.debug(__file__, log.format(tags_list), u'verbose')
+    LOGGER.info(log.format(tags_list))
     if len(tags_list) == 1 and tags_list[0].upper() == u'RANDOM':
-        bot.debug(__file__, log.format(u'random'), u'verbose')
+        LOGGER.info(log.format(u'random'))
         link = prbooru_search(bot, booru)  # Request a random image else:
     else:
-        bot.debug(__file__, log.format(u'tags'), u'verbose')
+        LOGGER.info(log.format(u'tags'))
         link = prbooru_search(bot, booru, tags=tags_list)  # Get image from tags
     if link:
         bot.reply(link)

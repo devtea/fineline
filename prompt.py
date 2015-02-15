@@ -11,7 +11,10 @@ import bisect
 import os.path
 import random
 
+from willie.logger import get_logger
 from willie.module import commands
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -21,7 +24,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -60,7 +63,7 @@ def setup(bot):
             for n, w in dbload:
                 bot.memory['prompt']['ponies'].append((n, w))
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s weighted ponies." % str(len(bot.memory['prompt']['ponies']))), u"verbose")
+        LOGGER.info(log.format(u"Loaded %s weighted ponies."), str(len(bot.memory['prompt']['ponies'])))
 
         cur.execute('SELECT * FROM prompt_nouns')
         dbload = cur.fetchall()
@@ -68,7 +71,7 @@ def setup(bot):
             for n in dbload:
                 bot.memory['prompt']['nouns'].append(n[0])
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s nouns." % str(len(bot.memory['prompt']['nouns']))), u"verbose")
+        LOGGER.info(log.format(u"Loaded %s nouns."), str(len(bot.memory['prompt']['nouns'])))
 
         cur.execute('SELECT * FROM prompt_verbs')
         dbload = cur.fetchall()
@@ -76,7 +79,7 @@ def setup(bot):
             for v in dbload:
                 bot.memory['prompt']['verbs'].append(v[0])
             dbload = None
-        bot.debug(__file__, log.format(u"Loaded %s verbs." % str(len(bot.memory['prompt']['verbs']))), u"verbose")
+        LOGGER.info(log.format(u"Loaded %s verbs."), str(len(bot.memory['prompt']['verbs'])))
     finally:
         cur.close()
         dbcon.close()
@@ -102,8 +105,8 @@ def prompt(bot, trigger):
     if bot.memory['shush']:
         return
 
-    bot.debug(__file__, log.format(u"=============="), u"verbose")
-    bot.debug(__file__, log.format(u"Module started"), u"verbose")
+    LOGGER.info(log.format(u"=============="))
+    LOGGER.info(log.format(u"Module started"))
     # Make our random selections for our prompt construction
     index_no = weighted_choice(bot.memory['prompt']['ponies'])
     sentence = [u"Your random prompt is: ",

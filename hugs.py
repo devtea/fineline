@@ -12,7 +12,10 @@ import random
 import re
 import time
 
+from willie.logger import get_logger
 from willie.module import rule, rate
+
+LOGGER = get_logger(__name__)
 
 random.seed()
 
@@ -24,7 +27,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -63,7 +66,7 @@ def hug_intercept(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u"Caught hug."), u"verbose")
+    LOGGER.info(log.format(u"Caught hug."))
     # First make sure we're intercepting the proper user's actions
     if re.match("hushmachine", trigger.nick):
         # Hugs directed at the bot
@@ -115,7 +118,7 @@ def hug_intercept(bot, trigger):
                 u"fish",
                 u"tackles"
         ])):
-            bot.debug(__file__, log.format(u"inner trigger"), u"verbose")
+            LOGGER.info(log.format(u"inner trigger"))
             if random.uniform(0, 1) < 0.04:
                 bot.action(random.choice([
                     u"quickly jumps in between them and gets the hug instead.",

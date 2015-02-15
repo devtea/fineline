@@ -18,7 +18,10 @@ import random
 import time
 import threading
 
+from willie.logger import get_logger
 from willie.module import interval, rule, commands, rate, example
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -28,7 +31,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -97,7 +100,7 @@ def slow_room(bot):
                 # It appears a bad file descriptor can be cached when the bot
                 # disconnects and reconnects. We need to flush these.
                 # del bot.memory["slow_timer"][key]
-                bot.debug(__file__, 'Caught exception in slow room module.', 'warning')
+                LOGGER.error('Caught exception in slow room module.', exec_info=True)
                 bot.memory["slow_timer"] = {}
 
 
@@ -111,7 +114,7 @@ def fetch_rss(bot, feed_url):
         try:
             feedparser.parse(url)
         except:
-            bot.debug(__file__, log.format(u"Could not update feed, using cached version."), u"warning")
+            LOGGER.warning(log.format(u"Could not update feed, using cached version."))
             return
         bot.memory["fetch_rss"][feed_url] = []
         bot.memory["fetch_rss"][feed_url].append(time.time())
@@ -241,9 +244,9 @@ def last_activity(bot, trigger):
     """Keeps track of the last activity for a room"""
     if trigger.sender.startswith("#") and \
             trigger.sender in _INCLUDE:
-        bot.debug(__file__, log.format(trigger.sender), u"verbose")
+        LOGGER.info(log.format(trigger.sender))
         if 'slow_timer_lock' not in bot.memory:
-            bot.debug(__file__, log.format(u'WTF Devs'), u'warning')
+            LOGGER.warning(log.format(u'WTF Devs'))
             setup(bot)
         with bot.memory["slow_timer_lock"]:
             bot.memory["slow_timer"][trigger.sender] = time.time()
@@ -255,8 +258,8 @@ def pony(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u'Triggered'), u'verbose')
-    bot.debug(__file__, log.format(trigger.sender), u'verbose')
+    LOGGER.info(log.format(u'Triggered'))
+    LOGGER.info(log.format(trigger.sender))
     cute(bot, trigger.sender, is_timer=False)
 
 

@@ -17,13 +17,14 @@ from willie.module import rule, commands, example
 import json
 import re
 import sys
+
 if sys.version_info.major < 3:
     from HTMLParser import HTMLParser
 else:
     from html.parser import HTMLParser
 
 regex = re.compile('(youtube.com/watch\S*v=|youtu.be/)([\w-]+)')
-_EXCLUDE=['#reddit-mlpds']
+_EXCLUDE = ['#reddit-mlpds']
 
 
 def setup(bot):

@@ -15,7 +15,6 @@ import random
 import re
 from socket import timeout
 import threading
-import traceback
 import time
 from string import Template
 
@@ -24,7 +23,10 @@ import praw.errors
 from praw.errors import InvalidSubreddit
 from requests import HTTPError
 
+from willie.logger import get_logger
 from willie.module import interval, commands, rate, example
+
+LOGGER = get_logger(__name__)
 
 _UA = u'FineLine IRC bot 0.1 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
@@ -52,7 +54,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -66,7 +68,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of colors.")
+        LOGGER.info(log.format("Trying manual import of colors."))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
@@ -78,7 +80,7 @@ try:
 except:
     import imp
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -249,7 +251,7 @@ def rmlpds(bot):
             bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            bot.debug(__file__, log.format(u"Sub exists."), u"verbose")
+            LOGGER.info(log.format(u"Sub exists."))
             new_posts = mlpds.get_new(limit=SUB_LIMIT)
             uncommented = []
             for post in new_posts:
@@ -261,11 +263,11 @@ def rmlpds(bot):
                     continue
                 if filter_comments(post, 0) > 0:
                     continue
-                # bot.debug(__file__, log.format(u"Adding post to list."), u"verbose")
+                # LOGGER.info(log.format(u"Adding post to list."))
                 uncommented.append(post)
             uncommented = filter_posts(bot, uncommented)
             if uncommented:
-                bot.debug(__file__, log.format(u"There are %i uncommented posts." % len(uncommented)), u"verbose")
+                LOGGER.info(log.format(u"There are %i uncommented posts."), len(uncommented))
                 # There were posts, so set full timer
                 bot.memory["rmlpds"]["timer"] = time.time()
                 post = random.choice(uncommented)
@@ -300,9 +302,9 @@ def rmlpds(bot):
                 bot.memory["rmlpds"]["last"] = None  # clear the last post so no inadvertant ignoring takes place
                 bot.memory["rmlpds"]["timer"] = time.time() - \
                     (_check_interval * 3 / 4)
-                bot.debug(__file__, log.format(u"No uncommented posts found."), u"verbose")
+                LOGGER.info(log.format(u"No uncommented posts found."))
         else:
-            bot.debug(__file__, log.format(u"Cannot check posts."), u"warning")
+            LOGGER.warning(log.format(u"Cannot check posts."))
 
 
 @commands(u'queue', u'check', u'posts', u'que', u'crit', u'critique')
@@ -336,7 +338,7 @@ def mlpds_check(bot, trigger):
         # Filter posts with more than 2 good comments
         if filter_comments(post, 2) >= 2:  # If we have at least 2 good comments...
             continue
-        bot.debug(__file__, log.format('appending %s to uncommented' % post.title), 'verbose')
+        LOGGER.info(log.format('appending %s to uncommented'), post.title)
         uncommented.append(post)
     if uncommented:
         uncommented.reverse()  # Reverse so list is old to new
@@ -553,14 +555,14 @@ def reddit_contest(bot, trigger):
         if (not arguments or not arguments[0] == 'force') and 'fetch_time' in bot.memory['rmlpds'] and \
                 bot.memory['rmlpds']['fetch_time'][0] > time.time() - (7 * 24 * 60 * 60):
             # Load cached comments
-            bot.debug(__file__, log.format(u"using cached comments"), u"warning")
+            LOGGER.info(log.format(u"using cached comments"))
             bot.reply("Okay, I checked recently so I will use what I found then. Use 'force' if you think I need to check again.")
             now = bot.memory['rmlpds']['fetch_time'][0]
             comments = bot.memory['rmlpds']['fetch_time'][1]
             all_comments = bot.memory['rmlpds']['fetch_time'][2]
             filtered_comments = []
         else:
-            bot.debug(__file__, log.format(u"Grabbing last 1000 comments"), u"warning")
+            LOGGER.info(log.format(u"Grabbing last 1000 comments"))
             bot.reply("Okay, this is a slow process (reddit api is slooooow) and can take up to an hour if reddit isn't behaving. I will message you with the results.")
 
             successful = None
@@ -570,14 +572,13 @@ def reddit_contest(bot, trigger):
                     comments = [i for i in mlpds.get_comments(limit=1000)]
                     successful = True
                 except:
-                    bot.debug(__file__, log.format(u"Exception when grabbing list of comments"), u"warning")
-                    print(traceback.format_exc())
+                    LOGGER.error(log.format(u"Exception when grabbing list of comments"), exec_info=True)
                     time.sleep(5)
                     trials += 1
             filtered_comments = []
 
             # Filter deleted comments
-            bot.debug(__file__, log.format(u"Filtering deleted comments"), u"warning")
+            LOGGER.info(log.format(u"Filtering deleted comments"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -587,8 +588,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering for deleted comment %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering for deleted comment %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -596,7 +596,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Filter by date to include only comments made last month
-            bot.debug(__file__, log.format(u"Filtering by date"), u"warning")
+            LOGGER.info(log.format(u"Filtering by date"))
             last_month = datetime.datetime.utcnow().month - 1
             if last_month == 0:
                 last_month = 12
@@ -609,8 +609,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering by date %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering by date %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -618,9 +617,9 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # filter by submission to exclude commonly excluded posts
-            bot.debug(__file__, log.format(u"Filtering by submission"), u"warning")
+            LOGGER.info(log.format(u"Filtering by submission"))
             for comment in comments:
-                bot.debug(__file__, log.format(u"checking %s" % comment.id), u"warning")
+                LOGGER.info(log.format(u"checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
@@ -630,8 +629,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering by submission %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering by submission %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -640,7 +638,7 @@ def reddit_contest(bot, trigger):
 
             # Filter comment if submission date more than 10 days prior to
             # comment date
-            bot.debug(__file__, log.format(u"Filtering on time difference between post and comment"), u"warning")
+            LOGGER.info(log.format(u"Filtering on time difference between post and comment"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -650,8 +648,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering on time diff %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering on time diff %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -659,7 +656,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Filter self comments on posts
-            bot.debug(__file__, log.format(u"Filtering self replies"), u"warning")
+            LOGGER.info(log.format(u"Filtering self replies"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -674,8 +671,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering self replies %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering self replies %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -688,7 +684,7 @@ def reddit_contest(bot, trigger):
             all_comments.extend(comments)
 
             # filter by comment length or inclusion of link
-            bot.debug(__file__, log.format(u"Filtering by length OR link"), u"warning")
+            LOGGER.info(log.format(u"Filtering by length OR link"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -698,8 +694,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering by length or link %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering by length or link %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -707,7 +702,7 @@ def reddit_contest(bot, trigger):
             filtered_comments = []
 
             # Only keep top level or first reply comments
-            bot.debug(__file__, log.format(u"Filtering based on top comment and thread participation"), u"warning")
+            LOGGER.info(log.format(u"Filtering based on top comment and thread participation"))
             for comment in comments:
                 successful = None
                 trials = 0
@@ -717,8 +712,7 @@ def reddit_contest(bot, trigger):
                             successful = True
                             filtered_comments.append(comment)
                     except:
-                        bot.debug(__file__, log.format(u"Exception when filtering by top comment and thread participation %s" % comment.id), u"warning")
-                        print(traceback.format_exc())
+                        LOGGER.error(log.format(u"Exception when filtering by top comment and thread participation %s"), comment.id, exec_info=True)
                         time.sleep(5)
                         trials += 1
             comments = []
@@ -729,7 +723,7 @@ def reddit_contest(bot, trigger):
             bot.memory['rmlpds']['fetch_time'] = (now, comments, all_comments)
 
         # Build list by commenter
-        bot.debug(__file__, log.format(u"Building list"), u"warning")
+        LOGGER.info(log.format(u"Building list"))
         commenters = {}
         for comment in comments:
             if comment.author.name not in commenters:
@@ -737,7 +731,7 @@ def reddit_contest(bot, trigger):
             commenters[comment.author.name].append(comment)
 
         # Filter commenters who have fewer than 3 applicable comments
-        bot.debug(__file__, log.format(u"Filtering less than three"), u"warning")
+        LOGGER.info(log.format(u"Filtering less than three"))
         for commenter in commenters.keys():
             if len(commenters[commenter]) < 3:
                 del commenters[commenter]
@@ -819,10 +813,10 @@ def reddit_contest(bot, trigger):
             with open(bot.memory['rmlpds']['export_location'], 'w') as f:
                 f.write(page_content.encode('utf-8', 'replace'))
         except IOError:
-            bot.debug(__file__, log.format('IO error writing contest file. check file permissions.'), 'warning')
+            LOGGER.error(log.format('IO error writing contest file. check file permissions.'), exec_info=True)
             return
         time.sleep(5)  # wait a bit for file syncing and shit so the new page is available
-        bot.debug(__file__, log.format('Finished processing list.'), 'warning')
+        LOGGER.info(log.format('Finished processing list.'))
         bot.msg(trigger.nick, 'The summary is out at %s' % bot.memory['rmlpds']['export_url'])
         bot.reply("Check your messages.")
 

@@ -17,7 +17,10 @@ import urlparse
 from string import Template
 
 from willie.config import ConfigurationError
+from willie.logger import get_logger
 from willie.module import commands, example, interval, priority, rule
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -27,7 +30,7 @@ except:
     import imp
     import sys
     try:
-        print(__file__, "Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -40,7 +43,7 @@ except:
     import imp
     import sys
     try:
-        print(__file__, "trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -53,7 +56,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -186,21 +189,21 @@ def generate_help_lists(bot):
             previous_html = ''.join(f.readlines())
     except IOError:
         previous_html = ''
-        bot.debug(__file__, log.format(u'IO error grabbing previous user help file contents. File may not exist yet'), 'warning')
+        LOGGER.warning(log.format(u'IO error grabbing previous user help file contents. File may not exist yet'))
     try:
         with open(bot.memory['help']['admin_path'], 'r') as f:
             previous_admin_html = ''.join(f.readlines())
     except IOError:
         previous_admin_html = ''
-        bot.debug(__file__, log.format(u'IO error grabbing previous admin help file contents. File may not exist yet'), 'warning')
+        LOGGER.warning(log.format(u'IO error grabbing previous admin help file contents. File may not exist yet'))
 
     if previous_html != html:
-        bot.debug(__file__, log.format(u'User help file is different, writing.'), 'verbose')
+        LOGGER.info(log.format(u'User help file is different, writing.'))
         with open(bot.memory['help']['user_path'], 'w') as f:
             f.write(html)
 
     if previous_admin_html != admin_html:
-        bot.debug(__file__, log.format(u'Admin help file is different, writing.'), 'verbose')
+        LOGGER.info(log.format(u'Admin help file is different, writing.'))
         with open(bot.memory['help']['admin_path'], 'w') as f:
             f.write(admin_html)
 

@@ -10,7 +10,10 @@ from __future__ import print_function
 import os.path
 import time
 
+from willie.logger import get_logger
 from willie.module import commands
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -20,7 +23,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -37,13 +40,13 @@ def setup(bot):
 def template(bot, trigger):
     """Quiets many bot functions for a while. Admin only."""
     if not trigger.admin and not trigger.owner and not trigger.isop:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to shush me!'), 'warning')
+        LOGGER.WARNING(log.format('%s just tried to shush me!'), trigger.nick)
         return
     bot.reply(u'Okay.')
-    bot.debug(__file__, log.format(trigger.nick, ' just shushed me.'), 'warning')
+    LOGGER.info(log.format(r'%s just shushed me.'), trigger.nick)
     bot.memory['shush'] = True
     time.sleep(5 * 60)
-    bot.debug(__file__, log.format('Done being quiet.'), 'warning')
+    LOGGER.info(log.format('Done being quiet.'))
     bot.memory['shush'] = False
 
 

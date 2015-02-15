@@ -11,7 +11,11 @@ import os.path
 import random
 import re
 import threading
+
+from willie.logger import get_logger
 from willie.module import commands, example
+
+LOGGER = get_logger(__name__)
 
 random.seed()
 
@@ -23,7 +27,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -76,7 +80,7 @@ def ep_del(bot, trigger):
     """ADMIN: Deletes a specified episode from the database."""
     # test the arguments returned, e.g. ['.episode', 'S01E03']
     if not trigger.owner:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to delete an episode!'), 'warning')
+        LOGGER.warning(log.format(trigger.nick, ' just tried to delete an episode!'))
         return
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
@@ -120,11 +124,11 @@ def ep_del(bot, trigger):
 def add_ep(bot, trigger):
     """ADMIN: Adds an episode to the database."""
     if not trigger.owner:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to add an episode!'), 'warning')
+        LOGGER.warning(log.format(u'%s just tried to add an episode!'), trigger.nick)
         return
-    bot.debug(__file__, log.format(u"add_ep triggered"), u"verbose")
+    LOGGER.info(log.format(u"add_ep triggered"))
     if not trigger.admin:
-        bot.debug(__file__, log.format(trigger.nick, u" just tried to add an episode..."), u"always")
+        LOGGER.warning(log.format(u'%s just tried to add an episode!'), trigger.nick)
         return
         # assume input is SxxExx title~~~~~~
         # eg ['!test', 'S01E01', 'Title', ...]
@@ -135,12 +139,12 @@ def add_ep(bot, trigger):
                     command[1],
                     flags=re.IGNORECASE
                     ):
-            bot.debug(__file__, log.format(u"Ep is sane"), u"verbose")
+            LOGGER.info(log.format(u"Ep is sane"))
             season, __, ep = trigger.args[1].split()[1].upper().partition("E")
             season = int(season.lstrip("S"))
             ep = int(ep)
             title = u' '.join(i for i in command if command.index(i) > 1)
-            bot.debug(__file__, log.format(u'Season %i, episode %i' % (season, ep)), u'verbose')
+            LOGGER.info(log.format(u'Season %i, episode %i'), season, ep)
             message = get_ep(bot, [season, ep])
             if message.startswith(u'T'):
                 bot.reply(u"That episode already exists!")
@@ -166,10 +170,10 @@ def add_ep(bot, trigger):
                     finally:
                         cur.close()
         else:
-            bot.debug(__file__, log.format(u"Argument is insane"), u"verbose")
+            LOGGER.info(log.format(u"Argument is insane"))
             bot.reply(u"I don't understand that.")
     else:
-        bot.debug(__file__, log.format(u"Not enough args"), u"verbose")
+        LOGGER.info(log.format(u"Not enough args"))
         bot.reply(u"Uh, what episode?")
 
 
@@ -180,7 +184,7 @@ def episode(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u"Triggered"), u"verbose")
+    LOGGER.info(log.format(u"Triggered"))
     # test the arguments returned, e.g. ['.episode', 'S01E03']
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
@@ -188,18 +192,18 @@ def episode(bot, trigger):
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):
-            bot.debug(__file__, log.format(u"Argument is sane"), u"verbose")
+            LOGGER.info(log.format(u"Argument is sane"))
             season, __, ep = trigger.args[1].split()[1].upper().partition(u"E")
             bot.reply(get_ep(bot, [int(season.lstrip(u"S")), int(ep)]))
         else:
-            bot.debug(__file__, log.format(u"Argument is insane"), u"verbose")
+            LOGGER.info(log.format(u"Argument is insane"))
             bot.reply((u"I don't understand that. Try '%s: help " +
                        u"episode'") % bot.nick)
     elif len(trigger.args[1].split()) > 2:
-        bot.debug(__file__, log.format(u"too many args"), u"verbose")
+        LOGGER.info(log.format(u"too many args"))
         bot.reply(u"I don't understand that. Try '%s: help episode'" % bot.nick)
     else:
-        bot.debug(__file__, log.format(u"Not enough args"), u"verbose")
+        LOGGER.info(log.format(u"Not enough args"))
         randep(bot, trigger)
 
 
@@ -209,7 +213,7 @@ def randep(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u"Triggered"), u"verbose")
+    LOGGER.info(log.format(u"Triggered"))
     season = random.randint(1, len(bot.memory['episodes']))
     episode = random.randint(1, len(bot.memory['episodes'][season]))
     bot.reply(get_ep(bot, [season, episode]))

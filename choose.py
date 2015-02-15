@@ -13,7 +13,10 @@ import os.path
 import random
 import time
 
+from willie.logger import get_logger
 from willie.module import commands, example
+
+LOGGER = get_logger(__name__)
 
 random.seed()
 
@@ -27,7 +30,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -41,7 +44,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -55,16 +58,16 @@ def setup(bot):
 
 
 def allocate(bot, nick, returns, choices):
-    bot.debug(__file__, log.format(u'Allocating %s for %s from %s.' % (returns, nick, choices)), 'verbose')
+    LOGGER.info(log.format(u'Allocating %s for %s from %s.'), returns, nick, choices)
     if returns == 1:
         if nick not in bot.memory['choose'] or time.time() - bot.memory['choose'][nick] > TIME_LIMIT:
-            bot.debug(__file__, log.format(u'Nick not in list or plenty of time has passed.'), 'verbose')
+            LOGGER.info(log.format(u'Nick not in list or plenty of time has passed.'))
             choice = weighted_choice(bot, choices)
         else:
-            bot.debug(__file__, log.format(u'Nick has choosen recently'), 'verbose')
+            LOGGER.info(log.format(u'Nick has choosen recently'))
             choice = unweighted_choice(choices, returns)
     else:
-        bot.debug(__file__, log.format(u'Defaulting to unweighted choice.'), 'verbose')
+        LOGGER.info(log.format(u'Defaulting to unweighted choice.'))
         choice = unweighted_choice(choices, returns)
     return choice
 
@@ -90,26 +93,26 @@ def weighted_choice(bot, unweighted):
            'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but', 'dum', 'freak',
            'freaks', 'freaky', 'silly', 'älä']
 
-    bot.debug(__file__, log.format(u'Weighting choices from %s.' % unweighted), 'verbose')
+    LOGGER.info(log.format(u'Weighting choices from %s.'), unweighted)
     weighted = []
     while unweighted:
         i = unweighted.pop()
-        bot.debug(__file__, log.format(u'Processing choice "%s"".' % i), 'verbose')
+        LOGGER.info(log.format(u'Processing choice "%s"".'), i)
         if set(i.split()).intersection(good):
             if set(i.split()).intersection(bad):
-                bot.debug(__file__, log.format(u'  Found choice in bad list.'), 'verbose')
+                LOGGER.info(log.format(u'  Found choice in bad list.'))
                 weighted.append((i, 1))
             else:
-                bot.debug(__file__, log.format(u'  Found choice in good list.'), 'verbose')
+                LOGGER.info(log.format(u'  Found choice in good list.'))
                 weighted.append((i, 525))
         else:
-            bot.debug(__file__, log.format(u'  Normal choice.'), 'verbose')
+            LOGGER.info(log.format(u'  Normal choice.'))
             weighted.append((i, 75))
-    bot.debug(__file__, log.format(u'Weighted list is %s.' % weighted), 'verbose')
+    LOGGER.info(log.format(u'Weighted list is %s.'), weighted)
 
     i = choose(weighted)
-    bot.debug(__file__, log.format(u'got index %s' % i), 'verbose')
-    bot.debug(__file__, log.format(u'Returning "%s"' % weighted[i][0]), 'verbose')
+    LOGGER.info(log.format(u'got index %s'), i)
+    LOGGER.info(log.format(u'Returning "%s"'), weighted[i][0])
     return [weighted[i][0]]
 
 
@@ -140,24 +143,24 @@ def choose(bot, trigger):
     now = time.time()
 
     # Parse the provided arguments into a list of strings
-    bot.debug(__file__, log.format("Trigger args: ", trigger.args), u"verbose")
+    LOGGER.info(log.format("Trigger args: ", trigger.args))
     __, __, list = trigger.args[1].partition(u' ')
     # Test for csv or space separated values
     if u',' in trigger.args[1]:
-        bot.debug(__file__, log.format('list: ', list), u"verbose")
+        LOGGER.info(log.format('list: ', list))
         args = list.split(u',')
-        bot.debug(__file__, log.format('args: ', args), u"verbose")
+        LOGGER.info(log.format('args: ', args))
     else:
         args = list.split()
     # Strip the strings
     for i, str in enumerate(args):
         args[i] = str.strip()
-    bot.debug(__file__, log.format('args: ', args), u"verbose")
+    LOGGER.info(log.format('args: ', args))
     if len(args) > 1:
         caller = nicks.Identifier(trigger.nick)
         # If the first argument is an int, we'll want to use it
         if args[0].isdigit():
-            bot.debug(__file__, log.format(u"First arg is a number."), u"verbose")
+            LOGGER.info(log.format(u"First arg is a number."))
             # Cast the string to an int so it's usable
             choices = int(float(args.pop(0)))
 
@@ -173,7 +176,7 @@ def choose(bot, trigger):
 
         else:
             # Just choose one item since no number was specified
-            bot.debug(__file__, log.format(u"First arg is not a number."), u"verbose")
+            LOGGER.info(log.format(u"First arg is not a number."))
             # choice = random.choice(args)
             choice = allocate(bot, caller, 1, args)
             if choice:
@@ -182,12 +185,11 @@ def choose(bot, trigger):
                 bot.reply(u"Hmm, how about everything?")
     else:
         # <=1 items is not enough to choose from!
-        bot.debug(__file__, log.format(u"Not enough args."), u"verbose")
         bot.reply(u"You didn't give me enough to choose from!")
 
     bot.memory['choose'][nicks.Identifier(trigger.nick)] = now
-    bot.debug(__file__, log.format(u"Updated last choose time for nick."), u"verbose")
-    bot.debug(__file__, log.format(u"=" * 20), u"verbose")
+    LOGGER.info(log.format(u"Updated last choose time for nick."))
+    LOGGER.info(log.format(u"=" * 20))
 
 
 if __name__ == "__main__":

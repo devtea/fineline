@@ -13,8 +13,11 @@ import gzip
 import re
 import os
 
-from willie.tools import Identifier
+from willie.logger import get_logger
 from willie.module import commands, example, rule, event, unblockable, priority
+from willie.tools import Identifier
+
+LOGGER = get_logger(__name__)
 
 _re_loglines = re.compile(r'\[[0-9:]*]\s\*{3}\sJoins:\s(\S+)\s\(([^)]+)\)')
 _chan_regex = re.compile(u'^(.*?)_\d{8}')
@@ -27,7 +30,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -40,7 +43,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -120,14 +123,14 @@ def greeting_initialize(bot, trigger):
         file_list = []
         for l in log_file:
             file_list.append(l.decode('utf-8', 'replace'))  # omfg took me way too long to figure out 'replace'
-        bot.debug(__file__, log.format(u'finished loading file'), u'verbose')
+        LOGGER.info(log.format(u'finished loading file'))
         for line in file_list:
             nicknhost = _re_loglines.search(line)
             if nicknhost:
                 nn, host = nicknhost.groups()
                 nn = Identifier(nn)
                 host = host.lstrip('~')
-                bot.debug(__file__, log.format(u'found nick and host. %s %s for %s' % (nn, host, channel)), u'verbose')
+                LOGGER.info(log.format(u'found nick and host. %s %s for %s'), nn, host, channel)
                 if channel not in tmp_hostlist:
                     tmp_hostlist[channel] = {}
                 if nn not in tmp_hostlist[channel]:
@@ -137,8 +140,8 @@ def greeting_initialize(bot, trigger):
 
     bot.reply(u"Okay, I'll start looking through the logs, but this may take a while.")
     with bot.memory['greet_lock']:
-        bot.debug(__file__, log.format(u'=' * 25), u'verbose')
-        bot.debug(__file__, log.format('Starting'), u'verbose')
+        LOGGER.info(log.format(u'=' * 25))
+        LOGGER.info(log.format('Starting'))
         filelist = []
         # Parse provided log files for nicks and hostnames. ZNC Default logs
         for dir in bot.memory['greet']['logs']:
@@ -146,9 +149,9 @@ def greeting_initialize(bot, trigger):
                 if bot.memory['greet']['log_regex'].match(f) and os.path.isfile(dir + f):
                     filelist.append(dir + f)
         for log_ in filelist:
-            bot.debug(__file__, log.format(u'opening %s' % log), u'verbose')
+            LOGGER.info(log.format(u'opening %s'), log)
             log_name = os.path.splitext(os.path.basename(log_))
-            bot.debug(__file__, log.format(u'logname %s' % log_name[0]), u'verbose')
+            LOGGER.info(log.format(u'logname %s'), log_name[0])
             chan = _chan_regex.search(log_name[0]).groups()[0].decode('utf-8', 'replace')
             if log_.endswith('gz'):
                 with gzip.open(log_, 'rb') as gfile:  # May need to switch to r if problems
@@ -179,7 +182,7 @@ def greeting_initialize(bot, trigger):
             finally:
                 cur.close()
                 db.close()
-    bot.debug(__file__, log.format(u'done loading from logs!'), u'verbose')
+    LOGGER.info(log.format(u'done loading from logs!'))
     bot.reply(u"Okay, I'm done reading the logs! ^_^")
 
 
@@ -187,7 +190,7 @@ def greeting_initialize(bot, trigger):
 def greet_nuke(bot, trigger):
     '''ADMIN: Nuke the greeting database.'''
     if not trigger.owner:
-        bot.debug(__file__, log.format(trigger.nick, ' just tried to nuke the greet database!'), 'warning')
+        LOGGER.warning(log.format(u'%s just tried to nuke the greet database!'), trigger.nick)
         return
     bot.reply(u"[](/ppsalute) Aye aye, nuking it from orbit.")
     with bot.memory['greet_lock']:
@@ -211,9 +214,9 @@ def greet_dump(bot, trigger):
     with bot.memory['greet_lock']:
         bot.say(u'Dumping to logs.')
         for channel in bot.memory['chan_host_hist']:
-            bot.debug(__file__, log.format(u'Channel: %s' % channel), u'always')
+            LOGGER.warning(log.format(u'Channel: %s'), channel)
             for nick in bot.memory['chan_host_hist'][channel]:
-                bot.debug(__file__, log.format(u'Nick: %s | Host: %s' % (nick, nick.hostname)), u'always')
+                LOGGER.warning(log.format(u'Nick: %s | Host: %s'), nick, nick.hostname)
         bot.say(u'Done.')
 
 
@@ -249,19 +252,19 @@ def join_watcher(bot, trigger):
                     cur.close()
                     db.close()
                 channel = trigger.sender.lower()
-                bot.debug(__file__, log.format('testing if greeting'), 'verbose')
+                LOGGER.info(log.format('testing if greeting'))
                 if channel in bot.memory['greet']['ings']:
                     # This is where joiners actually get greeted
-                    bot.debug(__file__, log.format('found greeting testing notice'), 'verbose')
-                    bot.debug(__file__, log.format(bot.memory['greet']['ings'][channel][0]), 'verbose')
+                    LOGGER.info(log.format('found greeting testing notice'))
+                    LOGGER.info(log.format(bot.memory['greet']['ings'][channel][0]))
                     if bot.memory['greet']['ings'][channel][0] == 'n':
-                        bot.debug(__file__, log.format("MESSAGE send: %s | msg: %s" % (trigger.sender, bot.memory['greet']['ings'][channel][1])), 'verbose')
+                        LOGGER.info(log.format("MESSAGE send: %s | msg: %s"), trigger.sender, bot.memory['greet']['ings'][channel][1])
                         bot.msg(trigger.sender, u'%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
                     else:
-                        bot.debug(__file__, log.format("NOTICE send: %s | msg: %s" % (trigger.nick, bot.memory['greet']['ings'][channel][1])), 'verbose')
+                        LOGGER.info(log.format("NOTICE send: %s | msg: %s"), trigger.nick, bot.memory['greet']['ings'][channel][1])
                         bot.write(['NOTICE', trigger.nick], '%s: %s' % (trigger.nick, bot.memory['greet']['ings'][channel][1]))
         except:
-            bot.debug(__file__, log.format(u'[greeting] Unhandled exception in hostname watcher! %s [%s]' % (sys.exc_info()[0], unicode(trigger))), u'always')
+            LOGGER.error(log.format(u'[greeting] Unhandled exception in hostname watcher! [%s]'), unicode(trigger), exec_info=True)
 
 
 @commands('greet_add', 'greeting_add')
@@ -272,7 +275,7 @@ def greeting_add(bot, trigger):
         return
     try:
         triggers = trigger.split()[1:]
-        bot.debug(__file__, log.format(triggers), 'verbose')
+        LOGGER.info(log.format(triggers))
         channel = triggers.pop(0).lower()
         notice = triggers.pop(0).lower()
         message = u' '.join(triggers)
@@ -340,7 +343,7 @@ def greeting_list(bot, trigger):
     if not trigger.admin and not trigger.owner and not trigger.isop:
         return
     triggers = trigger.split()[1:]
-    bot.debug(__file__, log.format(triggers), 'verbose')
+    LOGGER.info(log.format(triggers))
     if len(triggers) > 1:
         bot.reply(u'Malformed input. Takes only 1 argument: channel')
         return

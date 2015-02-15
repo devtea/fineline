@@ -16,7 +16,10 @@ import subprocess
 import textwrap
 import time
 
+from willie.logger import get_logger
 from willie.module import commands, example, interval
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -26,7 +29,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -64,7 +67,7 @@ def setup(bot):
     try:
         file_list = os.listdir(bot.memory['streaming']['source_dir'])
     except OSError:
-        bot.debug(__file__, log.format('Unable to load list of files.'), 'warning')
+        LOGGER.error(log.format('Unable to load list of files.'), exec_info=True)
         raise
     else:
         file_list.sort()
@@ -73,7 +76,7 @@ def setup(bot):
         try:
             bot.memory['streaming']['listTemplate'] = Template(f.read())
         except:
-            bot.debug(__file__, log.format(u'Unable to load template.'), u'always')
+            LOGGER.error(log.format(u'Unable to load template.'), exec_info=True)
             raise
     publish_list(bot)
 
@@ -95,7 +98,7 @@ def start_stream(bot, ep):
                 bot.memory['streaming']['loc']
             )
         )
-    bot.debug(__file__, log.format('streamer.py Starting stream of %s' % ep), 'always')
+    LOGGER.info(log.format('streamer.py Starting stream of %s'), ep)
     bot.memory['streaming']['live'] = True
     bot.memory['streaming']['title'] = ep
     try:
@@ -148,16 +151,16 @@ def stream(bot, trigger):
         elif arg_1 == u'DEL':
             dequeue(bot, process(arg_2))
         else:
-            bot.debug(__file__, log.format(u"insane args"), u"verbose")
+            LOGGER.info(log.format(u"insane args"))
             bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                       u"stream'")
     elif len(trigger.args[1].split()) > 3:
-        bot.debug(__file__, log.format(u"too many args"), u"verbose")
+        LOGGER.info(log.format(u"too many args"))
         bot.reply(u"I don't understand that. Try '%s: help " % bot.nick +
                   u"stream'")
     else:
         bot.reply(u'Stream what?! Try !help stream for details.')
-        bot.debug(__file__, log.format(u"Not enough args"), u"verbose")
+        LOGGER.info(log.format(u"Not enough args"))
 
 
 def enqueue(bot, ep):
@@ -204,7 +207,7 @@ def get_queue(bot):
 
 
 def list_media(bot, trigger):
-    bot.debug(__file__, log.format(log.format(bot.memory['streaming']['use_html'])), 'verbose')
+    LOGGER.info(log.format(bot.memory['streaming']['use_html']))
     if bot.memory['streaming']['use_html']:
         bot.reply(u'The list of available videos is up at %s' %
                   bot.memory['streaming']['url'])
@@ -233,16 +236,13 @@ def streaming(bot, trigger):
 def publish_list(bot):
     if not bot.memory['streaming']['use_html']:
         return
-    bot.debug(__file__, log.format(log.format(bot.memory['streaming']['dest'])), 'verbose')
+    LOGGER.info(log.format(bot.memory['streaming']['dest']))
     try:
         with open(bot.memory['streaming']['dest'], 'r') as f:
             previous_full_list = ''.join(f.readlines())
     except IOError:
         previous_full_list = ''
-        bot.debug(
-            __file__,
-            log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'),
-            u'warning')
+        LOGGER.warning(log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
 
     # Generate full list HTML
     contents = bot.memory['streaming']['listTemplate'].substitute(
@@ -254,8 +254,7 @@ def publish_list(bot):
         with open(bot.memory['streaming']['dest'], 'w') as f:
             f.write(contents)
     else:
-        bot.debug(__file__, log.format(u'No chage in list html file, skipping.'), u'verbose')
-    return
+        LOGGER.debug(log.format(u'No chage in list html file, skipping.'))
 
 
 @commands('bob')

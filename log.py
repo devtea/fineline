@@ -13,6 +13,10 @@ Usage examples:
 
 from __future__ import print_function
 
+from willie.logger import get_logger
+
+LOGGER = get_logger(__name__)
+
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
 try:
@@ -21,7 +25,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -29,6 +33,6 @@ except:
         if fp:
             fp.close()
 
-bot.debug(__file__, log.format(text), u'verbose')
+logger.info(log.format(text))
 
 '''

@@ -14,11 +14,14 @@ import os.path
 import threading
 import time
 
-from string import Template
 from pprint import pprint
+from string import Template
 
-from willie.module import commands, example, rule, priority, rate
 from willie.formatting import color
+from willie.logger import get_logger
+from willie.module import commands, example, rule, priority, rate
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -28,7 +31,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -41,7 +44,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -54,7 +57,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -266,7 +269,7 @@ def karma_export(bot, trigger):
                 previous_json = ''.join(f.readlines())
         except IOError:
             previous_json = ''
-            bot.debug(__file__, log.format('IO error grabbing karma.json file contents. File may not exist yet'), 'warning')
+            LOGGER.warning(log.format('IO error grabbing karma.json file contents. File may not exist yet'))
 
         json_dump = json.dumps(bot.memory['karma'])
 
@@ -274,17 +277,20 @@ def karma_export(bot, trigger):
         if previous_json != json_dump:
             try:
                 with open(JSON_FILE, 'w') as f:
-                    bot.debug(__file__, log.format('Writing json'), 'verbose')
+                    LOGGER.info(log.format('Writing json'))
                     f.write(json_dump)
 
                 plain_dump = '\n'.join(['%s %s' % (bot.memory['karma'][i], i) for i in bot.memory['karma']])
-                print(pprint(plain_dump))
+                LOGGER.info(pprint(plain_dump))
                 with open(PLAIN_FILE, 'w') as f:
-                    bot.debug(__file__, log.format('Writing plain file'), 'verbose')
-                    f.write(plain_dump.encode('utf-8', 'replace'))
+                    LOGGER.info(log.format('Writing plain file'))
+                    dump = plain_dump.encode('utf-8', 'replace')
+                    LOGGER.debug(log.format('file contents'))
+                    LOGGER.debug(dump)
+                    f.write(dump)
 
                 with open(CSV_FILE, 'wb') as f:
-                    bot.debug(__file__, log.format('Writing csv file'), 'verbose')
+                    LOGGER.info(log.format('Writing csv file'))
                     writer = csv.writer(f)
                     writer.writerows([(bot.memory['karma'][i], i.encode('utf-8', 'replace')) for i in bot.memory['karma']])
 
@@ -294,17 +300,17 @@ def karma_export(bot, trigger):
                     plain_path=PLAIN_URL)
                 try:
                     with open(LINK_FILE) as f:
-                        bot.debug(__file__, log.format('Reading link file'), 'verbose')
+                        LOGGER.info(log.format('Reading link file'))
                         previous_links = ''.join(f.readlines())
                 except IOError:
                     previous_links = ''
-                    bot.debug(__file__, log.format('IO error grabbing karma.html file contents. File may not exist yet'), 'warning')
+                    LOGGER.error(log.format('IO error grabbing karma.html file contents. File may not exist yet'), exec_info=True)
                 if previous_links != link_page:
                     with open(LINK_FILE, 'w') as f:
-                        bot.debug(__file__, log.format('writing link file'), 'verbose')
+                        LOGGER.info(log.format('writing link file'))
                         f.write(link_page)
             except IOError:
-                bot.debug(__file__, log.format('IO error. check file permissions for karma export output.'), 'warning')
+                LOGGER.error(log.format('IO error. check file permissions for karma export output.'), exec_info=True)
                 return
 
             # wait 60s for web server to update

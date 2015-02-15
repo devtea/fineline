@@ -10,23 +10,40 @@ from __future__ import unicode_literals
 
 import os
 import time
-import willie.tools
 import threading
 import sys
+
+import willie.tools
+from willie.logger import get_logger
 from willie.tools import Identifier, iterkeys
 from willie.module import commands, nickname_commands, rule, priority
+
+LOGGER = get_logger(__name__)
 
 maximum = 4
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
 try:
+    import log
+except:
+    import imp
+    # import sys
+    try:
+        LOGGER.info("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+try:
     import nicks
 except:
+    import imp
+    # import sys
     try:
-        import imp
-        import sys
-        print "trying manual import of nicks"
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -37,9 +54,9 @@ try:
     import util
 except:
     import imp
-    import sys
+    # import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -206,3 +223,7 @@ def message(bot, trigger):
 
     if len(bot.memory['reminders'].keys()) != remkeys:
         dumpReminders(bot.tell_filename, bot.memory['reminders'], bot.memory['tell_lock'])  # @@ tell
+
+
+if __name__ == "__main__":
+    print(__doc__.strip())

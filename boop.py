@@ -9,11 +9,14 @@ http://bitbucket.org/tdreyer/fineline
 from __future__ import print_function
 
 import os.path
-from willie.module import commands, example
-from willie.tools import Identifier
 import random
 import threading
-import traceback
+
+from willie.logger import get_logger
+from willie.module import commands, example
+from willie.tools import Identifier
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -23,7 +26,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -37,7 +40,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of colors")
+        LOGGER.info(log.format("trying manual import of colors"))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
@@ -50,7 +53,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -146,8 +149,7 @@ def boop_add(bot, trigger):
             dbcon.commit()
             bot.memory['boop'][arguments[0]].append(boop)
         except:
-            bot.debug(__file__, log.format(u'ERROR: Unable to insert boop'), u'always')
-            print(traceback.format_exc())
+            LOGGER.error(log.format(u'Unable to insert boop'), exc_info=True)
             bot.reply('Error inserting!')
         else:
             bot.reply('Added.')
@@ -187,8 +189,7 @@ def boop_del(bot, trigger):
                        AND boop like ?""", (arguments[0], boop))
         dbcon.commit()
     except:
-        bot.debug(__file__, log.format(u'ERROR: error removing boop'), u'always')
-        print(traceback.format_exc())
+        LOGGER.error(log.format(u'ERROR: error removing boop'), exc_info=True)
         bot.reply("Error removing boops, probably malformed text provided for the like '?' portion of the SQL query.")
     else:
         bot.reply('%s boop(s) removed.' % count)

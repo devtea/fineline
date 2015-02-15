@@ -14,7 +14,10 @@ import random
 import threading
 import time
 
+from willie.logger import get_logger
 from willie.module import commands, interval
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -24,7 +27,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -37,7 +40,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of nicks")
+        LOGGER.info(log.format("trying manual import of nicks"))
         fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
         nicks = imp.load_source('nicks', pathname, fp)
         sys.modules['nicks'] = nicks
@@ -50,7 +53,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of colors")
+        LOGGER.info(log.format("trying manual import of colors"))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
@@ -63,7 +66,7 @@ except:
     import imp
     import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util
@@ -137,11 +140,11 @@ def weighted_choice(w):
 def move_to_inactive(bot, participant):
     index = None
     for i in bot.memory['tod']['list']:
-        bot.debug(__file__, log.format('comparing (%s, %s)' % i), 'verbose')
+        LOGGER.info(log.format('comparing (%s, %s)' % i))
         if participant == i[0]:
-            bot.debug(__file__, log.format('found (%s, %s)' % i), 'verbose')
+            LOGGER.info(log.format('found (%s, %s)' % i))
             index = bot.memory['tod']['list'].index(i)
-            bot.debug(__file__, log.format('index is %s' % index), 'verbose')
+            LOGGER.info(log.format('index is %s'),  index)
             break
     if index is not None:
         bot.memory['tod']['inactive_list'].append(bot.memory['tod']['list'].pop(index))
@@ -155,11 +158,11 @@ def move_to_list(bot, participant):
     if not bot.memory['tod']['inactive_list']:
         return False
     for i in bot.memory['tod']['inactive_list']:
-        bot.debug(__file__, log.format('comparing (%s, %s)' % i), 'verbose')
+        LOGGER.info(log.format('comparing (%s, %s)' % i))
         if participant == i[0]:
-            bot.debug(__file__, log.format('found (%s, %s)' % i), 'verbose')
+            LOGGER.info(log.format('found (%s, %s)' % i))
             index = bot.memory['tod']['inactive_list'].index(i)
-            bot.debug(__file__, log.format('index is %s' % index), 'verbose')
+            LOGGER.info(log.format('index is %s'), index)
             break
     if index is not None:
         bot.memory['tod']['list'].append(bot.memory['tod']['inactive_list'].pop(index))
@@ -183,7 +186,7 @@ def join(bot, trigger):
     with bot.memory['tod']['lock']:
         bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
-        bot.debug(__file__, log.format('TOD join for %s, %s' % (trigger.nick, trigger.host)), 'verbose')
+        LOGGER.info(log.format('TOD join for %s, %s'), trigger.nick, trigger.host)
 
         if move_to_list(bot, participant):
             bot.reply("You are back in the truth or dare list.")
@@ -213,7 +216,7 @@ def leave(bot, trigger):
     with bot.memory['tod']['lock']:
         bot.memory['tod']['lastactivity'] = time.time()
         participant = nicks.NickPlus(trigger.nick, trigger.host)
-        bot.debug(__file__, log.format('TOD quit for %s' % participant), 'verbose')
+        LOGGER.info(log.format('TOD quit for %s'), participant)
         if move_to_inactive(bot, participant):
             bot.reply("You are no longer in the truth or dare list")
         else:
@@ -225,13 +228,13 @@ def spin(bot, trigger):
     """This command is used to choose the next target for a Truth or Dare session. """
     def pick_nick(bot):
         next_nick = ' '
-        bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
-        bot.debug(__file__, log.format('in_chan returns %s' % nicks.in_chan(bot, trigger.sender, next_nick)), 'verbose')
+        LOGGER.info(log.format('next_nick is "%s"'), next_nick)
+        LOGGER.info(log.format('in_chan returns %s'), nicks.in_chan(bot, trigger.sender, next_nick))
 
         while not nicks.in_chan(bot, trigger.sender, next_nick):  # pick people until we get someone in the room.
             next = weighted_choice(bot.memory['tod']['list'])
             next_nick = bot.memory['tod']['list'][next][0]
-            bot.debug(__file__, log.format('next_nick is "%s"' % next_nick), 'verbose')
+            LOGGER.info(log.format('next_nick is "%s"'), next_nick)
 
         # Check to see if their nick is different and use that
         nick_list = []
@@ -369,7 +372,7 @@ def clear(bot, trigger):
 @interval(1000)
 def clear_when_dead(bot):
     if bot.memory['tod']['list'] and bot.memory['tod']['lastactivity'] and bot.memory['tod']['lastactivity'] < time.time() - _EXPIRY:
-        bot.debug(__file__, log.format('Clearing TOD list due to inactivity'), 'verbose')
+        LOGGER.info(log.format('Clearing TOD list due to inactivity'))
         bot.memory['tod']['list'] = []
         bot.memory['tod']['inactive_list'] = []
         bot.memory['tod']['lastactivity'] = None

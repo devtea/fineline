@@ -15,11 +15,13 @@ from socket import timeout
 from string import Template
 import threading
 import time
-import traceback
 
-import willie.web as web
+from willie.logger import get_logger
 from willie.module import commands, interval
 from willie.tools import Identifier
+import willie.web as web
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -29,7 +31,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -43,7 +45,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of colors formatter.")
+        LOGGER.info(log.format("Trying manual import of colors formatter."))
         fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
         colors = imp.load_source('colors', pathname, fp)
         sys.modules['colors'] = colors
@@ -198,25 +200,23 @@ class livestream(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"))
+            LOGGER.info(time.strftime("%Y-%m-%d %H:%M:%S"))
             if re.findall('400 Bad Request', self._results):
-                print('Livestream Error: 400 Bad Request')
+                LOGGER.warning(log.format('Livestream Error: 400 Bad Request'))
                 raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
-                print('Livestream Error: 404 Not Found')
+                LOGGER.warning(log.format('Livestream Error: 404 Not Found'))
                 raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
-                print('Livestream Error: 500 Internal Server Error')
+                LOGGER.warning(log.format('Livestream Error: 500 Internal Server Error'))
                 raise ValueError('500 Internal Server Error')
             elif re.findall('503 Service Unavailable', self._results):
-                print('Livestream Error: 503 Service Unavailable')
+                LOGGER.warning(log.format('Livestream Error: 503 Service Unavailable'))
                 raise ValueError('503 Service Unavailable')
             else:
-                print("Bad Json loaded from livestream.com")
-                print("Raw data is:")
-                print(self._results)
-                print("Raw Exception:")
-                print(traceback.format_exc())
+                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exec_info=True)
+                LOGGER.warning("Raw data:")
+                LOGGER.warning(self._results)
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
@@ -235,25 +235,22 @@ class livestream(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"))
             if re.findall('400 Bad Request', self._results):
-                print('Livestream Error: 400 Bad Request')
+                LOGGER.warning(log.format('Livestream Error: 400 Bad Request'))
                 raise ValueError('400 Bad Request')
             elif re.findall('404 Not Found', self._results):
-                print('Livestream Error: 404 Not Found')
+                LOGGER.warning(log.format('Livestream Error: 404 Not Found'))
                 raise ValueError('404 Not Found')
             elif re.findall('500 Internal Server Error', self._results):
-                print('Livestream Error: 500 Internal Server Error')
+                LOGGER.warning(log.format('Livestream Error: 500 Internal Server Error'))
                 raise ValueError('500 Internal Server Error')
             elif re.findall('503 Service Unavailable', self._results):
-                print('Livestream Error: 503 Service Unavailable')
+                LOGGER.warning(log.format('Livestream Error: 503 Service Unavailable'))
                 raise ValueError('503 Service Unavailable')
             else:
-                print("Bad Json loaded from livestream.com")
-                print("Raw data is:")
-                print(self._results)
-                print("Raw Exception:")
-                print(traceback.format_exc())
+                LOGGER.warning(log.format("Bad Json loaded from livestream.com"), exec_info=True)
+                LOGGER.warning("Raw data:")
+                LOGGER.warning(self._results)
                 raise
         for s in self._form_j['channel']:
             self._settings[s] = self._form_j['channel'][s]
@@ -326,12 +323,9 @@ class picarto(stream):
             else:
                 self._live = False
         except:
-            print(time.strftime("%Y-%m-%d %H:%M:%S"))
-            print("Bad Json loaded from livestream.com")
-            print("Raw data is:")
-            print(self._results)
-            print("Raw Exception:")
-            print(traceback.format_exc())
+            LOGGER.warning(log.format("Bad Json loaded from picarto.tv"), exec_info=True)
+            LOGGER.warning("Raw data:")
+            LOGGER.warning(self._results)
             self._live = False
             raise
 
@@ -385,7 +379,7 @@ class youtube(stream):
             self._last_update = time.time()
             if self._live:
                 # When going online, we should grab the live stream URL
-                print(self._form_j['feed']['entry'][0]['content']['src'])
+                LOGGER.info(log.format('youtube live stream url %s'), self._form_j['feed']['entry'][0]['content']['src'])
                 self._event_url = 'http://youtube.com/watch?v=%s' % \
                     self._re_yturl.findall(self._form_j['feed']['entry'][0]['content']['src'])[0]
             else:
@@ -412,17 +406,17 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print("Bad Json loaded from twitch.tv")
-            print("Raw data is:")
-            print(self._results)
+            LOGGER.error(log.format("Bad Json loaded from twitch.tv"), exec_info=True)
+            LOGGER.error("Raw data is:")
+            LOGGER.error(self._results)
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s: %s' % (
                 self._form_j['status'],
                 self._form_j['error'],
                 self._form_j['message']))
-        # print('got json')
-        # print(json.dumps(self._form_j, indent=4))
+        # LOGGER.info(log.format('got json'))
+        # LOGGER.info(json.dumps(self._form_j, indent=4))
         try:
             raise ValueError(self._form_j['error'])
         except KeyError:
@@ -447,9 +441,9 @@ class twitchtv(stream):
         try:
             self._form_j = json.loads(self._results)
         except ValueError:
-            print("Bad Json loaded from twitch.tv")
-            print("Raw data is:")
-            print(self._results)
+            LOGGER.warning(log.formag("Bad Json loaded from twitch.tv"))
+            LOGGER.warning("Raw data is:")
+            LOGGER.warning(self._results)
             raise
         if 'error' in self._form_j:
             raise ValueError('%s %s %s' % (
@@ -556,24 +550,16 @@ def setup(bot):
             bot.memory['streamSet']['help_file_dest']
         )
     except:
-        bot.debug(__file__,
-                  log.format(u'Unable to copy help file. Check configuration.'),
-                  u'always')
+        LOGGER.error(log.format(u'Unable to copy help file. Check configuration.'), exec_info=True)
         raise
     with open(bot.memory['streamSet']['list_template_path']) as f:
         try:
             bot.memory['streamListT'] = Template(''.join(f.readlines()))
         except:
-            bot.debug(__file__,
-                      log.format(u'Unable to load list template.'),
-                      u'always')
+            LOGGER.error(log.format(u'Unable to load list template.'), exec_info=True)
             raise
 
-    bot.debug(
-        __file__,
-        log.format(u'Starting stream setup, this may take a bit.'),
-        'always'
-    )
+    LOGGER.info(log.format(u'Starting stream setup, this may take a bit.'))
     # TODO consider making these unique sets
     if 'url_exclude' not in bot.memory:
         bot.memory['url_exclude'] = []
@@ -626,7 +612,7 @@ def load_from_db(bot, trigger=None):
     """ADMIN: Reload live streams from database."""
     if trigger and not trigger.owner:
         return
-    bot.debug(__file__, log.format(u'Reloading from DB'), 'verbose')
+    LOGGER.info(log.format(u'Reloading from DB'))
     bot.memory['streams'] = []
     bot.memory['feat_streams'] = []
     dbcon = bot.db.connect()  # sqlite3 connection
@@ -647,16 +633,14 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(
                 bot.memory['streamFac'].newStream(c, s, a))
         except:
-            bot.debug(__file__,
-                      log.format(u'Failed to initialize livestream: %s, %s, %s' % (c, s, a)),
-                      u'warning')
+            LOGGER.error(log.format(u'Failed to initialize livestream: %s, %s, %s'), c, s, a, exec_info=True)
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
         feature(bot, 'feature', (c, s), quiet=True)
     for c, s, n in sub_rows:
         subscribe(bot, 'subscribe', (c, s), Identifier(n), quiet=True)
-    bot.debug(__file__, log.format(u'Done.'), 'verbose')
+    LOGGER.info(log.format(u'Done.'))
 
 
 def alias(bot, switch, channel, value=None):
@@ -725,7 +709,7 @@ def nsfw(bot, switch, channel, quiet=None):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug(__file__, log.format(msg), 'warning')
+            LOGGER.info(log.format(msg))
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -749,7 +733,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
                 return
 
             else:
@@ -757,7 +741,7 @@ def nsfw(bot, switch, channel, quiet=None):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
         elif switch == 'unnsfw':
             i = None
             for i in [a for a in bot.memory['streams']
@@ -784,28 +768,27 @@ def nsfw(bot, switch, channel, quiet=None):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
                     return
                 else:
                     msg = u"That doesn't have a NSFW tag."
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
                     return
             else:
                 msg = u"I don't have that stream."
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
         else:
-            msg = u"Uh oh, that wasn't supposed to happen."
+            msg = u"Uh oh, something broke..."
             if not quiet:
                 bot.say(msg)
-                bot.say(u"!tell tdreyer1 FIIIIIXX MEEEEEEEE!")
             else:
-                bot.debug(__file__, log.format(msg), 'warning')
+                LOGGER.error(log.format(msg))
 
 
 def more_help(bot, trigger):
@@ -990,12 +973,10 @@ def add_stream(bot, user):
                 else:
                     bot.reply(u'There was an unknown error, check your ' +
                               u'spelling and try again later')
-                    bot.debug(__file__, log.format(txt), 'warning')
+                    LOGGER.info(log.format(txt))
                     return
             except timeout as txt:
-                bot.debug(__file__,
-                          log.format(txt),
-                          u'warnings')
+                LOGGER.info(log.format(txt))
                 bot.reply(u'Oops, the request to the service timed out! ' +
                           u'Try again later.')
                 return
@@ -1004,9 +985,7 @@ def add_stream(bot, user):
                                WHERE channel = %s
                                AND service = %s''' % (_SUB * 2), (u, s))
                 if cur.fetchone()[0] == 0:
-                    bot.debug(__file__,
-                              log.format(u'ADD: count was != 0'),
-                              u'verbose')
+                    LOGGER.info(log.format(u'ADD: count was != 0'))
                     cur.execute('''INSERT INTO streams (channel, service)
                                    VALUES (%s, %s)''' % (_SUB * 2), (u, s))
                     dbcon.commit()
@@ -1038,7 +1017,7 @@ def list_streams(bot, arg=None, nick=None):
 
     if arg == 'subscribed' or arg == 'subscriptions':
         # Private subscriptions should be PM'd, even if many
-        assert isinstance(nick, Nick)
+        assert isinstance(nick, Identifier)
         if len(bot.memory['streamSubs']) == 0:
             bot.say("You aren't subscribed to anything.")
             return
@@ -1108,24 +1087,14 @@ def publish_lists(bot, trigger=None):
             previous_full_list = ''.join(f.readlines())
     except IOError:
         previous_full_list = ''
-        bot.debug(
-            __file__,
-            log.format(
-                u'IO error grabbing "list_main_dest_path" file contents. ',
-                u'File may not exist yet'),
-            u'warning')
+        LOGGER.warning(log.format(u'IO error grabbing "list_main_dest_path" file contents. File may not exist yet'))
 
     try:
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'r') as f:
             previous_feat_list = ''.join(f.readlines())
     except IOError:
         previous_feat_list = ''
-        bot.debug(
-            __file__,
-            log.format(
-                u'IO error grabbing "list_feat_dest_path" file contents. ',
-                u'File may not exist yet'),
-            u'warning')
+        LOGGER.info(log.format(u'IO error grabbing "list_feat_dest_path" file contents. File may not exist yet'))
 
     # Generate full list HTML
     live_list = []
@@ -1146,7 +1115,7 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_full_list != contents:
-        bot.debug(__file__, log.format(u'Found change in full list html file.'), u'verbose')
+        LOGGER.info(log.format(u'Found change in full list html file.'))
         with open(bot.memory['streamSet']['list_main_dest_path'], 'w') as f:
             f.write(contents)
     # Generate featured list HTML
@@ -1168,7 +1137,7 @@ def publish_lists(bot, trigger=None):
         dead='\n'.join(dead_list))
     # Don't clobber the HDD
     if previous_feat_list != contents:
-        bot.debug(__file__, log.format(u'Found change in featured list html file.'), u'verbose')
+        LOGGER.info(log.format(u'Found change in featured list html file.'))
         with open(bot.memory['streamSet']['list_feat_dest_path'], 'w') as f:
             f.write(contents)
     return
@@ -1249,7 +1218,7 @@ def feature(bot, switch, channel, quiet=False):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug(__file__, log.format(msg), 'warning')
+            LOGGER.info(log.format(msg))
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -1262,7 +1231,7 @@ def feature(bot, switch, channel, quiet=False):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
                     return
                 else:
                     try:
@@ -1284,13 +1253,13 @@ def feature(bot, switch, channel, quiet=False):
                     if not quiet:
                         bot.say(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
                     return
             msg = u"Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
-                bot.debug(__file__, log.format(msg), 'warning')
+                LOGGER.info(log.format(msg))
             return
         elif switch == 'unfeature':
             for i in [a for a in bot.memory['feat_streams']
@@ -1308,26 +1277,26 @@ def feature(bot, switch, channel, quiet=False):
                 if not quiet:
                     bot.say(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
                 return
             msg = u"Not a channel or that channel hasn't been added yet!"
             if not quiet:
                 bot.say(msg)
             else:
-                bot.debug(__file__, log.format(msg), 'warning')
+                LOGGER.info(log.format(msg))
             return
         else:
             msg = u"Oh shit, I don't know what just happened."
             if not quiet:
                 bot.reply(msg)
             else:
-                bot.debug(__file__, log.format(msg), 'warning')
+                LOGGER.info(log.format(msg))
 
 
 def subscribe(bot, switch, channel, nick, quiet=False):
     assert isinstance(channel, basestring) or type(channel) is tuple
     assert isinstance(switch, basestring)
-    assert isinstance(nick, Nick)
+    assert isinstance(nick, Identifier)
     try:
         u, s = parse_service(channel)
     except TypeError:
@@ -1335,7 +1304,7 @@ def subscribe(bot, switch, channel, nick, quiet=False):
         if not quiet:
             bot.say(msg)
         else:
-            bot.debug(__file__, log.format(msg), 'warning')
+            LOGGER.info(log.format(msg))
         return
     dbcon = bot.db.connect()
     cur = dbcon.cursor()
@@ -1365,14 +1334,14 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                     if not quiet:
                         bot.reply(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
                     return
                 else:
                     msg = u"You're already subscribed to that channel!"
                     if not quiet:
                         bot.reply(msg)
                     else:
-                        bot.debug(__file__, log.format(msg), 'warning')
+                        LOGGER.info(log.format(msg))
             elif switch == 'unsubscribe':
                 if i in bot.memory['streamSubs']:
                     if nick in bot.memory['streamSubs'][i]:
@@ -1391,19 +1360,19 @@ def subscribe(bot, switch, channel, nick, quiet=False):
                         if not quiet:
                             bot.reply(msg)
                         else:
-                            bot.debug(__file__, log.format(msg), 'warning')
+                            LOGGER.info(log.format(msg))
                         return
                 msg = u"You weren't subscribed to that or that doesn't exist."
                 if not quiet:
                     bot.reply(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
             else:
                 msg = u"Oh shit, I don't know what just happened."
                 if not quiet:
                     bot.reply(msg)
                 else:
-                    bot.debug(__file__, log.format(msg), 'warning')
+                    LOGGER.info(log.format(msg))
 
 
 @interval(47)
@@ -1423,7 +1392,7 @@ def announcer(bot):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u'Announcer waking up'), u'verbose')
+    LOGGER.debug(log.format(u'Announcer waking up'))
     publish_lists(bot)
     # IMPORTANT _msg_interval must be larger than _announce_interval
     # Time in which to consider streams having been updated recently
@@ -1466,7 +1435,7 @@ def announcer(bot):
                     # Chan was msg'd about stream too recently. The stream may
                     # be experiencing trouble so we don't want to spam
                     pass
-    bot.debug(__file__, log.format(u'Announcer sleeping'), u'verbose')
+    LOGGER.debug(log.format(u'Announcer sleeping'))
 
 
 # Livestream limits access to the following limits
@@ -1476,7 +1445,7 @@ def announcer(bot):
 #    10000 requests per day ( ~1 / 9sec )
 @interval(223)
 def livestream_updater(bot):
-    bot.debug(__file__, log.format(u'Starting livestream.com updater.'), u'verbose')
+    LOGGER.info(log.format(u'Starting livestream.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         try:
@@ -1485,45 +1454,33 @@ def livestream_updater(bot):
         except ValueError:
             pass
         time.sleep(0.25)
-    bot.debug(
-        u'streams.py',
-        u'livestream.com updater complete in %s seconds.' % (time.time() - now),
-        u'verbose'
-    )
+    LOGGER.info(log.format(u'livestream.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(227)
 def twitchtv_updater(bot):
-    bot.debug(__file__, log.format(u'Starting twitch.tv updater.'), u'verbose')
+    LOGGER.info(log.format(u'Starting twitch.tv updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
-    bot.debug(
-        __file__,
-        log.format(u'twitch.tv updater complete in %s seconds.' % (time.time() - now)),
-        u'verbose'
-    )
+    LOGGER.info(log.format(u'twitch.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(229)
 def youtube_updater(bot):
-    bot.debug(__file__, log.format(u'Starting youtube.com updater.'), u'verbose')
+    LOGGER.info(log.format(u'Starting youtube.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
         s.update()
         time.sleep(0.25)
-    bot.debug(
-        __file__,
-        log.format(u'youtube.com updater complete in %s seconds.' % (time.time() - now)),
-        u'verbose'
-    )
+    LOGGER.info(log.format(u'youtube.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(239)
 def ustream_updater(bot):
-    bot.debug(__file__, log.format(u'Starting ustream.tv updater.'), u'verbose')
+    LOGGER.info(log.format(u'Starting ustream.tv updater.'))
     now = time.time()
     # channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
     # if len(channel_list) == 0:
@@ -1543,26 +1500,21 @@ def ustream_updater(bot):
         s.update()
         time.sleep(0.25)
         '''
-    bot.debug(
-        __file__,
-        log.format(u'ustream.tv updater complete in %s seconds.' % (time.time() - now)),
-        u'verbose'
-    )
+    LOGGER.info(log.format(u'ustream.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(161)
 def picarto_updater(bot):
-    bot.debug(__file__, log.format(u'Starting picarto.tv updater.'), u'verbose')
+    LOGGER.info(log.format(u'Starting picarto.tv updater.'))
     try:
         now = time.time()
         for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
             # TODO handle timeout, misc exceptions
             s.update()
             time.sleep(0.25)
-        bot.debug(__file__, log.format(u'picarto.tv updater complete in %s seconds.' % (time.time() - now)), u'verbose')
+        LOGGER.info(log.format(u'picarto.tv updater complete in %s seconds.'), (time.time() - now))
     except:
-        bot.debug(__file__, log.format(u'ERROR: Unhandled exception in the picarto updater.'), u'always')
-        print(traceback.format_exc())
+        LOGGER.error(log.format(u'Unhandled exception in the picarto updater.'), exec_info=True)
 
 
 def info():

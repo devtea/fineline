@@ -14,20 +14,36 @@ from __future__ import unicode_literals
 
 import os.path
 import re
-import sys
-from willie import web, tools
-from willie.module import commands, rule, example
 from socket import timeout
+
+from willie import web, tools
+from willie.logger import get_logger
+from willie.module import commands, rule, example
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
 try:
+    import log
+except:
+    import imp
+    import sys
+    try:
+        LOGGER.info("Trying manual import of log formatter.")
+        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
+        log = imp.load_source('log', pathname, fp)
+        sys.modules['log'] = log
+    finally:
+        if fp:
+            fp.close()
+try:
     import util
 except:
     import imp
-    # import sys  # We imported this above
+    import sys
     try:
-        print("trying manual import of util")
+        LOGGER.info(log.format("trying manual import of util"))
         fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
         util = imp.load_source('util', pathname, fp)
         sys.modules['util'] = util

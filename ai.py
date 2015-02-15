@@ -15,6 +15,9 @@ import time
 from willie.tools import Identifier
 
 from willie.module import rule, rate, priority
+from willie.logger import get_logger
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -24,7 +27,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -188,7 +191,7 @@ def swish(bot, trigger):
         return
     if random.uniform(0, 1) < 0.01:
         time.sleep(random.uniform(1, 3))
-        bot.debug(__file__, log.format(trigger.group(0)), u"verbose")
+        LOGGER.info(log.format(trigger.group(0)))
         i = u"i" * (len(trigger.group(0)) - 5)
         bot.say(u"[](/dhexcited) Sw%ssh! ♥" % i)
 
@@ -345,7 +348,7 @@ def night(bot, trigger):
         message = random.choice([u"Later", u"Bye"])
     punctuation = random.choice([u".", u"", u"!"])
     # Test statment to filter negetive statements
-    bot.debug(__file__, log.format(unicode(trigger)), u"verbose")
+    LOGGER.info(log.format(unicode(trigger)))
     # Use a set intersection to filter triggering lines by keyword
     if not set(trigger.args[1].lower().split()).intersection(set([u'not', u'no', u'at', u'almost', u'soon'])):
         time.sleep(1)
@@ -357,12 +360,12 @@ def night(bot, trigger):
 """
 def smart_action(bot, trigger):
     '''Hopefully a flexible, fun action system for admins'''
-    bot.debug(__file__, log.format("triggered"), "verbose")
-    bot.debug(__file__, log.format(trigger.nick), "verbose")
-    bot.debug(__file__, log.format(trigger.args), "verbose")
-    bot.debug(__file__, log.format("admin: ", trigger.admin), "verbose")
-    bot.debug(__file__, log.format("owner: ", trigger.owner), "verbose")
-    bot.debug(__file__, log.format("isop: ",trigger.isop), "verbose")
+    LOGGER.info(log.format("triggered"))
+    LOGGER.info(log.format(trigger.nick))
+    LOGGER.info(log.format(trigger.args))
+    LOGGER.info(log.format("admin: ", trigger.admin))
+    LOGGER.info(log.format("owner: ", trigger.owner))
+    LOGGER.info(log.format("isop: ",trigger.isop))
 basic_smart = "would you kindly|please|go"
 smart_action.rule = ("^$nickname[:,\s]+(%s)[A-Za-z0-9,'\s]+(NICKNAME)" +
     "(a|an|the|some)(OBJECT)?")

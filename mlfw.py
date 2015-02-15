@@ -13,8 +13,11 @@ import os.path
 from urllib import quote
 from socket import timeout
 
-import willie.web as web
+from willie.logger import get_logger
 from willie.module import commands, example
+import willie.web as web
+
+LOGGER = get_logger(__name__)
 
 # Bot framework is stupid about importing, so we need to override so that
 # various modules are always available for import.
@@ -24,7 +27,7 @@ except:
     import imp
     import sys
     try:
-        print("Trying manual import of log formatter.")
+        LOGGER.info("Trying manual import of log formatter.")
         fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
         log = imp.load_source('log', pathname, fp)
         sys.modules['log'] = log
@@ -36,7 +39,7 @@ except:
 def mlfw_search(bot, terms):
     base_url = u'http://mylittlefacewhen.com/api/v3/face/'
     query_strings = u'?removed=false&limit=1' + terms
-    bot.debug(__file__, log.format(query_strings), u"verbose")
+    LOGGER.info(log.format(query_strings))
     try:
         result = web.get(base_url + query_strings, 10)
     except timeout:
@@ -44,11 +47,9 @@ def mlfw_search(bot, terms):
     try:
         json_results = json.loads(result)
     except ValueError:
-        bot.debug(__file__, log.format(u"Bad json returned"), u"warning")
-        bot.debug(__file__, log.format(result), u"warning")
-    bot.debug(__file__,
-              log.format(json.dumps(json_results, sort_keys=False, indent=2)),
-              u"verbose")
+        LOGGER.warning(log.format(u"Bad json returned from mlfw"))
+        LOGGER.warning(log.format(result))
+    LOGGER.info(log.format(json.dumps(json_results, sort_keys=False, indent=2)))
     try:
         return json_results['objects'][0]['image']
     except IndexError:
@@ -64,22 +65,22 @@ def mlfw(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
-    bot.debug(__file__, log.format(u"Triggered =============="), u"verbose")
-    bot.debug(__file__, log.format(trigger.groups()[1]), u"verbose")
+    LOGGER.info(log.format(u"Triggered =============="))
+    LOGGER.info(log.format(trigger.groups()[1]))
     list = trigger.groups()[1]
     if not list:
         bot.reply(u"try something like %s" % mlfw.example[0]['example'])
     else:
-        bot.debug(__file__, log.format(list), u"verbose")
+        LOGGER.info(log.format(list))
         args = list.split(u',')
         for i, str in enumerate(args):
             args[i] = quote(str.strip())
-        bot.debug(__file__, log.format(args), u"verbose")
+        LOGGER.info(log.format(args))
         tags = u'&tags__all=' + u','.join(args)
-        bot.debug(__file__, log.format(tags), u"verbose")
+        LOGGER.info(log.format(tags))
         mlfw_result = mlfw_search(bot, tags)
         if mlfw_result:
-            bot.debug(__file__, log.format(mlfw_result), u"verbose")
+            LOGGER.info(log.format(mlfw_result))
             bot.reply(u'http://mylittlefacewhen.com%s' % mlfw_result)
         elif mlfw_result is False:  # looks bad, but must since might be None
             bot.reply(u"Uh oh, MLFW isn't working right. Try again later.")
