@@ -82,7 +82,7 @@ def ep_del(bot, trigger):
         return
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
-        if re.match(ur'^S\d{1,2}E\d{1,2}$',
+        if re.match(r'^S\d{1,2}E\d{1,2}$',
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):
@@ -133,7 +133,7 @@ def add_ep(bot, trigger):
     command = trigger.args[1].split()
     if len(command) > 2:
         # Test the second argument for sanity, eg 'S01E03'
-        if re.match(ur'^S\d{1,2}E\d{1,2}$',
+        if re.match(r'^S\d{1,2}E\d{1,2}$',
                     command[1],
                     flags=re.IGNORECASE
                     ):
@@ -186,7 +186,7 @@ def episode(bot, trigger):
     # test the arguments returned, e.g. ['.episode', 'S01E03']
     if len(trigger.args[1].split()) == 2:
         # Test the second argument for sanity, eg 'S01E03'
-        if re.match(ur'^S\d{1,2}E\d{1,2}$',
+        if re.match(r'^S\d{1,2}E\d{1,2}$',
                     trigger.args[1].split()[1],
                     flags=re.IGNORECASE
                     ):

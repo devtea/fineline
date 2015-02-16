@@ -9,7 +9,6 @@ import bisect
 import random
 import threading
 from datetime import datetime
-from types import IntType
 
 from willie.logger import get_logger
 from willie.module import commands, example
@@ -189,7 +188,7 @@ def ship(bot, trigger):
         # match nick with pony!
         while i2 == i1:
             i2 = weighted_choice(bot.memory['pony_list'])
-        if not isinstance(i1, IntType):
+        if not isinstance(i1, int):
             pair = [i1, bot.memory['pony_list'][i2][0]]
         else:
             pair = [bot.memory['pony_list'][i1][0], bot.memory['pony_list'][i2][0]]

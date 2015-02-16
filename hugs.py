@@ -34,8 +34,8 @@ except:
             fp.close()
 
 
-@rule(ur'\001ACTION [a-zA-Z0-9 ,]*?' +
-      ur'((\bhugs? $nickname)|(\bgives $nickname a hug))')
+@rule(r'\001ACTION [a-zA-Z0-9 ,]*?' +
+      r'((\bhugs? $nickname)|(\bgives $nickname a hug))')
 @rate(90)
 def hugback(bot, trigger):
     """Returns a 'hug' action directed at the bot."""

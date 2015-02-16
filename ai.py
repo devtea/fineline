@@ -241,15 +241,15 @@ def slapped(bot, trigger):
         bot.reply("[](/pinkieslap)")
 
 
-hi_prefix = ur"($nickname[:,]?\s+)"
-hi_meat = ur"(hello|hi|hai|ahoy|sup|hey|yo|afternoon|holla|g?'?morning?)"
-hi_all = ur"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
-    ur"folks|guys|peoples?|mulpdrong|$nickname)"
+hi_prefix = r"($nickname[:,]?\s+)"
+hi_meat = r"(hello|hi|hai|ahoy|sup|hey|yo|afternoon|holla|g?'?morning?)"
+hi_all = r"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+    r"folks|guys|peoples?|mulpdrong|$nickname)"
 hi_to_fineline = hi_prefix + hi_meat + '([.!\s]?$)'
-hi_to_all = hi_meat + ur"[,]?\s+" + hi_all + '([.!\s]?$)'
+hi_to_all = hi_meat + r"[,]?\s+" + hi_all + '([.!\s]?$)'
 
 
-@rule(ur"(" + hi_to_fineline + ur")|" + ur"(" + hi_to_all + ur")")
+@rule(r"(" + hi_to_fineline + r")|" + r"(" + hi_to_all + r")")
 @rate(300)
 def hi(bot, trigger):
     """Replies to greetings."""
@@ -265,8 +265,8 @@ def hi(bot, trigger):
         bot.say(message + " " + trigger.nick + punctuation)
 
 
-# @rule(ur'.*$nickname\:?,?\s+Are you a (ro)?bot|.*$nickname (is )?a (ro)?bot')
-@rule(ur'.*$nickname\:?,?\s+Are you a (ro)?bot|' +
+# @rule(r'.*$nickname\:?,?\s+Are you a (ro)?bot|.*$nickname (is )?a (ro)?bot')
+@rule(r'.*$nickname\:?,?\s+Are you a (ro)?bot|' +
       '.*$nickname (is )?a (ro)?bot|' +
       '.*is $nickname a (real)?\s?person|' +
       '.*$nickname.*are you a (real\a)?(person|bot|robot)')
@@ -316,22 +316,22 @@ def isbot(bot, trigger):
                 ))
 
 
-night_prefix = ur"($nickname\:?,?\s+)"
-night_meat = ur"((good|g)?\s?'?(night|bye)|(later(s?)))"
-night_all = ur"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
+night_prefix = r"($nickname\:?,?\s+)"
+night_meat = r"((good|g)?\s?'?(night|bye)|(later(s?)))"
+night_all = r"((y'?)?all\b|(every\s?(body|one|pony|pone|poni))|mlpds|" + \
     "folks|guys|peoples?|mulpdrong|$nickname)"
 night_to_fineline = night_prefix + night_meat
-night_to_all = ur".*?" + night_meat + ur",?\s+" + night_all
-night_universal = ur".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
+night_to_all = r".*?" + night_meat + r",?\s+" + night_all
+night_universal = r".*?((time (for me)?\s?(to|for)\s?((go to)|(head))?\s?" + \
     "(to )?(bed|sleep))|" + \
     "(I'?m ((((going to)|(gonna)) ((go)|(head off))?)|(heading off))" + \
     "\s?(to )?(bed|sleep|crash|(pass out))))"
 
 
 @rule(
-    ur"(" + night_to_fineline + ur")|" +
-    ur"(" + night_to_all + ur")|" +
-    ur"(" + night_universal + ur")"
+    r"(" + night_to_fineline + r")|" +
+    r"(" + night_to_all + r")|" +
+    r"(" + night_universal + r")"
 )
 @priority('high')
 @rate(1000)
@@ -371,7 +371,7 @@ smart_action.priority = 'medium'
 """
 
 
-@rule(ur'^$nickname\s?[!\.]\s?$')
+@rule(r'^$nickname\s?[!\.]\s?$')
 def nick(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:

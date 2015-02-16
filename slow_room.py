@@ -134,14 +134,14 @@ def fzoo(bot, channel):
 
 
 def quote(bot, channel):
-    bot.msg(channel, ur"!quote")
+    bot.msg(channel, "!quote")
     time.sleep(random.uniform(3, 5))
     if random.uniform(0, 1) < 0.3:
-        bot.msg(channel, ur"[](/ppfear)")
+        bot.msg(channel, "[](/ppfear)")
 
 
 def arttip(bot, channel):
-    bot.msg(channel, ur"!arttip")
+    bot.msg(channel, "!arttip")
 
 
 def sing(bot, channel):

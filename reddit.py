@@ -11,7 +11,7 @@ Depends on PRAW: https://github.com/praw-dev/praw
 # TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
 # TODO add recency filter for announced reddit posts
 from datetime import datetime
-import HTMLParser
+from html.parser import HTMLParser
 import re
 from socket import timeout
 import threading
@@ -29,10 +29,10 @@ LOGGER = get_logger(__name__)
 
 _url = '(reddit\.com|redd\.it)'
 _reurl = re.compile(_url, flags=re.I)
-_partial = ur'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
-_util_html = HTMLParser.HTMLParser()
+_partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
+_util_html = HTMLParser(convert_charrefs=True)
 _TIMEOUT = 20
-_UA = 'FineLine IRC bot 0.1 by /u/tdreyer1'
+_UA = 'FineLine 5.0 by /u/tdreyer1'
 _timeout_message = 'Sorry, reddit is unavailable right now.'
 _error_msg = "That doesn't exist, or reddit is being squirrely."
 _bad_reddit_msg = "That doesn't seem to exist on reddit."
@@ -390,7 +390,7 @@ def link_parser(subm, url=False, new=False):
 def reddit_post(bot, trigger):
     """Posts basic info on reddit links"""
     # If you change these, you're going to have to update others too
-    user = ur'(^|\s|reddit.com)/u(ser)?/[^/\s)"\'\}\]]{3,20}'
+    user = r'(^|\s|reddit.com)/u(ser)?/[^/\s)"\'\}\]]{3,20}'
     subm = ('%s((/r/[^/\s]{3,20}/comments/[^/\s]{3,}(/[^/\s)]{3,})?/?)|'
             '(/[^/\s)]{4,}/?))') % _url
     cmnt = ('%s(/r/[^/\s]{3,20}/comments/[^/\s]{3,}/[^/\s]{3,}' +
@@ -458,7 +458,7 @@ def reddit_post(bot, trigger):
         if re.match('.*?%s' % user, link):
             LOGGER.info(log.format("URL is user"))
             full_url = re.search(
-                ur'(https?://)?(www\.)?%s?%s' % (_url, user),
+                r'(https?://)?(www\.)?%s?%s' % (_url, user),
                 link
             ).group(0)
             if re.match('^/u', full_url):
@@ -500,7 +500,7 @@ def reddit_post(bot, trigger):
             LOGGER.info(log.format("URL is comment"))
             try:
                 full_url = ''.join(
-                    re.search(ur'(https?://)?(www\.)?%s' % cmnt,
+                    re.search(r'(https?://)?(www\.)?%s' % cmnt,
                               link
                               ).groups())
             except TypeError:
@@ -521,7 +521,7 @@ def reddit_post(bot, trigger):
             if post.over_18:
                 nsfw = '%s post: ' % colors.colorize("NSFW", ["red"], ["bold"])
             snippet = comment.body
-            match = re.compile(ur'\n')  # 2 lines to remove newline markup
+            match = re.compile(r'\n')  # 2 lines to remove newline markup
             snippet = match.sub(' ', snippet)
             bot.say(
                 'Comment (↑%s) by %s on %s%s — "%s"' % (
@@ -538,7 +538,7 @@ def reddit_post(bot, trigger):
             if util.ignore_nick(bot, trigger.nick, trigger.host):
                 return
             LOGGER.info(log.format("URL is submission"))
-            full_url = re.search(ur'(https?://)?(www\.)?%s' % subm,
+            full_url = re.search(r'(https?://)?(www\.)?%s' % subm,
                                  link
                                  ).group(0)
             if not re.match('^http', full_url):
@@ -568,7 +568,7 @@ def reddit_post(bot, trigger):
         # Subreddit Section
         elif re.match('.*?%s' % subr, link):
             LOGGER.info(log.format("URL is subreddit"))
-            full_url = re.search(ur'(https?://)?(www\.)?%s' % subr,
+            full_url = re.search(r'(https?://)?(www\.)?%s' % subr,
                                  link
                                  ).group(0)
             LOGGER.info(log.format('URL is %s'), full_url)

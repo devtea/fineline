@@ -10,13 +10,13 @@ import json
 import re
 import threading
 import time
-import types
-import urlparse
-import urllib2
 from datetime import datetime
 from pprint import pprint as pp
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 from string import Template
+from urllib.parse import urlparse
+from urllib.request import urlopen
+from urllib.error import HTTPError
 
 from willie.logger import get_logger
 from willie.module import commands, rule, interval, example
@@ -163,8 +163,8 @@ class DAParser(ImageParser):
             if d and 'class' in d and d['class'] == 'dev-content-full':
                 self.img = re.sub('(deviantart.net/fs[0-9]+)/', '\g<1>/200H/', d['src'])
                 try:
-                    urllib2.urlopen(self.img)  # Basically just to test if the url throws a 404
-                except urllib2.HTTPError:
+                    urlopen(self.img)  # Basically just to test if the url throws a 404
+                except HTTPError:
                     self.img = d['src']  # if the small image doesn't exist (aka a gif) use full
 
 
@@ -248,7 +248,7 @@ def setup(bot):
     bot.memory['digest']['url'] = "%sdaily-digest.html" % bot.config.general.hosted_domain
     with open(bot.memory['digest']['template'], 'r') as f:
         try:
-            bot.memory['digest']['templatehtml'] = Template(f.read().decode('utf-8', 'replace'))
+            bot.memory['digest']['templatehtml'] = Template(f.read())
         except:
             LOGGER.error(log.format('Unable to load template.'), exc_info=True)
             raise
@@ -298,7 +298,7 @@ def setup(bot):
 
 def parsebool(b):
     '''Parses bools back and forth from ints for the database'''
-    if isinstance(b, types.BooleanType):
+    if isinstance(b, bool):
         if b:
             return 1
         else:
@@ -379,8 +379,8 @@ def image_filter(bot, url):
     def derpibooru(url):
         '''derpibooru provides an oembed option at derpiboo.ru/oembed.json'''
         try:
-            content = urllib2.urlopen("http://derpiboo.ru/oembed.json?url=%s" % url)
-            raw_json = content.read().decode('utf-8', 'replace')
+            content = urlopen("http://derpiboo.ru/oembed.json?url=%s" % url)
+            raw_json = content.read()
             f_json = json.loads(raw_json)
             if 'thumbnail_url' in f_json:
                 return {'url': f_json['thumbnail_url'], 'format': 'standard'}
@@ -392,8 +392,8 @@ def image_filter(bot, url):
 
     def tumblr(url):
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             urls = _re_tumblr.findall(html)  # just a simple pattern search for certain urls
         except:
             LOGGER.error(log.format('Unhandled exception in the tumblr parser.'), exc_info=True)
@@ -406,8 +406,8 @@ def image_filter(bot, url):
     def tinygrab(url):
         parser = TinyGrabParser()
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             parser.feed(html)
         except:
             LOGGER.error(log.format('Unhandled exception in the tinygrab parser.'), exc_info=True)
@@ -417,8 +417,8 @@ def image_filter(bot, url):
     def steam(url):
         parser = SteamParser()
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             parser.feed(html)
         except:
             LOGGER.error(log.format('Unhandled exception in the steam parser.'), exc_info=True)
@@ -428,8 +428,8 @@ def image_filter(bot, url):
     def fivehpx(url):
         parser = FivehpxParser()
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             parser.feed(html)
         except:
             LOGGER.error(log.format('Unhandled exception in the 500px parser.'), exc_info=True)
@@ -439,8 +439,8 @@ def image_filter(bot, url):
     def flickr(url):
         '''Flickr seems to do a lot of javascript voodoo after page load so tag searching is difficult'''
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             try:
                 base_url = re.search("baseURL: '([^']+)'", html).groups()[0]
             except AttributeError:
@@ -463,8 +463,8 @@ def image_filter(bot, url):
     def deviantart(url):
         parser = DAParser()
         try:
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             parser.feed(html)
         except:
             LOGGER.error(log.format('Unhandled exception in the DA parser.'), exc_info=True)
@@ -475,8 +475,8 @@ def image_filter(bot, url):
         def process_url(bot, url):
             parser = ImgurParser()
             # No try except here, catching elsewhere
-            content = urllib2.urlopen(url)
-            html = content.read().decode('utf-8', 'replace')
+            content = urlopen(url)
+            html = content.read()
             parser.feed(html)
             img = parser.get_img()
             return img
@@ -547,8 +547,8 @@ def image_filter(bot, url):
         except AttributeError:
             return None
         try:
-            content = urllib2.urlopen(parsed)
-            raw_json = content.read().decode('utf-8', 'replace')
+            content = urlopen(parsed)
+            raw_json = content.read()
             f_json = json.loads(raw_json)
             if 'file_url' in f_json:
                 return {'url': f_json['file_url'], 'format': 'standard'}
@@ -570,7 +570,7 @@ def image_filter(bot, url):
 
     LOGGER.info(log.format("Filtering URL %s"), url)
 
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = urlparse(url)
     domain = '{uri.netloc}/'.format(uri=parsed_url).strip('/')
     # Regex replacements for certain domains
     LOGGER.info(log.format("Unprocessed domain is: %s"), domain)
@@ -674,7 +674,7 @@ def url_watcher(bot, trigger):
             'nsfw': nsfw,
             'url': original,
             'image': u['url'],
-            'service': u['service'].decode('utf-8', 'replace'),
+            'service': u['service'],
             'html': u['html'],
             'channel': trigger.sender,
             'reported': False
@@ -936,7 +936,7 @@ def build_html(bot, trigger):
         msg = ''
 
     html = bot.memory['digest']['templatehtml'].substitute(body=msg, head=simple_header)
-    if previous_html.decode('utf-8', 'replace') != html:
+    if previous_html != html:
         LOGGER.info(log.format('Generated digest html file is different, writing.'))
         with open(bot.memory['digest']['destination'], 'w') as f:
             f.write(html.encode('utf-8', 'replace'))

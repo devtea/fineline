@@ -10,7 +10,7 @@ http://bitbucket.org/tdreyer/fineline
 """
 import os.path
 import re
-import urlparse
+from urllib.parse import urljoin
 
 from string import Template
 
@@ -122,8 +122,8 @@ def setup(bot=None):
     if bot.config.has_section('general'):
         if bot.config.has_option('general', 'hosted_domain') \
                 and bot.config.has_option('general', 'hosted_path'):
-            bot.memory['help']['user_domain'] = urlparse.urljoin(bot.config.general.hosted_domain, _FILENAME)
-            bot.memory['help']['admin_domain'] = urlparse.urljoin(bot.config.general.hosted_domain, _ADMIN_FILENAME)
+            bot.memory['help']['user_domain'] = urljoin(bot.config.general.hosted_domain, _FILENAME)
+            bot.memory['help']['admin_domain'] = urljoin(bot.config.general.hosted_domain, _ADMIN_FILENAME)
             bot.memory['help']['user_path'] = os.path.join(bot.config.general.hosted_path, _FILENAME)
             bot.memory['help']['admin_path'] = os.path.join(bot.config.general.hosted_path, _ADMIN_FILENAME)
             bot.memory['help']['use_urls'] = True

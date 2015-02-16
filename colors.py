@@ -22,7 +22,6 @@ Recognized 'default' colors:
     15 Light Grey
 '''
 from random import choice
-from types import ListType
 from willie.module import commands, example
 
 RESET = "\x0f"
@@ -54,8 +53,8 @@ STYLES = {
 def colorize(text, colors=[], styles=[]):
     assert isinstance(text, str), "No string provided."
     assert text, "Text is empty."
-    assert type(colors) is ListType, "Colors must be in a list."
-    assert type(styles) is ListType, "Styles must be in a list."
+    assert isinstance(colors, list), "Colors must be in a list."
+    assert isinstance(styles, list), "Styles must be in a list."
     assert len(colors) < 3, "Too many colors."
     assert len(styles) < 4, "Too many styles."
     if colors or styles:
@@ -66,7 +65,7 @@ def colorize(text, colors=[], styles=[]):
             except KeyError:
                 raise KeyError('Color "%s" is invalid.' % colors[0])
             except UnicodeDecodeError:
-                message = message.decode('utf-8', 'replace')
+                message = message
                 message = '\x03%s%s%s' % (COLORS[colors[0].lower()], message, RESET)
         elif len(colors) == 2:
             try:
@@ -81,7 +80,7 @@ def colorize(text, colors=[], styles=[]):
                     colors[1]
                 ))
             except UnicodeDecodeError:
-                message = message.decode('utf-8', 'replace')
+                message = message
                 message = '\x03%s,%s%s\x0f' % (
                     COLORS[colors[0].lower()],
                     COLORS[colors[1].lower()],
@@ -94,7 +93,7 @@ def colorize(text, colors=[], styles=[]):
                 except KeyError:
                     raise KeyError('Style "%s" is invalid.' % style)
                 except UnicodeDecodeError:
-                    message = message.decode('utf-8', 'replace')
+                    message = message
                     message = '%s%s\x0f' % (STYLES[style.lower()], message)
         return message
     else:
@@ -138,4 +137,4 @@ def colors(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

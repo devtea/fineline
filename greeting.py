@@ -121,7 +121,7 @@ def greeting_initialize(bot, trigger):
     def parse_log(channel, log_file):
         file_list = []
         for l in log_file:
-            file_list.append(l.decode('utf-8', 'replace'))  # omfg took me way too long to figure out 'replace'
+            file_list.append(l)  # omfg took me way too long to figure out 'replace'
         LOGGER.info(log.format('finished loading file'))
         for line in file_list:
             nicknhost = _re_loglines.search(line)
@@ -151,7 +151,7 @@ def greeting_initialize(bot, trigger):
             LOGGER.info(log.format('opening %s'), log)
             log_name = os.path.splitext(os.path.basename(log_))
             LOGGER.info(log.format('logname %s'), log_name[0])
-            chan = _chan_regex.search(log_name[0]).groups()[0].decode('utf-8', 'replace')
+            chan = _chan_regex.search(log_name[0]).groups()[0]
             if log_.endswith('gz'):
                 with gzip.open(log_, 'rb') as gfile:  # May need to switch to r if problems
                     parse_log(chan, gfile)

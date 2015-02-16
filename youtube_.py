@@ -10,16 +10,12 @@ http://willie.dfbta.net
 
 This module will respond to .yt and .youtube commands and searches the youtubes.
 """
-from willie import web, tools
-from willie.module import rule, commands, example
 import json
 import re
-import sys
+from html.parser import HTMLParser
 
-if sys.version_info.major < 3:
-    from HTMLParser import HTMLParser
-else:
-    from html.parser import HTMLParser
+from willie import web, tools
+from willie.module import rule, commands, example
 
 regex = re.compile('(youtube.com/watch\S*v=|youtu.be/)([\w-]+)')
 _EXCLUDE = ['#reddit-mlpds']
@@ -155,7 +151,7 @@ def ytsearch(bot, trigger):
               ' | Views: ' + video_info['views'] +
               ' | Link: ' + video_info['link'])
 
-    bot.say(HTMLParser().unescape(message))
+    bot.say(HTMLParser(convert_charrefs=True).unescape(message))
 
 
 @rule('.*(youtube.com/watch\S*v=|youtu.be/)([\w-]+).*')
@@ -179,7 +175,7 @@ def ytinfo(bot, trigger, found_match=None):
               ' | Likes: ' + video_info['likes'] + \
               ' | Dislikes: ' + video_info['dislikes']
 
-    bot.say(HTMLParser().unescape(message))
+    bot.say(HTMLParser(convert_charrefs=True).unescape(message))
 
 
 @commands('ytlast', 'ytnew', 'ytlatest')
@@ -205,4 +201,4 @@ def ytlast(bot, trigger):
               ' | Dislikes: ' + video_info['dislikes'] +
               ' | Link: ' + video_info['link'])
 
-    bot.say(HTMLParser().unescape(message))
+    bot.say(HTMLParser(convert_charrefs=True).unescape(message))

@@ -6,7 +6,6 @@ Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
-from HTMLParser import HTMLParseError
 from random import choice
 from socket import timeout
 
@@ -67,10 +66,9 @@ def prbooru_search(bot, booru, tags=None, rand=True):
                 # Tried lxml but no difference for this application
                 img_tags = SoupStrainer("img")
                 soupy = BeautifulSoup(page, parse_only=img_tags)
-            except HTMLParseError:
-                return None
             except:
-                raise
+                LOGGER.error('Unhandled error in parsing.', exc_info=True)
+                return None
             image = soupy.find('img', id='image')['src']
             return image
         else:
@@ -88,11 +86,10 @@ def prbooru_search(bot, booru, tags=None, rand=True):
                 # Tried lxml but no real difference for this application
                 a_tags = SoupStrainer("a")
                 soupy = BeautifulSoup(page, parse_only=a_tags)
-            except HTMLParseError:
-                return None
             except:
-                raise
-            soupy_links = soupy.find_all('a', id=re.compile(ur'p\d{1,6}'))
+                LOGGER.error('Unhandled error in parsing.', exc_info=True)
+                return None
+            soupy_links = soupy.find_all('a', id=re.compile(r'p\d{1,6}'))
             links_list = []
             for i in soupy_links:
                 # LOGGER.info(log.format(i['href']))

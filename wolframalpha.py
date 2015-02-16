@@ -1,18 +1,13 @@
 """
 wolframalpha.py - A wolfram alpha query module
-Copyright 2015, khyperia
+Copyright 2015, khyperia, Tim Dreyer
 Licensed under the Eiffel Forum License 2.
 
 http://bitbucket.org/tdreyer/fineline
 """
 import re
-import sys
+from html.parser import HTMLParser
 from socket import timeout
-
-if sys.version_info.major < 3:
-    import HTMLParser
-else:
-    import html.parser as HTMLParser
 
 from willie.module import commands, example
 from willie import web
@@ -32,8 +27,7 @@ def wolframalpha(bot, trigger):
         return bot.say('WolframAlpha timed out')
     if not answer:
         return bot.reply('No answer')
-    answer = answer.decode('unicode_escape')
-    answer = HTMLParser.HTMLParser().unescape(answer)
+    answer = HTMLParser(convert_charrefs=True).unescape(answer)
     while True:
         match = re.search('\\\:([0-9A-Fa-f]{4})', answer)
         if match is None:
@@ -53,4 +47,4 @@ def wolframalpha(bot, trigger):
 
 
 if __name__ == "__main__":
-    print __doc__.strip()
+    print(__doc__.strip())

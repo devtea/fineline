@@ -7,12 +7,12 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 import datetime
-import HTMLParser
 import random
 import re
-from socket import timeout
 import threading
 import time
+from html.parser import HTMLParser
+from socket import timeout
 from string import Template
 
 import praw
@@ -33,7 +33,7 @@ _bad_reddit_msg = "That doesn't seem to exist on reddit."
 _bad_user_msg = "That user doesn't seem to exist."
 _error_msg = "That doesn't exist, or reddit is being squirrely."
 _timeout_message = 'Sorry, reddit is unavailable right now.'
-_util_html = HTMLParser.HTMLParser()
+_util_html = HTMLParser(convert_charrefs=True)
 # Bots to be ignored go here
 _excluded_commenters = []
 SUB_LIMIT = 50

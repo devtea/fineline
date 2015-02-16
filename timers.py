@@ -10,7 +10,6 @@ from datetime import timedelta
 import re
 import threading
 from time import time
-from types import IntType, FloatType, BooleanType
 
 from willie.logger import get_logger
 from willie.module import commands, event, example, interval, rule
@@ -34,8 +33,8 @@ except:
         if fp:
             fp.close()
 
-_rtime = re.compile(ur'^((\d{1,2}:){1,2})?\d{1,2}$')
-_rquiet = re.compile(ur'(^q$)|(^quiet$)|(^p$)|(^private$)', flags=re.I)
+_rtime = re.compile(r'^((\d{1,2}:){1,2})?\d{1,2}$')
+_rquiet = re.compile(r'(^q$)|(^quiet$)|(^p$)|(^private$)', flags=re.I)
 
 
 def setup(bot):
@@ -46,7 +45,7 @@ def setup(bot):
 
 
 def format_sec(sec):
-    assert type(sec) is FloatType or type(sec) is IntType
+    assert isinstance(sec, float) or isinstance(sec, int)
     sec = int(round(sec))
     if sec < 60:
         formatted = '%i sec' % sec
@@ -77,12 +76,12 @@ def new_timer(bot, trigger):
                 return int(times[0])
             elif len(times) == 2:
                 dur = int(times[0]) * 60 + int(times[1])
-                assert type(dur) is IntType
+                assert isinstance(dur, int)
                 return dur
             else:
                 dur = int(times[0]) * 60 * 60 + \
                     int(times[1]) * 60 + int(times[2])
-                assert type(dur) is IntType
+                assert isinstance(dur, int)
                 return dur
         else:
             raise ValueError('Malformed time')
@@ -91,9 +90,9 @@ def new_timer(bot, trigger):
         # Assume exists bot.memory['user_timers']['source']
         assert isinstance(src, str)
         assert isinstance(target, str)
-        assert type(end_time_unix) is FloatType
-        assert type(reminder) is IntType or reminder is None
-        assert type(quiet) is BooleanType
+        assert isinstance(end_time_unix, float)
+        assert isinstance(reminder, int) or reminder is None
+        assert isinstance(quiet, bool)
 
         bot.memory['user_timers'][src][target.lower()] = (
             target,

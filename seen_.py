@@ -12,7 +12,6 @@ import re
 import threading
 from datetime import timedelta, datetime
 from time import time
-from types import FloatType, TupleType
 
 from pytz import timezone
 
@@ -111,15 +110,15 @@ def seen_insert(bot, nick, data):
     # TODO change data imput to dict
 
     assert isinstance(nick, str)
-    assert type(data) is TupleType
+    assert isinstance(data, tuple)
     assert len(data) == 3
-    assert type(data[0]) is FloatType, '%r is not float' % data[0]
+    assert isinstance(data[0], float), '%r is not float' % data[0]
     assert isinstance(data[1], str)
     assert isinstance(data[2], str)
     nn = Identifier(nick)
     dict = {}
     dict['time'] = str(data[0])
-    dict['channel'] = data[1]  # data[1] should be unicode
+    dict['channel'] = data[1]
     dict['message'] = data[2]
 
     bot.memory['seen'][nn] = data
@@ -168,10 +167,10 @@ def load_from_logs(bot, trigger):
                 file_list = []
                 for l in file:
                     # omfg took me way too long to figure out 'replace'
-                    file_list.append(l.decode('utf-8', 'replace'))
+                    file_list.append(l)
                 LOGGER.info(log.format('finished loading file'))
                 for line in file_list:
-                    # line = line.decode('utf-8', 'replace')
+                    # line = line
                     # LOGGER.debug(log.format(line))
                     LOGGER.info(log.format('checking line'))
                     m = line_regex.search(line)
@@ -184,7 +183,6 @@ def load_from_logs(bot, trigger):
                             os.path.basename(log_file)
                         )
                         chan = chan_regex.search(log_name[0]).group(1)
-                        chan = chan.decode('utf-8', 'replace')
                         last = m.group(1)  # 00:00:00
                         date = log_name[0][-8:]  # 20001212
                         dt = datetime(
@@ -232,8 +230,8 @@ def seen_recorder(bot, trigger):
         return  # ignore priv msg and excepted rooms
     nn = Identifier(trigger.nick)
     now = time()
-    msg = trigger.args[1].strip().encode('utf-8', 'replace')
-    chan = trigger.args[0].encode('utf-8', 'replace')
+    msg = trigger.args[1].strip()
+    chan = trigger.sender
 
     data = (now, chan, msg)
 

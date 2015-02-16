@@ -75,7 +75,7 @@ def update_from_priv(bot):
     nlist = list(bot.memory['nicks'])
     priv = dict(bot.privileges)
 
-    privlist = set([i for i in {n for c in priv.itervalues() for n in c}])  # Flatten the dict to a set of ids sans channels
+    privlist = set([i for i in {n for c in priv.values() for n in c}])  # Flatten the dict to a set of ids sans channels
     bot.memory['nicks'] = [i for i in nlist if i in privlist]  # Remove any nicks that aren't around anymore
     for i in [x for x in privlist if x not in bot.memory['nicks']]:  # Whois any nicks we didn't already have
         # Add first, then whois
@@ -153,7 +153,7 @@ def whois_catcher(bot, trigger):
 def list_all_nicks(bot):
     '''Returns a flattened set of the current nicks that the bot can see in all channels.'''
     priv = dict(bot.privileges)
-    return {n for c in priv.itervalues() for n in c}
+    return {n for c in priv.values() for n in c}
 
 
 @rule('.*')
