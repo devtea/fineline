@@ -118,19 +118,25 @@ def weighted_choice(weighted):
 @commands('ship')
 def ship(bot, trigger):
     """Returns a somewhat random shipping pair."""
+    LOGGER.debug(log.format('Ship module started'))
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
+        LOGGER.debug(log.format('Ship returning, shushed'))
         return
     include_nicks = False
     try:
         target = nicks.NickPlus(trigger.args[1].split()[1])
+        LOGGER.debug(log.format('Found target=%s'), target)
     except IndexError:
         target = None
+        LOGGER.debug(log.format('No target specified'))
     else:
         if target.lower() in ['me', 'myself']:
+            LOGGER.debug(log.format('"ship me" format'))
             target = trigger.nick
             include_nicks = True
         elif target.lower() in ['yourself', 'you']:
+            LOGGER.debug(log.format('"ship you" format'))
             target = bot.nick
             include_nicks = True
         elif target.lower() in _anyone:
@@ -142,6 +148,7 @@ def ship(bot, trigger):
             #     bot.memory['seen'][nn] = data
             #     where nn is Identifier(nick)
             #     timestamp is a float
+            LOGGER.debug(log.format('"ship anyone" format'))
             target = None
             target_list = nicks.in_chan(bot, trigger.sender)
             random.shuffle(target_list)
@@ -150,28 +157,36 @@ def ship(bot, trigger):
                 timedelta = now - last_seen(bot, nick)
                 if timedelta.days <= 3:  # magic numbers are magic
                     target = nick
+                    LOGGER.debug(log.format('Nick selected: %s'), nick)
                     include_nicks = True
                     break
-
         elif nicks.in_chan(bot, trigger.sender, target):
+            LOGGER.debug(log.format('"ship nickname" format'))
             # Get properly formatted nick from channel nick list
             nick_list = []
             nick_list.extend(nicks.in_chan(bot, trigger.sender))
+            LOGGER.debug(log.format('nick_list: %s'), nick_list)
             i = nicks.in_chan(bot, trigger.sender).index(target)
             target = nick_list.pop(i)
-
-            LOGGER.info(log.format("target is: %s"), target)
+            LOGGER.debug(log.format('target: %s index: %s'), target, i)
             include_nicks = True
         else:
-            LOGGER.info(log.format('Target not found in room.'))
+            LOGGER.debug(log.format('Target not found in room.'))
             target = None
 
     if target or include_nicks:
+        LOGGER.debug(log.format("Target was specified at some point so we'll include nicks in chan."))
         i1 = target
+        LOGGER.debug(log.format('i1=%s'), i1)
     else:
-        i1 = weighted_choice(bot.memory['pony_list'])
+        LOGGER.debug(log.format("Target was not specified at some point so we'll only pull from database list."))
+        i1 = weighted_choice(bot.memory['pony_list'])  # This gets the index, not the key
+        LOGGER.debug(log.format('i1=%s'), i1)
+    LOGGER.debug(log.format('Setting i2 = i1'))
     i2 = i1
     if include_nicks and random.uniform(0, 1) > 0.5:
+        # This will never run with i1,i2 being indexes due to include_nicks
+
         # match target with nick in channel
         # don't match lurkers
         target_list = nicks.in_chan(bot, trigger.sender)
@@ -179,19 +194,42 @@ def ship(bot, trigger):
         now = datetime.now()
         for nick in target_list:
             timedelta = now - last_seen(bot, nick)
+            LOGGER.debug(log.format('comparing nick=%s i1=%s timedelta=%s'), nick, i1, timedelta.days)
             if nick != i1 and timedelta.days <= 3:  # magic numbers are magic
                 i2 = nick
                 break
-
+        if i1 == i2:  # Edge case, no nicks matched criteria so i1 still == i2
+            LOGGER.debug(log.format('Edge case! i1 still equals i2'))
+            target_list = nicks.in_chan(bot, trigger.sender)
+            random.shuffle(target_list)
+            for nick in target_list:
+                LOGGER.debug(log.format('recomparing nick=%s (%s) i1=%s (%s)'), nick, type(nick), i1, type(i1))
+                if nick != i1:
+                    LOGGER.debug(log.format('nick != i1'))
+                    i2 = nick
+                    break
+                else:
+                    LOGGER.debug(log.format('nick == i1'))
         pair = [i1, i2]
+        LOGGER.debug(log.format('i1=%s, i2=%s'), i1, i2)
     else:
+        # This can run with i1,i2 being either indexes or nicks!
+        if isinstance(i1, int):
+            i1 = bot.memory['pony_list'][i1][0]
+            i2 = i1
         # match nick with pony!
+        LOGGER.debug(log.format('i1=%s, i2=%s'), i1, i2)
         while i2 == i1:
             i2 = weighted_choice(bot.memory['pony_list'])
+            i2 = bot.memory['pony_list'][i2][0]
+            LOGGER.debug(log.format('i1=%s, i2=%s'), i1, i2)
+        pair = [i1, i2]
+        '''
         if not isinstance(i1, int):
             pair = [i1, bot.memory['pony_list'][i2][0]]
         else:
             pair = [bot.memory['pony_list'][i1][0], bot.memory['pony_list'][i2][0]]
+        '''
     random.shuffle(pair)
     bot.reply(random.choice(_reply_list) % (pair[0], pair[1]))
 
