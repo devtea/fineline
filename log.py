@@ -6,7 +6,7 @@ import time
 
 
 def format(*args):
-    message = ''.join([i for i in args])
+    message = ''.join([str(i) for i in args])
     return '%s - %s' % (time.strftime("%Y-%m-%d %H:%M:%S"), message)
 '''
 Usage examples:
