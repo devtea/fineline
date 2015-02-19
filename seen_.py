@@ -1,4 +1,3 @@
-# coding=utf8
 """
 seen.py - A simple Willie module to track nicks
 Copyright 2013, Tim Dreyer

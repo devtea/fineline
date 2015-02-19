@@ -1,4 +1,3 @@
-# coding=utf8
 """
 slow_room.py - A simple willie module to pipe up when things are slow.
 Copyright 2013, Tim Dreyer

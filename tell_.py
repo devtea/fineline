@@ -1,4 +1,3 @@
-# coding=utf8
 """
 tell.py - Willie Tell and Ask Module
 Copyright 2008, Sean B. Palmer, inamidst.com, Tim Dreyer

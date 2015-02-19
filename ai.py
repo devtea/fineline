@@ -1,4 +1,3 @@
-# coding=utf8
 """
 ai.py - A simple willie module for misc silly ai
 Copyright 2013, Tim Dreyer
