@@ -6,7 +6,7 @@ Licensed under the Eiffel Forum License 2.
 http://bitbucket.org/tdreyer/fineline
 """
 import re
-from html.parser import HTMLParser
+from html import unescape
 from socket import timeout
 
 from willie.module import commands, example
@@ -27,13 +27,13 @@ def wolframalpha(bot, trigger):
         return bot.say('WolframAlpha timed out')
     if not answer:
         return bot.reply('No answer')
-    answer = HTMLParser(convert_charrefs=True).unescape(answer)
+    answer = unescape(answer)
     while True:
         match = re.search('\\\:([0-9A-Fa-f]{4})', answer)
         if match is None:
             break
         char_code = match.group(1)
-        char = unichr(int(char_code, 16))
+        char = chr(int(char_code, 16))
         answer = answer.replace('\:' + char_code, char)
     waOutputArray = answer.split(';')
     if(len(waOutputArray) < 2):
