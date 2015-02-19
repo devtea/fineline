@@ -17,7 +17,7 @@ random.seed()
 def about(bot, trigger):
     """Shares basic information on the bot."""
     time.sleep(random.uniform(2, 4))
-    bot.say(u"Hello, my name is %s and I'm a bot! " % bot.nick)
+    bot.say("Hello, my name is %s and I'm a bot! " % bot.nick)
 
 
 @commands('bugs', 'bug')
@@ -28,7 +28,7 @@ def bugs(bot, trigger):
     time.sleep(random.uniform(2, 4))
     bot.say('Bugs?! I don\'t have any bugs!')
     time.sleep(random.uniform(2, 4))
-    bot.say(u"But I guess if you think you've found one, you can " +
+    bot.say("But I guess if you think you've found one, you can " +
             "make a bug report at " +
             "https://bitbucket.org/tdreyer/fineline/issues")
 
