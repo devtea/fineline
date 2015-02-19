@@ -1,4 +1,3 @@
-# coding=utf8
 """
 youtube.py - Willie YouTube Module
 Copyright 2012, Dimitri Molenaars, Tyrope.nl.
@@ -12,7 +11,7 @@ This module will respond to .yt and .youtube commands and searches the youtubes.
 """
 import json
 import re
-from html.parser import HTMLParser
+from html import unescape
 
 from willie import web, tools
 from willie.module import rule, commands, example
@@ -151,7 +150,7 @@ def ytsearch(bot, trigger):
               ' | Views: ' + video_info['views'] +
               ' | Link: ' + video_info['link'])
 
-    bot.say(HTMLParser(convert_charrefs=True).unescape(message))
+    bot.say(unescape(message))
 
 
 @rule('.*(youtube.com/watch\S*v=|youtu.be/)([\w-]+).*')
@@ -175,7 +174,7 @@ def ytinfo(bot, trigger, found_match=None):
               ' | Likes: ' + video_info['likes'] + \
               ' | Dislikes: ' + video_info['dislikes']
 
-    bot.say(HTMLParser(convert_charrefs=True).unescape(message))
+    bot.say(unescape(message))
 
 
 @commands('ytlast', 'ytnew', 'ytlatest')
@@ -201,4 +200,4 @@ def ytlast(bot, trigger):
               ' | Dislikes: ' + video_info['dislikes'] +
               ' | Link: ' + video_info['link'])
 
-    bot.say(HTMLParser(convert_charrefs=True).unescape(message))
+    bot.say(unescape(message))
