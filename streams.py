@@ -629,7 +629,7 @@ def load_from_db(bot, trigger=None):
             bot.memory['streams'].append(
                 bot.memory['streamFac'].newStream(c, s, a))
         except:
-            LOGGER.error(log.format('Failed to initialize livestream: %s, %s, %s'), c, s, a, exc_info=True)
+            LOGGER.error(log.format('Failed to initialize livestream, perhaps due to it being deactivated: Channel=%s, Service=%s, Alias=%s'), c, s, a, exc_info=True)
         if n:
             nsfw(bot, 'nsfw', (c, s), quiet=True)
     for c, s in feat_rows:
@@ -1436,7 +1436,7 @@ def announcer(bot):
 #    10000 requests per day ( ~1 / 9sec )
 @interval(223)
 def livestream_updater(bot):
-    LOGGER.info(log.format('Starting livestream.com updater.'))
+    LOGGER.debug(log.format('Starting livestream.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'livestream.com']:
         try:
@@ -1445,33 +1445,33 @@ def livestream_updater(bot):
         except ValueError:
             pass
         time.sleep(0.25)
-    LOGGER.info(log.format('livestream.com updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.debug(log.format('livestream.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(227)
 def twitchtv_updater(bot):
-    LOGGER.info(log.format('Starting twitch.tv updater.'))
+    LOGGER.debug(log.format('Starting twitch.tv updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'twitch.tv']:
         # TODO handle timeout, misc exceptions
         s.update()
         time.sleep(0.25)
-    LOGGER.info(log.format('twitch.tv updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.debug(log.format('twitch.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(229)
 def youtube_updater(bot):
-    LOGGER.info(log.format('Starting youtube.com updater.'))
+    LOGGER.debug(log.format('Starting youtube.com updater.'))
     now = time.time()
     for s in [i for i in bot.memory['streams'] if i.service == 'youtube.com']:
         s.update()
         time.sleep(0.25)
-    LOGGER.info(log.format('youtube.com updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.debug(log.format('youtube.com updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(239)
 def ustream_updater(bot):
-    LOGGER.info(log.format('Starting ustream.tv updater.'))
+    LOGGER.debug(log.format('Starting ustream.tv updater.'))
     now = time.time()
     # channel_list = [i.name for i in bot.memory['streams'] if i.service == 'ustream.tv']
     # if len(channel_list) == 0:
@@ -1491,19 +1491,19 @@ def ustream_updater(bot):
         s.update()
         time.sleep(0.25)
         '''
-    LOGGER.info(log.format('ustream.tv updater complete in %s seconds.'), (time.time() - now))
+    LOGGER.debug(log.format('ustream.tv updater complete in %s seconds.'), (time.time() - now))
 
 
 @interval(161)
 def picarto_updater(bot):
-    LOGGER.info(log.format('Starting picarto.tv updater.'))
+    LOGGER.debug(log.format('Starting picarto.tv updater.'))
     try:
         now = time.time()
         for s in [i for i in bot.memory['streams'] if i.service == 'picarto.tv']:
             # TODO handle timeout, misc exceptions
             s.update()
             time.sleep(0.25)
-        LOGGER.info(log.format('picarto.tv updater complete in %s seconds.'), (time.time() - now))
+        LOGGER.debug(log.format('picarto.tv updater complete in %s seconds.'), (time.time() - now))
     except:
         LOGGER.error(log.format('Unhandled exception in the picarto updater.'), exc_info=True)
 
