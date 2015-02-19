@@ -1,4 +1,3 @@
-# coding=utf8
 """
 reddit.py - A simple Willie module that provides reddit functionality
 Copyright 2013, Tim Dreyer
@@ -10,12 +9,12 @@ Depends on PRAW: https://github.com/praw-dev/praw
 """
 # TODO Filter multiple posts from a single user (ie. one user posts 10x in 10 min)
 # TODO add recency filter for announced reddit posts
-from datetime import datetime
-from html.parser import HTMLParser
 import re
-from socket import timeout
 import threading
 import time
+from datetime import datetime
+from html import unescape
+from socket import timeout
 
 import praw
 import praw.errors
@@ -30,7 +29,6 @@ LOGGER = get_logger(__name__)
 _url = '(reddit\.com|redd\.it)'
 _reurl = re.compile(_url, flags=re.I)
 _partial = r'((^|[^A-Za-z0-9])/(r|u(ser)?)/[^/\s\.]{3,20})'
-_util_html = HTMLParser(convert_charrefs=True)
 _TIMEOUT = 20
 _UA = 'FineLine 5.0 by /u/tdreyer1'
 _timeout_message = 'Sorry, reddit is unavailable right now.'
@@ -340,7 +338,7 @@ def fetch_reddits(bot, trigger=None):
                         while len(bot.memory['reddit_link_history']) > 1000:
                             bot.memory['reddit_link_history'].pop(0)
                         bot.memory['reddit_link_history'].append(p.url)
-                        LOGGER.info(log.format('%s %s %s'), _util_html.unescape(p.title.encode('utf-8')), p.author, p.url)
+                        LOGGER.info(log.format('%s %s %s'), unescape(p.title.encode('utf-8')), p.author, p.url)
     except:
         LOGGER.error(log.format('Unhandled exception fetching new reddit posts'), exc_info=True)
 
@@ -372,7 +370,7 @@ def link_parser(subm, url=False, new=False):
             subm.subreddit.display_name,
             short_url,
             nsfw,
-            colors.colorize(_util_html.unescape(subm.title), ['green'])
+            colors.colorize(unescape(subm.title), ['green'])
         )
     else:
         return '%s%s post %sby %s to /r/%s — %s %s' % (
@@ -381,7 +379,7 @@ def link_parser(subm, url=False, new=False):
             score,
             pname,
             subm.subreddit.display_name,
-            colors.colorize(_util_html.unescape(subm.title), ['green']),
+            colors.colorize(unescape(subm.title), ['green']),
             short_url
         )
 
@@ -528,8 +526,8 @@ def reddit_post(bot, trigger):
                     colors.colorize(str(comment.ups), ['orange']),
                     colors.colorize(comment.author.name, ['purple']),
                     nsfw,
-                    trc(_util_html.unescape(colors.colorize(post.title, ['green'])), 15),
-                    trc(_util_html.unescape(colors.colorize(snippet.strip(), ['teal'])), 15)
+                    trc(unescape(colors.colorize(post.title, ['green'])), 15),
+                    trc(unescape(colors.colorize(snippet.strip(), ['teal'])), 15)
                 )
             )
 
