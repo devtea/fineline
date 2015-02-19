@@ -58,9 +58,18 @@ class NickPlus(Identifier):
         self._hostname = value
 
     def __eq__(self, other):
+        LOGGER.debug(log.format('Comparing %s (%s) to %s (%s)'), self, type(self), other, type(other))
         if isinstance(other, NickPlus) and \
                 (self.hostname is not None) and (other.hostname is not None):
+            if self._lowered == other._lowered or self.hostname == other.hostname:
+                LOGGER.debug('self == other')
+            else:
+                LOGGER.debug('self != other')
             return self._lowered == other._lowered or self.hostname == other.hostname
+        if self._lowered == Identifier._lower(other):
+            LOGGER.debug('self == other')
+        else:
+            LOGGER.debug('self != other')
         return self._lowered == Identifier._lower(other)
 
     def __hash__(self):
@@ -96,12 +105,17 @@ def in_chan(bot, channel, nick=None):
     returns boolean of whether that object is in the channel.'''
     priv = dict(bot.privileges)
     with bot.memory['nick_lock']:
+        LOGGER.debug(log.format('in_chan:nick=%s channel=%s priv=%s'), nick, channel, priv)
         if not nick and channel in priv.keys():
-            tmp = [i for i in bot.memory['nicks'] if i in priv[channel].keys()]
-            LOGGER.info(log.format(tmp))
+            LOGGER.debug(log.format('in_chan:Channel found priv'))
+            tmp = [i for i in bot.memory['nicks'] if i.lower() in priv[channel].keys()]
+            LOGGER.debug(log.format('in_chan:nicks in chan: %s'), tmp)
             return tmp
         elif nick and channel in priv.keys():
-            return nick in priv[channel].keys()
+            LOGGER.debug(log.format('in_chan:Channel found priv'))
+            LOGGER.debug(log.format('in_chan:nick in channel: %s'), nick.lower() in priv[channel].keys())
+            return nick.lower() in priv[channel].keys()
+        LOGGER.debug(log.format('in_chan:no nick and no chan'))
         return None
 
 
