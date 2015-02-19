@@ -1,4 +1,3 @@
-# coding=utf8
 """
 choose.py - A simple willie module that chooses randomly between arguments
 Copyright 2013, Tim Dreyer
@@ -57,16 +56,16 @@ def setup(bot):
 
 
 def allocate(bot, nick, returns, choices):
-    LOGGER.info(log.format('Allocating %s for %s from %s.'), returns, nick, choices)
+    LOGGER.debug(log.format('Allocating %s for %s from %s.'), returns, nick, choices)
     if returns == 1:
         if nick not in bot.memory['choose'] or time.time() - bot.memory['choose'][nick] > TIME_LIMIT:
-            LOGGER.info(log.format('Nick not in list or plenty of time has passed.'))
+            LOGGER.debug(log.format('Nick not in list or plenty of time has passed.'))
             choice = weighted_choice(bot, choices)
         else:
-            LOGGER.info(log.format('Nick has choosen recently'))
+            LOGGER.debug(log.format('Nick has choosen recently'))
             choice = unweighted_choice(choices, returns)
     else:
-        LOGGER.info(log.format('Defaulting to unweighted choice.'))
+        LOGGER.debug(log.format('Defaulting to unweighted choice.'))
         choice = unweighted_choice(choices, returns)
     return choice
 
@@ -92,25 +91,25 @@ def weighted_choice(bot, unweighted):
            'hitler', 'fcuk', 'fook', 'fock', 'stop', 'but', 'dum', 'freak',
            'freaks', 'freaky', 'silly', 'älä']
 
-    LOGGER.info(log.format('Weighting choices from %s.'), unweighted)
+    LOGGER.debug(log.format('Weighting choices from %s.'), unweighted)
     weighted = []
     while unweighted:
         i = unweighted.pop()
-        LOGGER.info(log.format('Processing choice "%s"".'), i)
+        LOGGER.debug(log.format('Processing choice "%s"".'), i)
         if set(i.split()).intersection(good):
             if set(i.split()).intersection(bad):
-                LOGGER.info(log.format('  Found choice in bad list.'))
+                LOGGER.debug(log.format('  Found choice in bad list.'))
                 weighted.append((i, 1))
             else:
-                LOGGER.info(log.format('  Found choice in good list.'))
+                LOGGER.debug(log.format('  Found choice in good list.'))
                 weighted.append((i, 525))
         else:
-            LOGGER.info(log.format('  Normal choice.'))
+            LOGGER.debug(log.format('  Normal choice.'))
             weighted.append((i, 75))
-    LOGGER.info(log.format('Weighted list is %s.'), weighted)
+    LOGGER.debug(log.format('Weighted list is %s.'), weighted)
 
     i = choose(weighted)
-    LOGGER.info(log.format('got index %s'), i)
+    LOGGER.debug(log.format('got index %s'), i)
     LOGGER.info(log.format('Returning "%s"'), weighted[i][0])
     return [weighted[i][0]]
 
@@ -142,24 +141,24 @@ def choose(bot, trigger):
     now = time.time()
 
     # Parse the provided arguments into a list of strings
-    LOGGER.info(log.format("Trigger args: ", trigger.args))
+    LOGGER.debug(log.format("Trigger args: ", trigger.args))
     __, __, list = trigger.args[1].partition(' ')
     # Test for csv or space separated values
     if ',' in trigger.args[1]:
-        LOGGER.info(log.format('list: ', list))
+        LOGGER.debug(log.format('list: ', list))
         args = list.split(',')
-        LOGGER.info(log.format('args: ', args))
+        LOGGER.debug(log.format('args: ', args))
     else:
         args = list.split()
     # Strip the strings
     for i, str in enumerate(args):
         args[i] = str.strip()
-    LOGGER.info(log.format('args: ', args))
+    LOGGER.debug(log.format('args: ', args))
     if len(args) > 1:
         caller = nicks.Identifier(trigger.nick)
         # If the first argument is an int, we'll want to use it
         if args[0].isdigit():
-            LOGGER.info(log.format("First arg is a number."))
+            LOGGER.debug(log.format("First arg is a number."))
             # Cast the string to an int so it's usable
             choices = int(float(args.pop(0)))
 
@@ -175,7 +174,7 @@ def choose(bot, trigger):
 
         else:
             # Just choose one item since no number was specified
-            LOGGER.info(log.format("First arg is not a number."))
+            LOGGER.debug(log.format("First arg is not a number."))
             # choice = random.choice(args)
             choice = allocate(bot, caller, 1, args)
             if choice:
@@ -187,8 +186,8 @@ def choose(bot, trigger):
         bot.reply("You didn't give me enough to choose from!")
 
     bot.memory['choose'][nicks.Identifier(trigger.nick)] = now
-    LOGGER.info(log.format("Updated last choose time for nick."))
-    LOGGER.info(log.format("=" * 20))
+    LOGGER.debug(log.format("Updated last choose time for nick."))
+    LOGGER.debug(log.format("=" * 20))
 
 
 if __name__ == "__main__":
