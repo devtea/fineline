@@ -45,7 +45,7 @@ COLORS = {
 }
 STYLES = {
     "i": "\x16", "italic": "\x16",
-    "": "\x1F", "underline": "\x1F",
+    "u": "\x1F", "underline": "\x1F",
     "b": "\x02", "bold": "\x02"
 }
 
