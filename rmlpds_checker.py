@@ -1,4 +1,3 @@
-# coding=utf8
 """
 rmlpds_checker.py - A simple willie module template
 Copyright 2013, Tim Dreyer
@@ -11,7 +10,7 @@ import random
 import re
 import threading
 import time
-from html.parser import HTMLParser
+from html import unescape
 from socket import timeout
 from string import Template
 
@@ -25,7 +24,7 @@ from willie.module import interval, commands, rate, example
 
 LOGGER = get_logger(__name__)
 
-_UA = 'FineLine IRC bot 0.1 by /u/tdreyer1'
+_UA = 'FineLine 5.0 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
 _channels = ['#reddit-mlpds', '#fineline_testing']
 _INCLUDE = ['#reddit-mlpds', '#fineline_testing', '#reddit-mlpds-bots']
@@ -33,7 +32,6 @@ _bad_reddit_msg = "That doesn't seem to exist on reddit."
 _bad_user_msg = "That user doesn't seem to exist."
 _error_msg = "That doesn't exist, or reddit is being squirrely."
 _timeout_message = 'Sorry, reddit is unavailable right now.'
-_util_html = HTMLParser(convert_charrefs=True)
 # Bots to be ignored go here
 _excluded_commenters = []
 SUB_LIMIT = 50
@@ -147,12 +145,12 @@ def filter_posts(bot, posts, ignore=True):
         if post.title and re.search('\[stream\]', post.title, re.IGNORECASE):
             return True
         if post.is_self and post.selftext and re.search(
-                ur'\b(live)?stream(ing)?\b',
+                r'\b(live)?stream(ing)?\b',
                 post.title,
                 flags=re.IGNORECASE
         ):
             links = re.findall(
-                # ur'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
+                # r'https?://[^\[\]\(\)\{\}\<\>,!\s]+',
                 r'(?u)(%s?(?:http|https|ftp)(?:://[^\[\]\(\)\{\}\<\>,!\s]+))',
                 post.selftext,
                 flags=re.IGNORECASE
@@ -164,22 +162,22 @@ def filter_posts(bot, posts, ignore=True):
         return False
 
     def is_lounge(post):
-        if post.title and re.search(ur'\blounge\b', post.title, re.I):
+        if post.title and re.search(r'\blounge\b', post.title, re.I):
             return True
         return False
 
     def is_theme(post):
-        if post.title and post.is_self and re.match(ur'weekly (drawing )?theme', post.title, flags=re.I):
+        if post.title and post.is_self and re.match(r'weekly (drawing )?theme', post.title, flags=re.I):
             return True
         return False
 
     def is_biweekly(post):
-        if post.title and post.is_self and re.search(ur'(st|rd|nd|th) bi-weekly( drawing)? challenge', post.title, flags=re.I):
+        if post.title and post.is_self and re.search(r'(st|rd|nd|th) bi-weekly( drawing)? challenge', post.title, flags=re.I):
             return True
         return False
 
     def is_train(post):
-        if post.title and post.is_self and re.search(ur'\bsketch train\b', post.title, flags=re.I):
+        if post.title and post.is_self and re.search(r'\bsketch train\b', post.title, flags=re.I):
             return True
         return False
 
@@ -214,7 +212,7 @@ def filter_comments(post, limit):
     '''Returns squishy number of 'good' comments'''
     def auth_comp(comment, post):
         try:
-            return i.author != post.author
+            return comment.author != post.author
         except AttributeError:
             return False
 
@@ -252,7 +250,7 @@ def rmlpds(bot):
             bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + \
                 (5 * 60)
         if sub_exists:
-            LOGGER.info(log.format("Sub exists."))
+            LOGGER.debug(log.format("Sub exists."))
             new_posts = mlpds.get_new(limit=SUB_LIMIT)
             uncommented = []
             for post in new_posts:
@@ -294,7 +292,7 @@ def rmlpds(bot):
                                 nsfw,
                                 colors.colorize(post.author.name, ['purple']),
                                 t,
-                                colors.colorize(_util_html.unescape(post.title), ['green']),
+                                colors.colorize(unescape(post.title), ['green']),
                                 post.short_link
                             )
                         )
@@ -371,7 +369,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), ['green'])
+                        colors.colorize(unescape(post.title), ['green'])
                     )
                 )
             else:
@@ -382,7 +380,7 @@ def mlpds_check(bot, trigger):
                         apos,
                         post.short_link,
                         f_date,
-                        colors.colorize(_util_html.unescape(post.title), ['green'])
+                        colors.colorize(unescape(post.title), ['green'])
                     )
                 )
     else:
@@ -775,8 +773,8 @@ def reddit_contest(bot, trigger):
                         subreddit=comment.subreddit,
                         sid=comment.submission.id,
                         cid=comment.id),
-                    comment=trim_comment(_util_html.unescape(comment.body)),
-                    title=_util_html.unescape(comment.submission.title),
+                    comment=trim_comment(unescape(comment.body)),
+                    title=unescape(comment.submission.title),
                     cdate=str(datetime.datetime.utcfromtimestamp(comment.created_utc)),
                     sdate=str(datetime.datetime.utcfromtimestamp(comment.submission.created_utc)),
                     name=get_name(comment.submission.author),
