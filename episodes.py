@@ -12,26 +12,20 @@ import threading
 from willie.logger import get_logger
 from willie.module import commands, example
 
-LOGGER = get_logger(__name__)
-
-random.seed()
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
+# Bot framework is stupid about importing, so we need to do silly stuff
 try:
     import log
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
         sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
+
+LOGGER = get_logger(__name__)
+
+random.seed()
 
 
 def setup(bot):

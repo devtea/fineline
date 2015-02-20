@@ -22,8 +22,36 @@ from requests import HTTPError
 from willie.logger import get_logger
 from willie.module import interval, commands, rate, example
 
-LOGGER = get_logger(__name__)
+# Bot framework is stupid about importing, so we need to do silly stuff
+try:
+    import log
+except:
+    import sys
+    import os.path
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
+        sys.modules['log'] = log
+try:
+    import colors
+except:
+    import sys
+    import os.path
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import colors
+    if 'colors' not in sys.modules:
+        sys.modules['colors'] = colors
+try:
+    import util
+except:
+    import sys
+    import os.path
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import util
+    if 'util' not in sys.modules:
+        sys.modules['util'] = util
 
+LOGGER = get_logger(__name__)
 _UA = 'FineLine 5.0 by /u/tdreyer1'
 _check_interval = 3 * 60 * 60  # Seconds between checks
 _channels = ['#reddit-mlpds', '#fineline_testing']
@@ -40,52 +68,6 @@ _RETRYS = 3
 # Use multiprocess handler for multiple bots/threads on same server
 praw_multi = praw.handlers.MultiprocessHandler()
 rc = praw.Reddit(user_agent=_UA, handler=praw_multi)
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
-try:
-    import log
-except:
-    import imp
-    import sys
-    import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
-        sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
-
-try:
-    import colors
-except:
-    import imp
-    import sys
-    import os.path
-    try:
-        LOGGER.info(log.format("Trying manual import of colors."))
-        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
-        colors = imp.load_source('colors', pathname, fp)
-        sys.modules['colors'] = colors
-    finally:
-        if fp:
-            fp.close()
-try:
-    import util
-except:
-    import imp
-    import sys
-    import os.path
-    try:
-        LOGGER.info(log.format("trying manual import of util"))
-        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
-        util = imp.load_source('util', pathname, fp)
-        sys.modules['util'] = util
-    finally:
-        if fp:
-            fp.close()
 
 
 def setup(bot):

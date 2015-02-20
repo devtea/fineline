@@ -13,25 +13,18 @@ from willie.tools import Identifier
 from willie.module import rule, rate, priority
 from willie.logger import get_logger
 
-LOGGER = get_logger(__name__)
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
+# Bot framework is stupid about importing, so we need to do silly stuff
 try:
     import log
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
         sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
 
+LOGGER = get_logger(__name__)
 basic_thanks = r"\bty|thanks|gracias|thank\s?you|thank\s?ya|\bta"
 basic_woo = r"(wo[o]+[t]?)|(y[a]+y)|(whe[e]+)\b"
 basic_badbot = ("bad|no|stop|dam[nit]+?|ffs|stfu|shut (it|up)|wtf|" +

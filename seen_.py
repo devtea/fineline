@@ -18,44 +18,32 @@ from willie.logger import get_logger
 from willie.module import commands, example, priority, rule
 from willie.tools import Identifier
 
-LOGGER = get_logger(__name__)
+# Bot framework is stupid about importing, so we need to do silly stuff
+try:
+    import log
+except:
+    import sys
+    # import os.path
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
+        sys.modules['log'] = log
+try:
+    import colors
+except:
+    import sys
+    # import os.path
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import colors
+    if 'colors' not in sys.modules:
+        sys.modules['colors'] = colors
 
+LOGGER = get_logger(__name__)
 log_regex = re.compile('^#reddit-mlpds_\d{8}\.log$')
 line_regex = re.compile('^\[(\d\d:\d\d:\d\d)\] <([^>]+)> (.*)$')
 chan_regex = re.compile('^(.*?)_\d{8}$')
 cen = timezone("US/Central")  # log timezone
 _EXCLUDE = ['#reddit-mlpds-spoilers']
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
-try:
-    import log
-except:
-    import imp
-    import sys
-    # import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
-        sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
-try:
-    import colors
-except:
-    import imp
-    import sys
-    # import os.path
-    try:
-        LOGGER.info(log.format("Trying manual import of colors."))
-        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
-        colors = imp.load_source('colors', pathname, fp)
-        sys.modules['colors'] = colors
-    finally:
-        if fp:
-            fp.close()
 
 
 def escape(ucode):

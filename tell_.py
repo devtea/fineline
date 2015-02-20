@@ -15,54 +15,37 @@ from willie.logger import get_logger
 from willie.tools import Identifier, iterkeys
 from willie.module import commands, nickname_commands, rule, priority, example
 
-LOGGER = get_logger(__name__)
-
-maximum = 4
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
+# Bot framework is stupid about importing, so we need to do silly stuff
 try:
     import log
 except:
-    import imp
     # import sys
     # import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
         sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
 try:
     import nicks
 except:
-    import imp
     # import sys
     # import os.path
-    try:
-        LOGGER.info(log.format("trying manual import of nicks"))
-        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
-        nicks = imp.load_source('nicks', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import nicks
+    if 'nicks' not in sys.modules:
         sys.modules['nicks'] = nicks
-    finally:
-        if fp:
-            fp.close()
 try:
     import util
 except:
-    import imp
     # import sys
     # import os.path
-    try:
-        LOGGER.info(log.format("trying manual import of util"))
-        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
-        util = imp.load_source('util', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import util
+    if 'util' not in sys.modules:
         sys.modules['util'] = util
-    finally:
-        if fp:
-            fp.close()
+
+LOGGER = get_logger(__name__)
+maximum = 4
 
 
 def loadReminders(fn, lock):

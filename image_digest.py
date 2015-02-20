@@ -20,58 +20,40 @@ import requests
 from willie.logger import get_logger
 from willie.module import commands, rule, interval, example
 
-LOGGER = get_logger(__name__)
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
+# Bot framework is stupid about importing, so we need to do silly stuff
 try:
     import log
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
         sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
 try:
     import nicks
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info(log.format("trying manual import of nicks"))
-        fp, pathname, description = imp.find_module('nicks', [os.path.join('.', '.willie', 'modules')])
-        nicks = imp.load_source('nicks', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import nicks
+    if 'nicks' not in sys.modules:
         sys.modules['nicks'] = nicks
-    finally:
-        if fp:
-            fp.close()
 try:
     import util
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info(log.format("trying manual import of util"))
-        fp, pathname, description = imp.find_module('util', [os.path.join('.', '.willie', 'modules')])
-        util = imp.load_source('util', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import util
+    if 'util' not in sys.modules:
         sys.modules['util'] = util
-    finally:
-        if fp:
-            fp.close()
 
+LOGGER = get_logger(__name__)
 EXPIRATION = 3 * 24 * 60 * 60  # 24 hour expiration, longer for testing
 BLACKLIST = ['i.4cdn.org']
 _REMOVE_VOTES = 5
 _VOTE_TIME = 5  # Time in minutes
-
 _re_tumblr = re.compile(r'https?://\d+\.media\.tumblr\.com/[a-zA-Z0-9]+/tumblr_[a-zA-Z0-9_]+_\d+.[a-zA-Z]{,4}')
 
 # Templates

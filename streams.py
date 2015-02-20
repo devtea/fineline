@@ -18,40 +18,27 @@ from willie.module import commands, interval
 from willie.tools import Identifier
 import willie.web as web
 
-LOGGER = get_logger(__name__)
-
-# Bot framework is stupid about importing, so we need to override so that
-# various modules are always available for import.
+# Bot framework is stupid about importing, so we need to do silly stuff
 try:
     import log
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info("Trying manual import of log formatter.")
-        fp, pathname, description = imp.find_module('log', [os.path.join('.', '.willie', 'modules')])
-        log = imp.load_source('log', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import log
+    if 'log' not in sys.modules:
         sys.modules['log'] = log
-    finally:
-        if fp:
-            fp.close()
-
 try:
     import colors
 except:
-    import imp
     import sys
     import os.path
-    try:
-        LOGGER.info(log.format("Trying manual import of colors formatter."))
-        fp, pathname, description = imp.find_module('colors', [os.path.join('.', '.willie', 'modules')])
-        colors = imp.load_source('colors', pathname, fp)
+    sys.path.append(os.path.join('.', '.willie', 'modules'))
+    import colors
+    if 'colors' not in sys.modules:
         sys.modules['colors'] = colors
-    finally:
-        if fp:
-            fp.close()
 
+LOGGER = get_logger(__name__)
 _exc_regex = []
 _twitch_client_id = None  # Overwritten in setup()
 _youtube_api_key = None  # Overwritten in setup()
