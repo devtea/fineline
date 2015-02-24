@@ -55,7 +55,7 @@ def dice(bot, trigger):
     if bot.memory['shush']:
         return
 
-    words = trigger.args[1].split(' ')
+    words = trigger.args[1].split(' ')[1:]
     if len(words) == 1:
         bot.reply(roll_d_str(words[0]))
     elif len(words) == 2:
