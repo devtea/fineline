@@ -245,7 +245,7 @@ def spin(bot, trigger):
         nick_list.extend(nicks.in_chan(bot, trigger.sender))
         nick_list = [i for i in nick_list if not util.ignore_nick(bot, i)]
 
-        if bot.memory['tod']['lastspin'] > time.time() - 15:
+        if bot.memory['tod']['lastspin'] is not None and bot.memory['tod']['lastspin'] > time.time() - 15:
             return
         elif len([i[0] for i in bot.memory['tod']['list'] if i[0] in nick_list]) < _MINIMUM:
             bot.say("Sorry, but we don't have enough participants! We need at least %i people to join." % _MINIMUM)
