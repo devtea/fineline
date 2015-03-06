@@ -78,6 +78,8 @@ def setup(bot):
         bot.memory["rmlpds"]["timer"] = time.time() - _check_interval + 60
     if "lock" not in bot.memory["rmlpds"]:
         bot.memory["rmlpds"]["lock"] = threading.Lock()
+    if "contest_lock" not in bot.memory["rmlpds"]:
+        bot.memory["rmlpds"]["contest_lock"] = threading.Lock()
 
     bot.memory["rmlpds"]["vote_id"] = None
     bot.memory["rmlpds"]["vote_count"] = 0
@@ -195,8 +197,8 @@ def filter_comments(post, limit):
     def auth_comp(comment, post):
         try:
             return comment.author != post.author
-        except AttributeError:
-            return False
+        except:
+            return True
 
     if post.num_comments < limit:
         return post.num_comments
@@ -528,7 +530,7 @@ def reddit_contest(bot, trigger):
         bot.reply("This module is not configured properly. Please configure the hosted path and domain in the config file.")
         return
 
-    with bot.memory['rmlpds']['lock']:
+    with bot.memory['rmlpds']['contest_lock']:
         mlpds = rc.get_subreddit('MLPDrawingSchool')
         now = time.time()
 
@@ -561,17 +563,22 @@ def reddit_contest(bot, trigger):
             # Filter deleted comments
             LOGGER.info(log.format("Filtering deleted comments"))
             for comment in comments:
+                LOGGER.debug(log.format("testing comment %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
                     try:
                         if comment.author:
-                            successful = True
+                            LOGGER.debug(log.format("comment %s is not deleted"), comment.id)
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("comment %s is deleted"), comment.id)
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering for deleted comment %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
+            LOGGER.debug(log.format("Finished testing for deleted comments"))
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -584,15 +591,20 @@ def reddit_contest(bot, trigger):
             for comment in comments:
                 successful = None
                 trials = 0
+                LOGGER.debug(log.format("Checking date on comment %s"), comment.id)
                 while not successful and trials < _RETRYS:
                     try:
                         if datetime.datetime.utcfromtimestamp(comment.created_utc).month == last_month:
-                            successful = True
+                            LOGGER.debug(log.format("Comment %s is in the correct month"), comment.id)
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("Comment %s is not in the correct month"), comment.id)
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering by date %s"), comment.id, exc_info=True)
                         time.sleep(5)
                         trials += 1
+            LOGGER.debug(log.format("Finished testing for comment date"))
             comments = []
             comments.extend(filtered_comments)
             filtered_comments = []
@@ -600,15 +612,18 @@ def reddit_contest(bot, trigger):
             # filter by submission to exclude commonly excluded posts
             LOGGER.info(log.format("Filtering by submission"))
             for comment in comments:
-                LOGGER.info(log.format("checking %s"), comment.id)
+                LOGGER.debug(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
                     try:
                         include = filter_posts(bot, [comment.submission], ignore=False)
                         if include:
-                            successful = True
+                            LOGGER.debug(log.format("The submission for comment %s passed the filter"), comment.id)
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("The submission for comment %s did not pass the filter"), comment.id)
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering by submission %s"), comment.id, exc_info=True)
                         time.sleep(5)
@@ -621,13 +636,17 @@ def reddit_contest(bot, trigger):
             # comment date
             LOGGER.info(log.format("Filtering on time difference between post and comment"))
             for comment in comments:
+                LOGGER.debug(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
                     try:
                         if comment.created_utc - comment.submission.created_utc < 10 * 24 * 60 * 60:  # 10 day diff
-                            successful = True
+                            LOGGER.debug(log.format("The time difference between submission and comment is sane"))
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("The time difference between submission and comment is too large"))
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering on time diff %s"), comment.id, exc_info=True)
                         time.sleep(5)
@@ -639,6 +658,7 @@ def reddit_contest(bot, trigger):
             # Filter self comments on posts
             LOGGER.info(log.format("Filtering self replies"))
             for comment in comments:
+                LOGGER.debug(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
@@ -649,8 +669,11 @@ def reddit_contest(bot, trigger):
                         except AttributeError:
                             poster = None  # Submission was probably deleted, we can safely assume self replies probably were too...
                         if commenter != poster:
-                            successful = True
+                            LOGGER.debug(log.format("The comment is not a self comment"))
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("The comment is a self comment"))
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering self replies %s"), comment.id, exc_info=True)
                         time.sleep(5)
@@ -667,13 +690,17 @@ def reddit_contest(bot, trigger):
             # filter by comment length or inclusion of link
             LOGGER.info(log.format("Filtering by length OR link"))
             for comment in comments:
+                LOGGER.debug(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
                     try:
                         if len(comment.body.split()) > 100 or markup_link.search(comment.body):
-                            successful = True
+                            LOGGER.debug(log.format("The comment is long enough"))
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("The comment is too short"))
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering by length or link %s"), comment.id, exc_info=True)
                         time.sleep(5)
@@ -685,13 +712,17 @@ def reddit_contest(bot, trigger):
             # Only keep top level or first reply comments
             LOGGER.info(log.format("Filtering based on top comment and thread participation"))
             for comment in comments:
+                LOGGER.debug(log.format("checking %s"), comment.id)
                 successful = None
                 trials = 0
                 while not successful and trials < _RETRYS:
                     try:
                         if include_comment(rc, comment):
-                            successful = True
+                            LOGGER.debug(log.format("The comment passes"))
                             filtered_comments.append(comment)
+                        else:
+                            LOGGER.debug(log.format("The comment doesn't pass"))
+                        successful = True
                     except:
                         LOGGER.error(log.format("Exception when filtering by top comment and thread participation %s"), comment.id, exc_info=True)
                         time.sleep(5)
@@ -713,7 +744,9 @@ def reddit_contest(bot, trigger):
 
         # Filter commenters who have fewer than 3 applicable comments
         LOGGER.info(log.format("Filtering less than three"))
-        for commenter in commenters.keys():
+        ckeys = []
+        ckeys.extend(commenters.keys())
+        for commenter in ckeys:
             if len(commenters[commenter]) < 3:
                 del commenters[commenter]
 
@@ -792,7 +825,7 @@ def reddit_contest(bot, trigger):
 
         try:
             with open(bot.memory['rmlpds']['export_location'], 'w') as f:
-                f.write(page_content.encode('utf-8', 'replace'))
+                f.write(page_content)
         except IOError:
             LOGGER.error(log.format('IO error writing contest file. check file permissions.'), exc_info=True)
             return
