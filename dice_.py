@@ -9,44 +9,81 @@ http://bitbucket.org/tdreyer/fineline
 from willie.module import commands
 import random
 
-random.seed()
+
+class DiceError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
-def roll(num_dice, sides_dice):
-    rolls = []
-    if num_dice < 1 or sides_dice <= 1:
-        return "I can't roll those dice"
-    if num_dice > 100:
-        return "Don't roll more than 100 dice"
-    for x in range(0, num_dice):
-        rolls.append(random.randrange(1, sides_dice))
-    if len(rolls) == 1:
-        return "Your {} sided dice roll is: {}".format(sides_dice, rolls[0])
-    rolls_str = [str(r) for r in rolls]
-    return "Your {}d{} roll is: {} = {}".format(num_dice, sides_dice, ' + '.join(rolls_str), sum(rolls))
+# Note: Does not handle spaces. Strip all spaces from input.
+def do_dice(string):
+    index = 0
+
+    def primary():
+        nonlocal index
+        if index < len(string) and string[index] == "(":
+            index += 1
+            prim_parse = parse(primary(), 0)
+            if index >= len(string) or string[index] != ")":
+                raise DiceError("Missing ')'")
+            index += 1
+            return prim_parse
+        start_index = index
+        while index < len(string) and string[index].isdigit():
+            index += 1
+        if index == start_index:
+            raise DiceError("No digit where there should have been.")
+        return int(string[start_index:index])
+
+    def roll(x, y):
+        if x > 1000:
+            raise DiceError("Nobody has that many dice!")
+        return sum((random.randint(1, int(y)) for i in range(0, int(x))))
+
+    # add *one character* operators in this.
+    # first number is precedence, second lambda is definition
+    operators = {
+        "+": (1, lambda x, y: x + y),
+        "-": (1, lambda x, y: x - y),
+        "*": (2, lambda x, y: x * y),
+        "/": (2, lambda x, y: x / y),
+        "%": (2, lambda x, y: x % y),
+        "^": (3, lambda x, y: x ** y),
+        "d": (4, lambda x, y: roll(x, y))
+    }
+
+    # http://en.wikipedia.org/wiki/Operator-precedence_parser
+    def parse(lhs, min_precedence):
+        nonlocal index
+        while index < len(string) and string[index] in operators and operators[string[index]][0] >= min_precedence:
+            op = string[index]
+            index += 1
+            rhs = primary()
+            while index < len(string) and string[index] in operators and operators[string[index]][0] > operators[op][0]:
+                rhs = parse(rhs, operators[string[index]][0])
+            lhs = operators[op][1](lhs, rhs)
+        return lhs
+
+    result = parse(primary(), 0)
+    if index != len(string):
+        raise DiceError("Couldn't parse string")
+    return result
 
 
-def roll_d_str(value):
-    d_split = value.split('d')
+def general_dice(string):
+    # Special case if words just contains an integer
     try:
-        if len(d_split) == 1:
-            sides_dice = int(d_split[0])
-            return roll(1, sides_dice)
-        elif len(d_split) == 2:
-            num_dice = int(d_split[0])
-            sides_dice = int(d_split[1])
-            return roll(num_dice, sides_dice)
+        return "Your roll is: " + str(random.randint(1, int(string)))
     except ValueError:
-        return "Those aren't numbers, silly"
+        pass
 
-
-def roll_two_str(first, second):
     try:
-        fst = int(first)
-        snd = int(second)
-        return roll(fst, snd)
-    except ValueError:
-        return "Those aren't numbers, silly"
+        return "Your roll is: " + str(do_dice(string))
+    except DiceError as e:
+        return "Uh oh! " + str(e)
 
 
 @commands(u'dice')
@@ -55,10 +92,7 @@ def dice(bot, trigger):
     if bot.memory['shush']:
         return
 
-    words = trigger.args[1].split(' ')[1:]
-    if len(words) == 1:
-        bot.reply(roll_d_str(words[0]))
-    elif len(words) == 2:
-        bot.reply(roll_two_str(words[0], words[1]))
-    else:
-        bot.reply("Usage: !dice [number of dice]d[number of sides on dice]")
+    # Take out command and strip spaces from rest
+    words = ''.join(trigger.args[1].split(' ')[1:])
+    bot.say(general_dice(words))
+
