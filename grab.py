@@ -127,8 +127,8 @@ def recent_watcher(bot, trigger):
     # bot.memory['grab']['list'][nick] = (is_action, text)
     with bot.memory['grab']['lock']:
         if trigger.sender.startswith('#'):
-            if trigger.startswith('\001ACTION'):
-                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, trigger[8:])
+            if 'intent' in trigger.tags and trigger.tags['intent'] == 'ACTION':
+                bot.memory['grab']['list'][Identifier(trigger.nick)] = (True, trigger)
             else:
                 bot.memory['grab']['list'][Identifier(trigger.nick)] = (False, trigger)
 

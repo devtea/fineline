@@ -220,6 +220,9 @@ def seen_recorder(bot, trigger):
     msg = trigger.args[1].strip()
     chan = trigger.sender
 
+    if 'intent' in trigger.tags and trigger.tags['intent'] == 'ACTION':
+        msg = '* %s' % msg
+
     data = (now, chan, msg)
 
     with bot.memory['seen_lock']:
@@ -250,6 +253,7 @@ def seen(bot, trigger):
             chan = bot.memory['seen'][nn][1]
             msg = bot.memory['seen'][nn][2]
 
+            # Keeping this check for legacy lines in db
             if msg.startswith("\x01ACTION") and msg.endswith("\x01"):
                 msg = "* %s %s" % (nn, msg[7:-1])
 

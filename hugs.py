@@ -28,13 +28,16 @@ LOGGER = get_logger(__name__)
 random.seed()
 
 
-@rule(r'\001ACTION [a-zA-Z0-9 ,]*?' +
+@rule(r'[a-zA-Z0-9 ,]*?' +
       r'((\bhugs? $nickname)|(\bgives $nickname a hug))')
 @rate(90)
 def hugback(bot, trigger):
     """Returns a 'hug' action directed at the bot."""
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
+        return
+    if 'intent' not in trigger.tags or trigger.tags['intent'] != 'ACTION':
+        LOGGER.debug('hugs.hugback triggered but not an action')
         return
     bot.action(random.choice([
         'hugs %s back' % trigger.nick,
@@ -44,7 +47,7 @@ def hugback(bot, trigger):
     ]))
 
 
-@rule("\001ACTION\s(" +
+@rule("(" +
       "(.*?hug(s?).*?((\!)|(\.+)))|" +
       "(\!no)|" +
       "(gets just within)|" +
@@ -58,17 +61,20 @@ def hug_intercept(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
         return
+    if 'intent' not in trigger.tags or trigger.tags['intent'] != 'ACTION':
+        LOGGER.debug('hugs.hug_intercept triggered but not an action')
+        return
     LOGGER.info(log.format("Caught hug."))
     # First make sure we're intercepting the proper user's actions
     if re.match("hushmachine", trigger.nick):
         # Hugs directed at the bot
-        if re.match("\001ACTION\s.+?%s.+?" % bot.nick, trigger.args[1]):
+        if re.match(".+?%s.+?" % bot.nick, trigger.args[1]):
             time.sleep(1)
             bot.say(random.choice([":D", "Aww, thanks!"]))
         elif re.findall(bot.nick, trigger.args[1]):
             return
         # special hugging
-        elif re.match("\001ACTION\sdrags.+?into the closet", trigger.args[1]):
+        elif re.match("drags.+?into the closet", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(1)
                 if random.uniform(0, 1) < 0.9:
@@ -76,7 +82,7 @@ def hug_intercept(bot, trigger):
                 else:
                     bot.say("I wish someone would 'special hug' me... :(")
         # spaghetti
-        elif re.match("\001ACTION\snervously hugs .*? fanny",
+        elif re.match("nervously hugs .*? fanny",
                       trigger.args[1]
                       ):
             if random.uniform(0, 1) < 0.5:
@@ -86,7 +92,7 @@ def hug_intercept(bot, trigger):
                     "fanny pack"
                 )
         # posts
-        elif re.match("\001ACTION\sstarts a hug, but the", trigger.args[1]):
+        elif re.match("starts a hug, but the", trigger.args[1]):
             if random.uniform(0, 1) < 5:
                 time.sleep(1)
                 bot.say("Yikes!")
@@ -99,7 +105,7 @@ def hug_intercept(bot, trigger):
         # generic hugs
         # use the intersection of sets to exclude some responses
         elif re.match(
-                "\001ACTION\s(.*?hug(s?).*?((\!)|(\.+)))", trigger.args[1]
+                "(.*?hug(s?).*?((\!)|(\.+)))", trigger.args[1]
         ) and not set(trigger.args[1].split()).intersection(set([
                 "headbutts",
                 "spaghetti",
@@ -121,17 +127,17 @@ def hug_intercept(bot, trigger):
                     "two bots in love can manage."
                 ]))
         # smelling distance
-        elif re.match("\001ACTION\sgets just within", trigger.args[1]):
+        elif re.match("gets just within", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(1)
                 bot.action("slowly backs away from the stench.")
         # too long
-        elif re.match("\001ACTION\sholds on to", trigger.args[1]):
+        elif re.match("holds on to", trigger.args[1]):
             if random.uniform(0, 1) < 0.5:
                 time.sleep(2)
                 bot.action("joins the hug, but it just makes things worse.")
         # !no
-        elif re.match("\001ACTION\s\!no", trigger.args[1]):
+        elif re.match("\!no", trigger.args[1]):
             time.sleep(1)
             bot.say(random.choice([
                 ":o hushmachine!",

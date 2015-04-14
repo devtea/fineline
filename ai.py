@@ -188,14 +188,19 @@ def swish(bot, trigger):
 
 @rule(
     "(^!(%s))|" % basic_slap +
-    "(\001ACTION [A-Za-z0-9,.'!\s]*?(%s)" % basic_slap +
+    "([A-Za-z0-9,.'!\s]*?(%s)" % basic_slap +
     "[A-Za-z0-9,.'!\s]+?$nickname)|" +
-    "(\001ACTION [A-Za-z0-9,.'!\s]+?$nickname" +
+    "([A-Za-z0-9,.'!\s]+?$nickname" +
     "[A-Za-z0-9,.'!\s]*?(%s)$)" % basic_slap
 )
 def slapped(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
+        return
+
+    # Require action
+    if 'intent' not in trigger.tags or trigger.tags['intent'] != 'ACTION':
+        LOGGER.debug('ai.slapped triggered but not an action')
         return
 
     if trigger.owner and not trigger.startswith('!'):
@@ -377,10 +382,13 @@ def nick(bot, trigger):
         bot.say('%s.' % message)
 
 
-@rule('^\001ACTION awkwardly tries to flirt with Fineline.')
+@rule('^awkwardly tries to flirt with Fineline.')
 def flirt(bot, trigger):
     # Don't do anything if the bot has been shushed
     if bot.memory['shush']:
+        return
+    if 'intent' not in trigger.tags or trigger.tags['intent'] != 'ACTION':
+        LOGGER.debug('ai.flirt triggered but not an action')
         return
     if trigger.nick != Identifier('hushmachine'):
         return
